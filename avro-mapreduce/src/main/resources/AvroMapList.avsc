@@ -1,0 +1,1 @@
+{"type":"record","name":"AvroMapList","namespace":"com.maplecloudy.avro.model","fields":[{"name":"fields","type":{"type":"map","values":{"type":"array","items":["string","int","long","bytes","float","double","boolean"],"java-class":"java.util.List"}}}]}

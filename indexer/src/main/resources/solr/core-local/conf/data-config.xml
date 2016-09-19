@@ -1,0 +1,31 @@
+<dataConfig>
+<dataSource driver="com.mysql.jdbc.Driver" url="jdbc:mysql://10.10.21.2/localdb" user="jambia_publisher" password="89BigDollar" batchSize="-1"/>
+    <document name="business">
+        <entity name="record" query="SELECT * from lucene_import" transformer="TemplateTransformer">
+            <field column="pid" name="pid" />
+            <field column="chainid" name="chainid" />
+            <field column="pubdate" name="pubdate" />
+            <field column="valdate" name="valdate" />
+            <field column="stdname" name="businessname" />
+            <field column="subdepartment" name="subdepartment" />
+            <field column="address" template="${record.housenumber} ${record.predirectional} ${record.streetname} ${record.streettype} ${record.postdirectional} ${record.apttype} ${record.aptnumber}" />
+            <field column="city" name="city" />
+            <field column="state" name="state" />
+            <field column="zip" name="zip" />                        
+            <field column="phone" template="${record.areacode}-${record.exchange}-${record.phonenumber}" />
+            <field column="latitude" name="lat"/>
+            <field column="longitude" name="lng"/>
+            <field column="full_text" name="text"/>
+            <field column="confidencescore" name="confidence_score"/>
+            <field column="attributename" name="attributes"/>
+            <field column="groupname" name="group"/>
+            <field column="categoryname" name="category"/>            
+            <field column="description" name="description"/>
+            <field column="sic_4_description" name="sic_description"/>
+            <field column="naics_description" name="naics_description"/>                        
+            <field column="normalizedname" name="normalized_heading"/>
+            <field column="attribute" name="unstructured_attributes"/>                        
+        </entity>
+    </document>
+</dataConfig>
+
