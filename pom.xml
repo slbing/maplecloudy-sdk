@@ -23,7 +23,7 @@
   <module>report-core</module>
   <module>flume-ng-ext</module>
   <module>geoip</module>
-  <module>indexer</module>
+  <!--<module>indexer</module>-->
   <module>spider</module>
  </modules>
   <distributionManagement>
