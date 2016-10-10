@@ -21,11 +21,12 @@
 			<artifactId>avro-mapreduce</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<!-- 
 		<dependency>
 			<groupId>com.maplecloudy.maple</groupId>
 			<artifactId>indexer</artifactId>
 			<version>${project.version}</version>
-		</dependency>
+		</dependency> -->
 		<dependency>
 			<groupId>xerces</groupId>
 			<artifactId>xercesImpl</artifactId>
