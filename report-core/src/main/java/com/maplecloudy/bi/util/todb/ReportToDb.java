@@ -95,7 +95,7 @@ public class ReportToDb extends OozieMain implements Tool, ReportConstants {
 		}
 	}
 	
-	protected void makeSureConnOK() throws SQLException, ClassNotFoundException{
+	public void makeSureConnOK() throws SQLException, ClassNotFoundException{
 		if (null == cur_conn) {
 			reConnect();
 		}else{

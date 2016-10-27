@@ -140,6 +140,7 @@ AsyncSqlOutputFormat<Object,Object> {
 		@Override
 		public void setConnectionDefault(TaskAttemptContext context)
 				throws ClassNotFoundException, SQLException {
+		  ReportToDbAlg.get(context.getConfiguration()).makeSureConnOK();
 			// TODO Auto-generated method stub
 			connection = ReportToDbAlg.get(context.getConfiguration()).cur_conn;
 		}
