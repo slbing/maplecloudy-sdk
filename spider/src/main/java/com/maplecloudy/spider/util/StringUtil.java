@@ -50,8 +50,8 @@ public class StringUtil {
 		return sb.toString();
 	}
 
-	private static final char[] HEX_DIGITS = { '0', '1', '2', '3', '4', '5',
-			'6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+	private static final char[] HEX_DIGITS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd',
+			'e', 'f' };
 
 	/**
 	 * Convenience call for {@link #toHexString(byte[], String, int)}, where
@@ -145,8 +145,7 @@ public class StringUtil {
 		if (args.length != 1)
 			System.out.println("Usage: StringUtil <encoding name>");
 		else
-			System.out.println(args[0] + " is resolved to "
-					+ EncodingDetector.resolveEncodingAlias(args[0]));
+			System.out.println(args[0] + " is resolved to " + EncodingDetector.resolveEncodingAlias(args[0]));
 	}
 
 	public static String MD5String(String src) {
@@ -160,6 +159,17 @@ public class StringUtil {
 		ret = StringUtil.toHexString(b);
 		return ret;
 
+	}
+
+	/**
+	 * Return true if value is null or when trimmed has zero length.
+	 *
+	 * @param value
+	 *            the value to test
+	 * @return true if null or trimmed value has zero length
+	 */
+	public static boolean isNullOrEmpty(String value) {
+		return value == null || value.trim().length() == 0;
 	}
 
 }
