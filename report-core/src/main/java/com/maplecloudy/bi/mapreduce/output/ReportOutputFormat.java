@@ -34,10 +34,10 @@ public class ReportOutputFormat extends
         Class<?> ra = ReportAlgorithm.getAlgorithm(conf,
             (Class<? extends ReportKey>) key.datum.getClass());
         mos.write(AvroMapOutputFormat.class, ra.getSimpleName(), key, value);
-//        if (!conf.getBoolean("report.process.actively",
-//            false)) return;
-//        if (DbOutputAble.class.isAssignableFrom(ra)) mos.write(
-//            ReportDbOutputFormat.class, "dbUpdateOut", AvroUtils.clone(key.datum), AvroUtils.clone(value));
+        if (!conf.getBoolean("report.process.actively",
+            false)) return;
+        if (DbOutputAble.class.isAssignableFrom(ra)) mos.write(
+            ReportDbOutputFormat.class, "dbUpdateOut", AvroUtils.clone(key.datum), AvroUtils.clone(value));
       }
       
       @Override

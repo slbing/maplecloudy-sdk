@@ -84,7 +84,8 @@ public class ReportDbOutputFormat extends
           ras.add(ra);
           keys.put(ra.getClass(), ReportUtils.getKeyNames(ra.getClass()));
           tableName.put(ra.getClass(), ra.getTableName());
-          values.put(ra.getClass(), ReportUtils.getAllValueNames(ra.getClass()));
+          values
+              .put(ra.getClass(), ReportUtils.getAllValueNames(ra.getClass()));
         }
       }
     }
@@ -101,7 +102,8 @@ public class ReportDbOutputFormat extends
     protected List<PreparedStatement> getPreparedStatement(
         List<Pair<ReportKey,ReportValues>> userRecords) throws SQLException {
       
-//      HashMap<Class<? extends ReportAlgorithm>,PreparedStatement> updateStmt = new HashMap<Class<? extends ReportAlgorithm>,PreparedStatement>();
+      // HashMap<Class<? extends ReportAlgorithm>,PreparedStatement> updateStmt
+      // = new HashMap<Class<? extends ReportAlgorithm>,PreparedStatement>();
       HashMap<Class<? extends ReportAlgorithm>,PreparedStatement> insertStmt = new HashMap<Class<? extends ReportAlgorithm>,PreparedStatement>();
       List<PreparedStatement> lstmt = Lists.newArrayList();
       // Synchronize on connection to ensure this does not conflict
@@ -109,17 +111,20 @@ public class ReportDbOutputFormat extends
       Connection conn = getConnection();
       
       synchronized (conn) {
-//        HashMap<Class<? extends ReportAlgorithm>,String> hm = getUpdateStatement();
-//        for (Map.Entry<Class<? extends ReportAlgorithm>,String> enty : hm
-//            .entrySet()) {
-//          PreparedStatement st = conn.prepareStatement(enty.getValue());
-//          st.setQueryTimeout(100000);
-//          updateStmt.put(enty.getKey(), st);
-//          lstmt.add(st);
-//        }
-//        
-        HashMap<Class<? extends ReportAlgorithm>,String> hmin = this.getInsertStatement();
-        for (Map.Entry<Class<? extends ReportAlgorithm>,String> enty : hmin.entrySet()) {
+        // HashMap<Class<? extends ReportAlgorithm>,String> hm =
+        // getUpdateStatement();
+        // for (Map.Entry<Class<? extends ReportAlgorithm>,String> enty : hm
+        // .entrySet()) {
+        // PreparedStatement st = conn.prepareStatement(enty.getValue());
+        // st.setQueryTimeout(100000);
+        // updateStmt.put(enty.getKey(), st);
+        // lstmt.add(st);
+        // }
+        //
+        HashMap<Class<? extends ReportAlgorithm>,String> hmin = this
+            .getInsertStatement();
+        for (Map.Entry<Class<? extends ReportAlgorithm>,String> enty : hmin
+            .entrySet()) {
           PreparedStatement st = conn.prepareStatement(enty.getValue());
           st.setQueryTimeout(100000);
           insertStmt.put(enty.getKey(), st);
@@ -128,8 +133,8 @@ public class ReportDbOutputFormat extends
       }
       
       // Add a select statement
-//      Statement selectSt = conn.createStatement();
-//      selectSt.setQueryTimeout(100000);
+      // Statement selectSt = conn.createStatement();
+      // selectSt.setQueryTimeout(100000);
       // lstmt.add(selectSt);
       
       // Inject the record parameters into the UPDATE and WHERE clauses. This
@@ -137,29 +142,30 @@ public class ReportDbOutputFormat extends
       // by the underlying record. Our code auto-gen process for exports was
       // responsible for taking care of this constraint.
       for (Pair<ReportKey,ReportValues> record : userRecords) {
-        Class<?> ra = ReportAlgorithm.getAlgorithm(getConf(), record.key().getClass());
+        Class<?> ra = ReportAlgorithm.getAlgorithm(getConf(), record.key()
+            .getClass());
         TreeSet<String> updates = keys.get(ra);
         TreeSet<String> rvs = values.get(ra);
-//        String sql = "select id from " + tableName.get(ra) + " where ";
-//        for (String update : updates) {
-//          sql += update + "='"
-//              + ReflectDataEx.get().getField(record.key(), update, 0)
-//              + "' and ";
-//        }
-//        sql += "timestamp="
-//            + getConf().getInt(ReportConstants.REPORT_TIME,
-//                (int) (System.currentTimeMillis() / 1000));
-//        ResultSet ret = null;
-//        try {
-//          ret = selectSt.executeQuery(sql);
-//        } catch (Exception e) {
-//          System.out.println(sql);
-//          selectSt.close();
-//          continue;
-//        }
-//        PreparedStatement pst;
-//        if (ret == null || !ret.next()) pst = insertStmt.get(ra);
-//        else pst = updateStmt.get(ra);
+        // String sql = "select id from " + tableName.get(ra) + " where ";
+        // for (String update : updates) {
+        // sql += update + "='"
+        // + ReflectDataEx.get().getField(record.key(), update, 0)
+        // + "' and ";
+        // }
+        // sql += "timestamp="
+        // + getConf().getInt(ReportConstants.REPORT_TIME,
+        // (int) (System.currentTimeMillis() / 1000));
+        // ResultSet ret = null;
+        // try {
+        // ret = selectSt.executeQuery(sql);
+        // } catch (Exception e) {
+        // System.out.println(sql);
+        // selectSt.close();
+        // continue;
+        // }
+        // PreparedStatement pst;
+        // if (ret == null || !ret.next()) pst = insertStmt.get(ra);
+        // else pst = updateStmt.get(ra);
         PreparedStatement pst = insertStmt.get(ra);
         int i = 1;
         for (String rv : rvs) {
@@ -170,26 +176,27 @@ public class ReportDbOutputFormat extends
         for (String update : updates) {
           boolean isNullStr = false;
           Object tmpV = ReflectDataEx.get().getField(record.key(), update, 0);
-          if (null == tmpV){
+          if (null == tmpV) {
             try {
-                Class tmpC = record.key().getClass().getField(update).getType();
-                if (tmpC.equals(String.class)){
-                  isNullStr = true;
-                }
+              Class tmpC = record.key().getClass().getField(update).getType();
+              if (tmpC.equals(String.class)) {
+                isNullStr = true;
+              }
             } catch (Exception e) {}
           }
-          if (!isNullStr)
-            pst.setString(i, "" + tmpV);
-          else 
-            pst.setNull(i, Types.CHAR);
+          if (!isNullStr) pst.setString(i, "" + tmpV);
+          else pst.setNull(i, Types.CHAR);
           i++;
         }
-        pst.setString(i, ""+getConf().getInt(ReportConstants.REPORT_TIME, 
-            (int) (System.currentTimeMillis() / 1000)));
+        pst.setString(
+            i,
+            ""
+                + getConf().getInt(ReportConstants.REPORT_TIME,
+                    (int) (System.currentTimeMillis() / 1000)));
         pst.addBatch();
       }
       
-      //selectSt.close();
+      // selectSt.close();
       return lstmt;
     }
     
@@ -205,7 +212,7 @@ public class ReportDbOutputFormat extends
         
         int numSlots;
         numSlots = this.keys.get(ra.getClass()).size()
-            + this.values.get(ra.getClass()).size()+1;
+            + this.values.get(ra.getClass()).size() + 1;
         
         sb.append("(");
         boolean first = true;
@@ -240,7 +247,7 @@ public class ReportDbOutputFormat extends
         }
         sbRow.append(")");
         sb.append(sbRow);
-//        System.out.println(sb.toString());
+        // System.out.println(sb.toString());
         hm.put(ra.getClass(), sb.toString());
       }
       return hm;
@@ -278,17 +285,18 @@ public class ReportDbOutputFormat extends
         }
         sb.append(" AND timestamp=?");
         hm.put(ra.getClass(), sb.toString());
-//        System.out.println(sb.toString());
+        // System.out.println(sb.toString());
       }
       return hm;
     }
-
-	@Override
-	public void setConnectionDefault(TaskAttemptContext context)
-			throws ClassNotFoundException, SQLException {
-		// TODO Auto-generated method stub
-		connection = ReportToDbAlg.get(context.getConfiguration()).cur_conn;
-	}
+    
+    @Override
+    public void setConnectionDefault(TaskAttemptContext context)
+        throws ClassNotFoundException, SQLException {
+      // TODO Auto-generated method stub
+      ReportToDbAlg.get(context.getConfiguration()).makeSureConnOK();
+      connection = ReportToDbAlg.get(context.getConfiguration()).cur_conn;
+    }
     
   }
   
