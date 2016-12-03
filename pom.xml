@@ -19,6 +19,7 @@
  </properties>
  <modules>
   <module>avro-mapreduce</module>
+  <module>distribute-job-engin</module>
   <module>data-source</module>
   <module>report-core</module>
   <module>flume-ng-ext</module>
