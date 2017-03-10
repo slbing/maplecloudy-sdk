@@ -28,15 +28,17 @@ import org.apache.hadoop.yarn.util.Apps;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
 
+import com.google.common.collect.Maps;
+
 
 public class Client {
 
   Configuration conf = new YarnConfiguration();
   
   public void run(String[] args) throws Exception {
-    final String command = args[0];
-    final int n = Integer.valueOf(args[1]);
-    final Path jarPath = new Path(args[2]);
+//    final String command = args[0];
+//    final int n = Integer.valueOf(args[1]);
+    final Path jarPath = new Path(args[0]);
 
     // Create yarnClient
     YarnConfiguration conf = new YarnConfiguration();
@@ -53,24 +55,36 @@ public class Client {
     amContainer.setCommands(
         Collections.singletonList(
             "$JAVA_HOME/bin/java" +
-            " -Xmx256M" +
-            " com.hortonworks.simpleyarnapp.ApplicationMaster" +
-            " " + command +
-            " " + String.valueOf(n) +
+            " -Xmx512M" +
+            " org.apache.spark.deploy.SparkSubmit" +
+            " --master yarn --class com.maplecloudy.taskengine.main.JavaCustomReceiver --deploy-mode client --executor-memory 500m   --num-executors 2 spider-task-engine-1.0.0-SNAPSHOT.jar 0.0.0.0 8889" +
             " 1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stdout" + 
             " 2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stderr" 
             )
         );
     
     // Setup jar for ApplicationMaster
-    LocalResource appMasterJar = Records.newRecord(LocalResource.class);
-    setupAppMasterJar(jarPath, appMasterJar);
+    
+    FileSystem fs = FileSystem.get(conf);
+    FileStatus[] fss = fs.listStatus(jarPath);
+    HashMap<String,LocalResource> hmlr = Maps.newHashMap();
+    for(FileStatus jar : fss)
+    {
+	    LocalResource lr = Records.newRecord(LocalResource.class);
+	    setupAppMasterJar(jar.getPath(), lr);
+	    hmlr.put(jar.getPath().getName(),lr);
+    }
+    
+    
     amContainer.setLocalResources(
-        Collections.singletonMap("simpleapp.jar", appMasterJar));
+    		hmlr);
 
     // Setup CLASSPATH for ApplicationMaster
     Map<String, String> appMasterEnv = new HashMap<String, String>();
     setupAppMasterEnv(appMasterEnv);
+    System.out.println("--------------------------");
+    System.out.println(appMasterEnv.toString());
+    System.out.println("--------------------------");
     amContainer.setEnvironment(appMasterEnv);
     
     // Set up resource type requirements for ApplicationMaster
@@ -89,6 +103,10 @@ public class Client {
     // Submit application
     ApplicationId appId = appContext.getApplicationId();
     System.out.println("Submitting application " + appId);
+    System.out.println("--------------------------");
+    System.out.println(appContext.toString());
+    System.out.println("--------------------------");
+    
     yarnClient.submitApplication(appContext);
     
     ApplicationReport appReport = yarnClient.getApplicationReport(appId);

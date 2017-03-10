@@ -20,34 +20,12 @@
 	</parent>
 	<groupId>com.maplecloudy.maple</groupId>
 	<artifactId>distribute-job-engin</artifactId>
-	<name>Kim Avro Mapreduce</name>
-	<description>Kim's Avro Mapreduce lib</description>
+	<name>maplecloudy distribute engine</name>
 	<dependencies>
 		<dependency>
-			<groupId>org.apache.avro</groupId>
-			<artifactId>avro</artifactId>
-			<version>1.7.6-kf-cdh5.7.3</version>
-		</dependency>
-		<dependency>
-			<groupId>com.jayway.restassured</groupId>
-			<artifactId>json-path</artifactId>
-			<version>1.8.1</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.codehaus.groovy</groupId>
-					<artifactId>groovy</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-		  <groupId>org.apache.oozie</groupId>
-		  <artifactId>oozie-core</artifactId>
-		  <version>4.1.0-cdh5.8.2</version>
-		</dependency>
-		<dependency>
-			<groupId>com.jayway.jsonpath</groupId>
-			<artifactId>json-path</artifactId>
-			<version>0.8.1</version>
+			<groupId>org.apache.hadoop</groupId>
+			<artifactId>hadoop-yarn-client</artifactId>
+			<version>2.6.0-cdh5.8.3</version>
 		</dependency>
 	</dependencies>
 	<repositories>
@@ -74,20 +52,19 @@
 					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>
-			<!-- 要将源码放上去，需要加入这个插件 -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
 				<version>2.2.1</version>
-					<executions>
-						<execution>
-							<id>attach-sources</id>
-							<phase>package</phase>
-							<goals>
-								<goal>jar</goal>
-							</goals>
-						</execution>
-					</executions>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<phase>package</phase>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
