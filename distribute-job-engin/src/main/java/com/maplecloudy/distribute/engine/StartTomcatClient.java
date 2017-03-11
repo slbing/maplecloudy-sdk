@@ -146,7 +146,7 @@ public class StartTomcatClient {
 		System.out.println("--------------------------");
 
 		yarnClient.submitApplication(appContext);
-
+		
 		ApplicationReport appReport = yarnClient.getApplicationReport(appId);
 		YarnApplicationState appState = appReport.getYarnApplicationState();
 		while (appState != YarnApplicationState.FINISHED

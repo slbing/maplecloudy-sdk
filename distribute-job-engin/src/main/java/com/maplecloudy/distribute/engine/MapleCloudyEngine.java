@@ -14,7 +14,7 @@ public class MapleCloudyEngine {
   public static void main(String[] args) throws Exception {
     // MapleCloudyEngine mce = new MapleCloudyEngine();
     
-    final String mainClasss = args[0];
+    final String mainClass = args[0];
     // Initialize clients to ResourceManager and NodeManagers
     Configuration conf = new YarnConfiguration();
     AMRMClient<ContainerRequest> rmClient = AMRMClient.createAMRMClient();
@@ -22,11 +22,22 @@ public class MapleCloudyEngine {
       rmClient.init(conf);
       rmClient.start();
       
-      Class<?> klass = Class.forName(mainClasss);
       System.out.println("Classpath         :");
       System.out.println("------------------------");
       StringTokenizer st = new StringTokenizer(
           System.getProperty("java.class.path"), ":");
+      System.out.println("Main class        : " + mainClass);
+      System.out.println();
+      System.out.println();
+      System.out.println("Arguments         :");
+      for (String arg : args) {
+        System.out.println("                    " + arg);
+      }
+      System.out.println("Java System Properties:");
+      System.out.println("------------------------");
+      System.getProperties().store(System.out, "");
+      System.out.flush();
+      
       while (st.hasMoreTokens()) {
         System.out.println("  " + st.nextToken());
       }
@@ -36,8 +47,9 @@ public class MapleCloudyEngine {
           arg[i - 1] = args[i];
         }
       }
-      Method mainMethod = klass.getMethod("main", String[].class);
-      mainMethod.invoke(null, (Object) arg);
+//      Class<?> klass = Class.forName(mainClass);
+//      Method mainMethod = klass.getMethod("main", String[].class);
+//      mainMethod.invoke(null, (Object) arg);
       
     } catch (Exception e) {
       e.printStackTrace();
