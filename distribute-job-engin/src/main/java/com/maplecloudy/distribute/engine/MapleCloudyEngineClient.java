@@ -37,8 +37,7 @@ public class MapleCloudyEngineClient {
   
   private static void usage() {
     String message = "Usage: MapleCloudyEngineClient <mainClass> \n"
-        + "\nOptions:\n" + "  " 
-        + "  -jar  <string>  : jar add to classpath\n"
+        + "\nOptions:\n" + "  " + "  -jar  <string>  : jar add to classpath\n"
         + "  -jars     <string>   : dir with all to add classpath\n"
         + "  -p<key=value>   : properties\n"
         + "  -args<string>   : args to main class\n"
@@ -88,13 +87,13 @@ public class MapleCloudyEngineClient {
           usage();
         }
         margs = args[i];
-      }else if (args[i].equals("-m")) {
+      } else if (args[i].equals("-m")) {
         i++;
         if (i >= args.length) {
           usage();
         }
-        memory  = Integer.parseInt(args[i]);
-      }else if (args[i].equals("-cpu")) {
+        memory = Integer.parseInt(args[i]);
+      } else if (args[i].equals("-cpu")) {
         i++;
         if (i >= args.length) {
           usage();
@@ -118,15 +117,18 @@ public class MapleCloudyEngineClient {
         .newRecord(ContainerLaunchContext.class);
     
     List<String> cmds = Lists.newArrayList();
+//    cmds.add("sleep 600 \n");
     String cmd = "$JAVA_HOME/bin/java ";
     for (String pp : pps) {
       cmd += " " + pp;
     }
-    cmd += " " + mainClass + " " + margs + " 1>"
-        + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stdout" + " 2>"
-        + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stderr";
-    // cmds.add("sleep 600 \n");
-    System.out.println("command:" + cmd.toString());;
+    cmd += " com.maplecloudy.distribute.engine.MapleCloudyEngine " + mainClass
+        + margs + " 1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR
+        + "/stdout" + " 2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR
+        + "/stderr";
+    
+    System.out.println("command:" + cmd.toString());
+    ;
     cmds.add(cmd);
     amContainer.setCommands(cmds);
     // Setup jar for ApplicationMaster
@@ -215,15 +217,11 @@ public class MapleCloudyEngineClient {
     // Finally, set-up ApplicationSubmissionContext for the application
     ApplicationSubmissionContext appContext = app
         .getApplicationSubmissionContext();
-    String name = "engine:launcher:"+mainClass ;
-    if(jar != null)
-      name +=":"+jar;
-    if(jars!= null)
-      name +=":"+jars;
-    if(war!= null)
-      name += ":"+war;
-    if(margs != null)
-      margs += ":"+margs;
+    String name = "engine:launcher:" + mainClass;
+    if (jar != null) name += ":" + jar;
+    if (jars != null) name += ":" + jars;
+    if (war != null) name += ":" + war;
+    if (margs != null) margs += ":" + margs;
     appContext.setApplicationName(name); // application name
     appContext.setAMContainerSpec(amContainer);
     appContext.setResource(capability);
@@ -240,18 +238,18 @@ public class MapleCloudyEngineClient {
     yarnClient.submitApplication(appContext);
     yarnClient.close();
     
-//    ApplicationReport appReport = yarnClient.getApplicationReport(appId);
-//    YarnApplicationState appState = appReport.getYarnApplicationState();
-//    while (appState != YarnApplicationState.FINISHED
-//        && appState != YarnApplicationState.KILLED
-//        && appState != YarnApplicationState.FAILED) {
-//      Thread.sleep(1000);
-//      appReport = yarnClient.getApplicationReport(appId);
-//      appState = appReport.getYarnApplicationState();
-//    }
-//    
-//    System.out.println("Application " + appId + " finished with" + " state "
-//        + appState + " at " + appReport.getFinishTime());
+    // ApplicationReport appReport = yarnClient.getApplicationReport(appId);
+    // YarnApplicationState appState = appReport.getYarnApplicationState();
+    // while (appState != YarnApplicationState.FINISHED
+    // && appState != YarnApplicationState.KILLED
+    // && appState != YarnApplicationState.FAILED) {
+    // Thread.sleep(1000);
+    // appReport = yarnClient.getApplicationReport(appId);
+    // appState = appReport.getYarnApplicationState();
+    // }
+    //
+    // System.out.println("Application " + appId + " finished with" + " state "
+    // + appState + " at " + appReport.getFinishTime());
     
   }
   

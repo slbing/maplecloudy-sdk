@@ -15,10 +15,13 @@ public class MapleCloudyEngine {
     // MapleCloudyEngine mce = new MapleCloudyEngine();
     
     final String mainClass = args[0];
+    
     // Initialize clients to ResourceManager and NodeManagers
-    Configuration conf = new YarnConfiguration();
-    AMRMClient<ContainerRequest> rmClient = AMRMClient.createAMRMClient();
+    AMRMClient<ContainerRequest> rmClient = null;
     try {
+//      Class<?> klass = Class.forName(mainClass);
+      Configuration conf = new YarnConfiguration();
+      rmClient = AMRMClient.createAMRMClient();
       rmClient.init(conf);
       rmClient.start();
       
@@ -47,16 +50,18 @@ public class MapleCloudyEngine {
           arg[i - 1] = args[i];
         }
       }
-//      Class<?> klass = Class.forName(mainClass);
-//      Method mainMethod = klass.getMethod("main", String[].class);
-//      mainMethod.invoke(null, (Object) arg);
+      
+      Class<?> klass = Class.forName(mainClass);
+      Method mainMethod = klass.getMethod("main", String[].class);
+      mainMethod.invoke(null, (Object) arg);
       
     } catch (Exception e) {
       e.printStackTrace();
+    } finally {
+      if (rmClient != null) rmClient.unregisterApplicationMaster(
+          FinalApplicationStatus.SUCCEEDED, "", "");
     }
     // Un-register with ResourceManager
-    rmClient.unregisterApplicationMaster(FinalApplicationStatus.SUCCEEDED, "",
-        "");
+    
   }
-  
 }
