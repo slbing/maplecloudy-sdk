@@ -1,7 +1,5 @@
 package com.maplecloudy.distribute.engine;
 
-import java.io.File;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,18 +11,15 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
-import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
 import org.apache.hadoop.yarn.api.records.LocalResourceVisibility;
 import org.apache.hadoop.yarn.api.records.Resource;
-import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.client.api.YarnClientApplication;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
-import org.apache.hadoop.yarn.util.Apps;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
 
@@ -117,7 +112,7 @@ public class MapleCloudyEngineClient {
         .newRecord(ContainerLaunchContext.class);
     
     List<String> cmds = Lists.newArrayList();
-//    cmds.add("sleep 600 \n");
+    // cmds.add("sleep 600 \n");
     String cmd = "$JAVA_HOME/bin/java ";
     for (String pp : pps) {
       cmd += " " + pp;
@@ -161,7 +156,7 @@ public class MapleCloudyEngineClient {
       hmlr.put(jarf.getPath().getName(), tlr);
     }
     
-    // add jar
+    // add war
     if (war != null) {
       LocalResource tlr = Records.newRecord(LocalResource.class);
       FileStatus jarf = fs.getFileStatus(new Path(war));
@@ -253,16 +248,17 @@ public class MapleCloudyEngineClient {
     
   }
   
-  @SuppressWarnings("deprecation")
   private void setupAppMasterEnv(Map<String,String> appMasterEnv) {
+    
+    StringBuilder classPathEnv = new StringBuilder(Environment.CLASSPATH.$$())
+        .append(ApplicationConstants.CLASS_PATH_SEPARATOR).append("./*");
     for (String c : conf.getStrings(
         YarnConfiguration.YARN_APPLICATION_CLASSPATH,
-        YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH)) {
-      Apps.addToEnvironment(appMasterEnv, Environment.CLASSPATH.name(),
-          c.trim());
+        YarnConfiguration.DEFAULT_YARN_CROSS_PLATFORM_APPLICATION_CLASSPATH)) {
+      classPathEnv.append(ApplicationConstants.CLASS_PATH_SEPARATOR);
+      classPathEnv.append(c.trim());
     }
-    Apps.addToEnvironment(appMasterEnv, Environment.CLASSPATH.name(),
-        Environment.PWD.$() + File.separator + "*");
+    appMasterEnv.put(Environment.CLASSPATH.name(), classPathEnv.toString());
     
   }
   
