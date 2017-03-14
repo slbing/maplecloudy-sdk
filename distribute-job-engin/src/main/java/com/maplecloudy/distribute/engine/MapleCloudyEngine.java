@@ -1,5 +1,9 @@
 package com.maplecloudy.distribute.engine;
 
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -10,10 +14,12 @@ import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterResponse;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerStatus;
+import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.api.records.NodeReport;
 import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync;
 import org.apache.hadoop.yarn.client.api.async.NMClientAsync;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.hadoop.yarn.exceptions.YarnException;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -24,15 +30,16 @@ public class MapleCloudyEngine {
     //
     
     final String mainClass = args[0];
-    String[] arg = new String[args.length - 1];
-    if (args.length > 1) {
-      for (int i = 1; i < args.length; i++) {
-        arg[i - 1] = args[i];
+    final boolean damon = Boolean.valueOf(args[1]);
+    String[] arg = new String[args.length - 2];
+    if (args.length > 2) {
+      for (int i = 2; i < args.length; i++) {
+        arg[i - 2] = args[i];
       }
     }
     
     MapleCloudyEngine mce = new MapleCloudyEngine();
-    mce.run(mainClass, arg);
+    mce.run(mainClass, arg, damon);
     
   }
   
@@ -41,13 +48,11 @@ public class MapleCloudyEngine {
   }
   
   // private ByteBuffer allTokens;
-  //  private UserGroupInformation appSubmitterUgi;
+  // private UserGroupInformation appSubmitterUgi;
   YarnConfiguration conf;
   // Handle to communicate with the Resource Manager
   @SuppressWarnings("rawtypes")
   private AMRMClientAsync amRMClient;
-  // Handle to communicate with the Node Manager
-  private NMClientAsync nmClientAsync;
   
   // Hostname of the container
   private String appMasterHostname = "";
@@ -55,8 +60,9 @@ public class MapleCloudyEngine {
   private int appMasterRpcPort = -1;
   // Tracking url to which app master publishes info for clients to monitor
   private String appMasterTrackingUrl = "";
+  private boolean bRun = true;
   
-  public void run(String mainClass, String[] args) {
+  public void run(String mainClass, String[] args, boolean damon) {
     
     // Initialize clients to ResourceManager and NodeManagers
     try {
@@ -94,7 +100,7 @@ public class MapleCloudyEngine {
       RegisterApplicationMasterResponse response = amRMClient
           .registerApplicationMaster(appMasterHostname, appMasterRpcPort,
               appMasterTrackingUrl);
-
+      
       System.out.println("Classpath         :");
       System.out.println("------------------------");
       StringTokenizer st = new StringTokenizer(
@@ -118,11 +124,30 @@ public class MapleCloudyEngine {
       Class<?> klass = Class.forName(mainClass);
       Method mainMethod = klass.getMethod("main", String[].class);
       mainMethod.invoke(null, (Object) args);
+      System.out.println("Mainclass invoke sucesss-------------------!:");
       
+      if (damon) {
+        while (bRun) {
+          Thread.sleep(5000);
+          System.out.println("Heart beat");
+        }
+      }
+      amRMClient.unregisterApplicationMaster(FinalApplicationStatus.SUCCEEDED,
+          "run main class success", appMasterTrackingUrl);
     } catch (Exception e) {
       e.printStackTrace();
+      try {
+        amRMClient.unregisterApplicationMaster(FinalApplicationStatus.FAILED,
+            e.getMessage(), appMasterTrackingUrl);
+      } catch (YarnException e1) {
+        e1.printStackTrace();
+      } catch (IOException e1) {
+        e1.printStackTrace();
+      }
+      
     } finally {
-
+      Runtime.getRuntime().exit(0);
+      amRMClient.stop();
     }
   }
   
@@ -138,7 +163,7 @@ public class MapleCloudyEngine {
     
     @Override
     public void onShutdownRequest() {
-      
+      bRun = false;
     }
     
     @Override
@@ -147,7 +172,7 @@ public class MapleCloudyEngine {
     @Override
     public void onError(Throwable e) {
       LOG.error("Error in RMCallbackHandler: ", e);
-      amRMClient.stop();
+      bRun =false;
     }
     
     @Override
@@ -156,51 +181,52 @@ public class MapleCloudyEngine {
     }
   }
   
-//  static class NMCallbackHandler implements NMClientAsync.CallbackHandler {
-//    
-//    private final MapleCloudyEngine applicationMaster;
-//    
-//    public NMCallbackHandler(MapleCloudyEngine applicationMaster) {
-//      this.applicationMaster = applicationMaster;
-//    }
-//    
-//    @Override
-//    public void onContainerStarted(ContainerId containerId,
-//        Map<String,ByteBuffer> allServiceResponse) {
-//      
-//    }
-//    
-//    @Override
-//    public void onContainerStatusReceived(ContainerId containerId,
-//        ContainerStatus containerStatus) {
-//      // TODO Auto-generated method stub
-//      
-//    }
-//    
-//    @Override
-//    public void onContainerStopped(ContainerId containerId) {
-//      // TODO Auto-generated method stub
-//      
-//    }
-//    
-//    @Override
-//    public void onStartContainerError(ContainerId containerId, Throwable t) {
-//      // TODO Auto-generated method stub
-//      
-//    }
-//    
-//    @Override
-//    public void onGetContainerStatusError(ContainerId containerId, Throwable t) {
-//      // TODO Auto-generated method stub
-//      
-//    }
-//    
-//    @Override
-//    public void onStopContainerError(ContainerId containerId, Throwable t) {
-//      // TODO Auto-generated method stub
-//      
-//    }
-//    
-//  }
-//  
+  // static class NMCallbackHandler implements NMClientAsync.CallbackHandler {
+  //
+  // private final MapleCloudyEngine applicationMaster;
+  //
+  // public NMCallbackHandler(MapleCloudyEngine applicationMaster) {
+  // this.applicationMaster = applicationMaster;
+  // }
+  //
+  // @Override
+  // public void onContainerStarted(ContainerId containerId,
+  // Map<String,ByteBuffer> allServiceResponse) {
+  //
+  // }
+  //
+  // @Override
+  // public void onContainerStatusReceived(ContainerId containerId,
+  // ContainerStatus containerStatus) {
+  // // TODO Auto-generated method stub
+  //
+  // }
+  //
+  // @Override
+  // public void onContainerStopped(ContainerId containerId) {
+  // // TODO Auto-generated method stub
+  //
+  // }
+  //
+  // @Override
+  // public void onStartContainerError(ContainerId containerId, Throwable t) {
+  // // TODO Auto-generated method stub
+  //
+  // }
+  //
+  // @Override
+  // public void onGetContainerStatusError(ContainerId containerId, Throwable t)
+  // {
+  // // TODO Auto-generated method stub
+  //
+  // }
+  //
+  // @Override
+  // public void onStopContainerError(ContainerId containerId, Throwable t) {
+  // // TODO Auto-generated method stub
+  //
+  // }
+  //
+  // }
+  //
 }

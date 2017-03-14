@@ -32,13 +32,17 @@ public class MapleCloudyEngineClient {
   
   private static void usage() {
     String message = "Usage: MapleCloudyEngineClient <mainClass> \n"
-        + "\nOptions:\n" + "  " + "  -jar  <string>  : jar add to classpath\n"
+        + "\nOptions:\n"
+        + "  "
+        + "  -jar  <string>  : jar add to classpath\n"
         + "  -jars     <string>   : dir with all to add classpath\n"
         + "  -p<key=value>   : properties\n"
         + "  -args<string>   : args to main class\n"
         + "  -war<string>   : war to start web server\n"
         + "  -m<string>   : memory set for this app,default 256M\n"
-        + "  -cpu<string>   : CPU Virtual Cores set for this app, defaule 1\n";
+        + "  -cpu<string>   : CPU Virtual Cores set for this app, defaule 1\n"
+        + "  -damon   : after run the main class, then wait for kill the application\n"
+        + "  -type <string>   : the application type ,default is MAPLECLOUDY-APP\n";
     
     System.err.println(message);
     System.exit(1);
@@ -52,6 +56,8 @@ public class MapleCloudyEngineClient {
     String margs = null;
     String war = null;
     int memory = 256;
+    boolean damon = false;
+    String type = "MAPLECLOUDY-APP";
     int cpu = 1;
     List<String> pps = Lists.newArrayList();
     final String mainClass = args[0];
@@ -94,8 +100,18 @@ public class MapleCloudyEngineClient {
           usage();
         }
         cpu = Integer.parseInt(args[i]);
+      } else if (args[i].equals("-damon")) {
+        damon = true;
+        i++;
+        
       }
-      
+      else if (args[i].equals("-type")) {
+        i++;
+        if (i >= args.length) {
+          usage();
+        }
+        type = args[i];
+      }
     }
     // Create yarnClient
     YarnConfiguration conf = new YarnConfiguration();
@@ -105,6 +121,7 @@ public class MapleCloudyEngineClient {
     yarnClient.start();
     
     // Create application via yarnClient
+    
     YarnClientApplication app = yarnClient.createApplication();
     
     // Set up the container launch context for the application master
@@ -118,9 +135,9 @@ public class MapleCloudyEngineClient {
       cmd += " " + pp;
     }
     cmd += " com.maplecloudy.distribute.engine.MapleCloudyEngine " + mainClass
-        + margs + " 1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR
-        + "/stdout" + " 2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR
-        + "/stderr";
+        + " " + damon + " " + margs + " 1>"
+        + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stdout" + " 2>"
+        + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stderr";
     
     System.out.println("command:" + cmd.toString());
     ;
@@ -212,6 +229,7 @@ public class MapleCloudyEngineClient {
     // Finally, set-up ApplicationSubmissionContext for the application
     ApplicationSubmissionContext appContext = app
         .getApplicationSubmissionContext();
+    appContext.setApplicationType(type);
     String name = "engine:launcher:" + mainClass;
     if (jar != null) name += ":" + jar;
     if (jars != null) name += ":" + jars;
