@@ -1,13 +1,15 @@
 package com.maplecloudy.distribute.engine;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadInfo;
-import java.lang.management.ThreadMXBean;
-import java.lang.reflect.Method;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.net.NetUtils;
@@ -17,33 +19,29 @@ import org.apache.hadoop.yarn.api.records.ContainerStatus;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.api.records.NodeReport;
 import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync;
-import org.apache.hadoop.yarn.client.api.async.NMClientAsync;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 
 import com.google.common.annotations.VisibleForTesting;
 
-public class MapleCloudyEngine {
-  private static final Log LOG = LogFactory.getLog(MapleCloudyEngine.class);
+public class MapleCloudyShellEngine {
+  private static final Log LOG = LogFactory
+      .getLog(MapleCloudyShellEngine.class);
   
   public static void main(String[] args) throws Exception {
     //
+    System.out.println(StringUtils.join(args,"\n"));
     
-    final String mainClass = args[0];
-    final boolean damon = Boolean.valueOf(args[1]);
-    String[] arg = new String[args.length - 2];
-    if (args.length > 2) {
-      for (int i = 2; i < args.length; i++) {
-        arg[i - 2] = args[i];
-      }
-    }
+    final String cmd = args[0];
+    boolean damon = false;
+    if (args.length > 1) damon = Boolean.valueOf(args[1]);
     
-    MapleCloudyEngine mce = new MapleCloudyEngine();
-    mce.run(mainClass, arg, damon);
+    MapleCloudyShellEngine mce = new MapleCloudyShellEngine();
+    mce.run(cmd, damon);
     
   }
   
-  public MapleCloudyEngine() {
+  public MapleCloudyShellEngine() {
     conf = new YarnConfiguration();
   }
   
@@ -62,35 +60,10 @@ public class MapleCloudyEngine {
   private String appMasterTrackingUrl = "";
   private boolean bRun = true;
   
-  public void run(String mainClass, String[] args, boolean damon) {
+  public void run(String cmd, boolean damon) {
     
     // Initialize clients to ResourceManager and NodeManagers
     try {
-      // Note: Credentials, Token, UserGroupInformation, DataOutputBuffer class
-      // are marked as LimitedPrivate
-      // Credentials credentials = UserGroupInformation.getCurrentUser()
-      // .getCredentials();
-      // DataOutputBuffer dob = new DataOutputBuffer();
-      // credentials.writeTokenStorageToStream(dob);
-      // // Now remove the AM->RM token so that containers cannot access it.
-      // Iterator<Token<?>> iter = credentials.getAllTokens().iterator();
-      // System.out.println("Executing with tokens:");
-      // while (iter.hasNext()) {
-      // Token<?> token = iter.next();
-      // System.out.println(token);
-      // if (token.getKind().equals(AMRMTokenIdentifier.KIND_NAME)) {
-      // iter.remove();
-      // }
-      // }
-      // allTokens = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
-      
-      // Create appSubmitterUgi and add original tokens to it
-      // String appSubmitterUserName = System
-      // .getenv(ApplicationConstants.Environment.USER.name());
-      // appSubmitterUgi = UserGroupInformation
-      // .createRemoteUser(appSubmitterUserName);
-      // appSubmitterUgi.addCredentials(credentials);
-      
       AMRMClientAsync.CallbackHandler allocListener = new RMCallbackHandler();
       amRMClient = AMRMClientAsync.createAMRMClientAsync(1000, allocListener);
       amRMClient.init(conf);
@@ -105,13 +78,9 @@ public class MapleCloudyEngine {
       System.out.println("------------------------");
       StringTokenizer st = new StringTokenizer(
           System.getProperty("java.class.path"), ":");
-      System.out.println("Main class        : " + mainClass);
+      System.out.println("Cmd        : " + cmd);
       System.out.println();
       System.out.println();
-      System.out.println("Arguments         :");
-      for (String arg : args) {
-        System.out.println("                    " + arg);
-      }
       System.out.println("Java System Properties:");
       System.out.println("------------------------");
       System.getProperties().store(System.out, "");
@@ -120,11 +89,11 @@ public class MapleCloudyEngine {
       while (st.hasMoreTokens()) {
         System.out.println("  " + st.nextToken());
       }
-      
-      Class<?> klass = Class.forName(mainClass);
-      Method mainMethod = klass.getMethod("main", String[].class);
-      mainMethod.invoke(null, (Object) args);
-      System.out.println("Mainclass invoke sucesss-------------------!:");
+      String[] cmds = cmd.split(":");
+      for (String subcmd : cmds) {
+        runCmd(subcmd);
+      }
+      System.out.println("Cmd run sucesss-------------------!:");
       
       if (damon) {
         while (bRun) {
@@ -172,7 +141,7 @@ public class MapleCloudyEngine {
     @Override
     public void onError(Throwable e) {
       LOG.error("Error in RMCallbackHandler: ", e);
-      bRun =false;
+      bRun = false;
     }
     
     @Override
@@ -181,6 +150,89 @@ public class MapleCloudyEngine {
     }
   }
   
+  public void runCmd(String cmd) {
+    try {
+      Map<String,String> env = System.getenv();
+      ArrayList<String> envList = new ArrayList<String>();
+      
+      for (Map.Entry<String,String> entry : env.entrySet()) {
+        String key = entry.getKey();
+        String value = entry.getValue();
+        envList.add(key + "=" + value);
+      }
+      String[] envAM = new String[envList.size()];
+      
+      Process amProc = Runtime.getRuntime().exec(cmd, envList.toArray(envAM));
+      
+      final BufferedReader errReader = new BufferedReader(
+          new InputStreamReader(amProc.getErrorStream(),
+              Charset.forName("UTF-8")));
+      final BufferedReader inReader = new BufferedReader(new InputStreamReader(
+          amProc.getInputStream(), Charset.forName("UTF-8")));
+      
+      // read error and input streams as this would free up the buffers
+      // free the error stream buffer
+      Thread errThread = new Thread() {
+        @Override
+        public void run() {
+          try {
+            String line = errReader.readLine();
+            while ((line != null) && !isInterrupted()) {
+              System.err.println("cmd output------:" + line);
+              line = errReader.readLine();
+            }
+          } catch (IOException ioe) {
+            LOG.warn("Error reading the error stream", ioe);
+          }
+        }
+      };
+      Thread outThread = new Thread() {
+        @Override
+        public void run() {
+          try {
+            String line = inReader.readLine();
+            while ((line != null) && !isInterrupted()) {
+              System.out.println("cmd output------:" + line);
+              line = inReader.readLine();
+            }
+          } catch (IOException ioe) {
+            LOG.warn("Error reading the out stream", ioe);
+          }
+        }
+      };
+      try {
+        errThread.start();
+        outThread.start();
+      } catch (IllegalStateException ise) {}
+      
+      // wait for the process to finish and check the exit code
+      try {
+        int exitCode = amProc.waitFor();
+        LOG.info("AM process exited with value: " + exitCode);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      } finally {}
+      
+      try {
+        // make sure that the error thread exits
+        // on Windows these threads sometimes get stuck and hang the execution
+        // timeout and join later after destroying the process.
+        errThread.join();
+        outThread.join();
+        errReader.close();
+        inReader.close();
+      } catch (InterruptedException ie) {
+        LOG.info(
+            "ShellExecutor: Interrupted while reading the error/out stream", ie);
+      } catch (IOException ioe) {
+        LOG.warn("Error while closing the error/out stream", ioe);
+      }
+      amProc.destroy();
+    } catch (Exception e) {
+      e.printStackTrace();
+      LOG.warn("Shell run with exception", e);
+    }
+  }
   // static class NMCallbackHandler implements NMClientAsync.CallbackHandler {
   //
   // private final MapleCloudyEngine applicationMaster;

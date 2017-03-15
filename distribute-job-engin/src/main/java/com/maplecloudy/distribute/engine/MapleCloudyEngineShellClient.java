@@ -31,19 +31,21 @@ import org.apache.hadoop.yarn.util.Records;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
-public class MapleCloudyEngineClient extends Configured implements Tool {
+public class MapleCloudyEngineShellClient extends Configured implements Tool {
   
   Configuration conf = new YarnConfiguration();
   
   private static void usage() {
-    String message = "Usage: MapleCloudyEngineClient <mainClass> \n"
+    String message = "Usage: MapleCloudyEngineClient <cmd> \n"
         + "\nOptions:\n"
         + "  "
         + "  -jar  <string>  : jar add to classpath\n"
         + "  -jars     <string>   : dir with all to add classpath\n"
         + "  -p<key=value>   : properties\n"
+        + "  -sc<string>   : shell script to can be run\n"
         + "  -args<string>   : args to main class\n"
         + "  -war<string>   : war to start web server\n"
+        + "  -arc<string>   : tar package to this cmd\n"
         + "  -m<string>   : memory set for this app,default 256M\n"
         + "  -cpu<string>   : CPU Virtual Cores set for this app, defaule 1\n"
         + "  -damon   : after run the main class, then wait for kill the application\n"
@@ -61,12 +63,13 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
       String jars = null;
       String margs = null;
       String war = null;
+      List<String> arcs = Lists.newArrayList();
       int memory = 256;
       boolean damon = false;
+      String shellScript = null;
       String type = "MAPLECLOUDY-APP";
       int cpu = 1;
       List<String> pps = Lists.newArrayList();
-      final String mainClass = args[0];
       for (int i = 0; i < args.length; i++) {
         if (args[i].equals("-jar")) {
           i++;
@@ -80,7 +83,14 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
             usage();
           }
           jars = args[i];
-        } else if (args[i].equals("-p")) {
+        } else if (args[i].equals("-sc")) {
+          i++;
+          if (i >= args.length) {
+            usage();
+          }
+          shellScript = args[i];
+        }
+        else if (args[i].equals("-p")) {
           pps.add(args[i].substring(2));
         } else if (args[i].equals("-war")) {
           i++;
@@ -116,6 +126,12 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
             usage();
           }
           type = args[i];
+        } else if (args[i].equals("-arc")) {
+          i++;
+          if (i >= args.length) {
+            usage();
+          }
+          arcs.add(args[i]);
         }
       }
       // Create yarnClient
@@ -139,8 +155,8 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
       for (String pp : pps) {
         cmd += " " + pp;
       }
-      cmd += " com.maplecloudy.distribute.engine.MapleCloudyEngine "
-          + mainClass + " " + damon + " " + margs + " 1>"
+      cmd += " com.maplecloudy.distribute.engine.MapleCloudyShellEngine   '"
+          + margs + "' " + damon + " 1>"
           + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stdout" + " 2>"
           + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stderr";
       
@@ -178,6 +194,18 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
         hmlr.put(jarf.getPath().getName(), tlr);
       }
       
+   // add shellScript
+      if (shellScript != null) {
+        LocalResource tlr = Records.newRecord(LocalResource.class);
+        FileStatus jarf = fs.getFileStatus(new Path(shellScript));
+        tlr.setResource(ConverterUtils.getYarnUrlFromPath(jarf.getPath()));
+        tlr.setSize(jarf.getLen());
+        tlr.setTimestamp(jarf.getModificationTime());
+        tlr.setType(LocalResourceType.FILE);
+        tlr.setVisibility(LocalResourceVisibility.PUBLIC);
+        hmlr.put(jarf.getPath().getName(), tlr);
+      }
+      
       // add war
       if (war != null) {
         LocalResource tlr = Records.newRecord(LocalResource.class);
@@ -190,6 +218,16 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
         hmlr.put(jarf.getPath().getName(), tlr);
       }
       
+      for (String arc : arcs) {
+        LocalResource tlr = Records.newRecord(LocalResource.class);
+        FileStatus jarf = fs.getFileStatus(new Path(arc));
+        tlr.setResource(ConverterUtils.getYarnUrlFromPath(jarf.getPath()));
+        tlr.setSize(jarf.getLen());
+        tlr.setTimestamp(jarf.getModificationTime());
+        tlr.setType(LocalResourceType.ARCHIVE);
+        tlr.setVisibility(LocalResourceVisibility.PUBLIC);
+        hmlr.put(jarf.getPath().getName(), tlr);
+      }
       if (jars != null) {
         Path pjars = new Path(jar);
         if (fs.isDirectory(pjars)) {
@@ -235,7 +273,7 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
       ApplicationSubmissionContext appContext = app
           .getApplicationSubmissionContext();
       appContext.setApplicationType(type);
-      String name = "engine:launcher:" + mainClass;
+      String name = "engine:launcher:";
       if (jar != null) name += ":" + jar;
       if (jars != null) name += ":" + jars;
       if (war != null) name += ":" + war;
@@ -296,7 +334,7 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
   public static void main(String[] args) throws Exception {
     int status = -1;
     try {
-      status = ToolRunner.run(new MapleCloudyEngineClient(), args);
+      status = ToolRunner.run(new MapleCloudyEngineShellClient(), args);
     } catch (Exception ex) {
       System.err.println("Abnormal execution:" + ex.getMessage());
       ex.printStackTrace(System.err);
