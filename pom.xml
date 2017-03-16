@@ -11,7 +11,7 @@
   <!-- Set default encoding to UTF-8 to remove maven complaints -->
   <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <hadoop2.version>2.6.0-cdh5.7.3</hadoop2.version>
+    <hadoop2.version>2.6.0-cdh5.8.3</hadoop2.version>
   <!-- defaults for flaky test and focused test exclusions -->
   <test.exclude.pattern>$</test.exclude.pattern> <!-- junk pattern -->
   <test.include.pattern>**/Test*.java</test.include.pattern>
@@ -82,42 +82,5 @@
   </pluginManagement>
  </build>
  <dependencies>
-  <dependency>
-   <groupId>log4j</groupId>
-   <artifactId>log4j</artifactId>
-   <version>1.2.16</version>
-   <exclusions>
-    <exclusion>
-     <groupId>com.sun.jdmk</groupId>
-     <artifactId>jmxtools</artifactId>
-    </exclusion>
-    <exclusion>
-     <groupId>com.sun.jmx</groupId>
-     <artifactId>jmxri</artifactId>
-    </exclusion>
-   </exclusions>
-  </dependency>
-  <dependency>
-   <groupId>junit</groupId>
-   <artifactId>junit</artifactId>
-   <version>4.8.1</version>
-   <scope>test</scope>
-  </dependency>
-  <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-client</artifactId>
-        <version>${hadoop2.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.hadoop</groupId>
-        <artifactId>hadoop-mapreduce-client-common</artifactId>
-        <version>${hadoop2.version}</version>
-      </dependency>
-      <dependency>
-        <!-- for Hadoop's LocalJobRunner -->
-        <groupId>commons-httpclient</groupId>
-        <artifactId>commons-httpclient</artifactId>
-        <version>3.1</version>
-      </dependency>
-  </dependencies>
+ </dependencies>
 </project>
