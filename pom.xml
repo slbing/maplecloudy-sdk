@@ -26,6 +26,7 @@
   <module>geoip</module>
   <!--<module>indexer</module>-->
   <module>spider</module>
+  <module>maplecloudy-sdk-dist</module>
  </modules>
   <distributionManagement>
   <repository>
