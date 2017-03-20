@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor 
+	license agreements. See the NOTICE file distributed with this work for additional 
+	information regarding copyright ownership. The ASF licenses this file to 
+	You under the Apache License, Version 2.0 (the "License"); you may not use 
+	this file except in compliance with the License. You may obtain a copy of 
+	the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required 
+	by applicable law or agreed to in writing, software distributed under the 
+	License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
+	OF ANY KIND, either express or implied. See the License for the specific 
+	language governing permissions and limitations under the License. -->
+
+<!-- This is a stripped down config file used for a simple example... It 
+	is *not* a good example to work from. -->
+<config>
+	<!-- <lib>../lib</lib> -->
+	<luceneMatchVersion>LUCENE_CURRENT</luceneMatchVersion>
+	<!-- The DirectoryFactory to use for indexes. solr.StandardDirectoryFactory, 
+		the default, is filesystem based. solr.RAMDirectoryFactory is memory based, 
+		not persistent, and doesn't work with replication. -->
+	<directoryFactory name="DirectoryFactory"
+		class="${solr.directoryFactory:solr.StandardDirectoryFactory}">
+		<!-- class="${solr.directoryFactory:solr.HdfsDirectoryFactory}" > -->
+		<!-- <str name="solr.hdfs.home">hdfs://vortex-pro.hadoop0001.hf.voicecloud.cn:8020</str> -->
+	</directoryFactory>
+
+	<dataDir>${solr.core-da.data.dir:}</dataDir>
+	<!-- <dataDir>user/chenchen8/online/vc_log/extract/DataAnalysisInfoIndex/2013-06-01/00/current/part-r-00000/index</dataDir> -->
+
+	<!-- To enable dynamic schema REST APIs, use the following for <schemaFactory>: 
+		<schemaFactory class="ManagedIndexSchemaFactory"> <bool name="mutable">true</bool> 
+		<str name="managedSchemaResourceName">managed-schema</str> </schemaFactory> 
+		When ManagedIndexSchemaFactory is specified, Solr will load the schema from 
+		he resource named in 'managedSchemaResourceName', rather than from schema.xml. 
+		Note that the managed schema resource CANNOT be named schema.xml. If the 
+		managed schema does not exist, Solr will create it after reading schema.xml, 
+		then rename 'schema.xml' to 'schema.xml.bak'. Do NOT hand edit the managed 
+		schema - external modifications will be ignored and overwritten as a result 
+		of schema modification REST API calls. When ManagedIndexSchemaFactory is 
+		specified with mutable = true, schema modification REST API calls will be 
+		allowed; otherwise, error responses will be sent back for these requests. -->
+	<schemaFactory class="ClassicIndexSchemaFactory" />
+
+	<updateHandler class="solr.DirectUpdateHandler2">
+		<updateLog>
+			<str name="dir">${solr.core-da.data.dir:}</str>
+		</updateLog>
+	</updateHandler>
+
+	<!-- realtime get handler, guaranteed to return the latest stored fields 
+		of any document, without the need to commit or open a new searcher. The current 
+		implementation relies on the updateLog feature being enabled. -->
+	<requestHandler name="/get" class="solr.RealTimeGetHandler">
+		<lst name="defaults">
+			<str name="omitHeader">true</str>
+		</lst>
+	</requestHandler>
+
+	<requestHandler name="/replication" class="solr.ReplicationHandler"
+		startup="lazy" />
+
+	<requestDispatcher handleSelect="true">
+		<requestParsers enableRemoteStreaming="false"
+			multipartUploadLimitInKB="2048" formdataUploadLimitInKB="2048" />
+	</requestDispatcher>
+
+	<requestHandler name="standard" class="solr.StandardRequestHandler"
+		default="true">
+		<lst name="defaults">
+			<str name="echoParams">explicit</str>
+			<str name="wt">json</str>
+			<str name="json.ml">map</str>
+			<str name="defType">edismax</str>
+			<str name="pf"> 
+			   <!--  sub s_area mss_ip eng_ip nginx_ip uid dvc appid type
+				platform
+				imei imsi mac other sn aue auf ent vcn tte ttsText cver mscVer mscLng
+				mscLat
+				mscSkin client_ip ntt street jsonMap recResult nlpResult thirdResult ret
+				atc_ret ats_ret nlic_ret nlis_ret nlis_err_pos third_ret
+				third_err_pos vaDownFrom
+				audioType age gender login_id osp nlp area dvcid sid
+				 -->
+				recResult_t sub_s appid_s  aue_s auf_s call_s 
+				caller_name_s client_ip_s cver_s domain_s ent_s  imei_s imsi_s
+				mac_s ntt_s sn_s rse_s rst_s scn_s sent_s uid_s
+				country_s	province_s city_s operator_s nlpResult_s	
+				mss_ip_s eng_ip	s_city_s sid sub_ntt_s
+				timestamp_date 
+				sch_i nbest_ prs_i ptt_i age_i gender_i ret_i
+
+				
+			</str>
+			<str name="qf">
+				<!-- sub^1
+				 s_area^1 mss_ip^1 eng_ip^1 nginx_ip^1 uid^1 dvc^1 appid^1 type^1
+				platform^1
+				imei^1 imsi^1 mac^1 other^1 sn^1 aue^1 auf^1 ent^1 vcn^1 tte^1 ttsText^1
+				cver^1 mscVer^1 mscLng^1 mscLat^1 mscSkin^1 client_ip^1 ntt^1
+				street^1 jsonMap^1
+				recResult^1 nlpResult^1 thirdResult^1 ret^1 atc_ret^1 ats_ret^1 nlic_ret^1
+				nlis_ret^1 nlis_err_pos^1 third_ret^1 third_err_pos^1 vaDownFrom^1
+				audioType^1
+				age^1 gender^1 login_id^1 osp^1 nlp^1 area^1 dvcid^1  -->
+				
+                recResult_t^100 sub_s^99 sid^98  aue_s^97 auf_s^96 call_s^95 
+				caller_name_s^94 client_ip_s^93 cver_s^92 domain_s ent_s^91  imei_s^90 imsi_s^89
+				mac_s^88 ntt_s^87 sn_s^86 rse_s^85 rst_s^84 scn_s^83 sent_s^82 uid_s^81
+				country_s^80	province_s^79 city_s^78 operator_s^77 nlpResult_s^76	
+				mss_ip_s^75 eng_ip^74	s_city_s^73  appid_s^72 sub_ntt_s^71
+
+				timestamp_date^46
+
+				sch_i^45  nbest_i^43 prs_i^42 ptt_i^41 age_i^40 gender_i^39 ret_i^38
+				
+			</str>
+		</lst>
+	</requestHandler>
+	<requestHandler name="/analysis/field" startup="lazy"
+		class="solr.FieldAnalysisRequestHandler" />
+	<requestHandler name="/update" class="solr.UpdateRequestHandler" />
+	<requestHandler name="/admin/"
+		class="org.apache.solr.handler.admin.AdminHandlers" />
+
+	<requestHandler name="/admin/ping" class="solr.PingRequestHandler">
+		<lst name="invariants">
+			<str name="q">solrpingquery</str>
+		</lst>
+		<lst name="defaults">
+			<str name="echoParams">all</str>
+		</lst>
+	</requestHandler>
+
+
+	<!-- config for the admin interface -->
+	<admin>
+		<defaultQuery>solr</defaultQuery>
+	</admin>
+
+
+
+</config>
+
