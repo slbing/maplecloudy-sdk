@@ -1,6 +1,7 @@
 package com.maplecloudy.distribute.engine;
 
 import java.io.IOException;
+import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,7 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
@@ -47,7 +49,8 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
         + "  -m<string>   : memory set for this app,default 256M\n"
         + "  -cpu<string>   : CPU Virtual Cores set for this app, defaule 1\n"
         + "  -damon   : after run the main class, then wait for kill the application\n"
-        + "  -type <string>   : the application type ,default is MAPLECLOUDY-APP\n";
+        + "  -type <string>   : the application type ,default is MAPLECLOUDY-APP\n"
+        + "  -user <string>   : the user submit the app,defaule is maplecloudy\n";
     
     System.err.println(message);
     System.exit(1);
@@ -120,7 +123,7 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
       }
       // Create yarnClient
       YarnConfiguration conf = new YarnConfiguration();
-      YarnClient yarnClient = YarnClient.createYarnClient();
+      final YarnClient yarnClient = YarnClient.createYarnClient();
       
       yarnClient.init(conf);
       yarnClient.start();
@@ -230,9 +233,10 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
       Resource capability = Records.newRecord(Resource.class);
       capability.setMemory(memory);
       capability.setVirtualCores(cpu);
+      System.out.println("login user:" + UserGroupInformation.getLoginUser());
       
       // Finally, set-up ApplicationSubmissionContext for the application
-      ApplicationSubmissionContext appContext = app
+      final ApplicationSubmissionContext appContext = app
           .getApplicationSubmissionContext();
       appContext.setApplicationType(type);
       String name = "engine:launcher:" + mainClass;
@@ -255,6 +259,7 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
       
       yarnClient.submitApplication(appContext);
       yarnClient.close();
+      
     } catch (YarnException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
@@ -293,14 +298,34 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
     
   }
   
-  public static void main(String[] args) throws Exception {
-    int status = -1;
-    try {
-      status = ToolRunner.run(new MapleCloudyEngineClient(), args);
-    } catch (Exception ex) {
-      System.err.println("Abnormal execution:" + ex.getMessage());
-      ex.printStackTrace(System.err);
+  public static void main(final String[] args) throws Exception {
+    String user = "maplecloudy";
+    for (int i = 0; i < args.length; i++) {
+      if (args[i].equals("-user")) {
+        i++;
+        if (i >= args.length) {
+          usage();
+        }
+        user = args[i];
+      }
     }
-    System.exit(status);
+    System.out.println("login in user:" + UserGroupInformation.getLoginUser());
+    UserGroupInformation ugi = UserGroupInformation.createProxyUser(user,
+        UserGroupInformation.getLoginUser());
+    ugi.doAs(new PrivilegedAction<Void>() {
+      @Override
+      public Void run() {
+        try {
+          ToolRunner.run(new MapleCloudyEngineClient(), args);
+        } catch (Exception e) {
+          e.printStackTrace();
+          System.exit(-1);
+        }
+        return null;
+      }
+      
+    });
+    System.exit(0);
   }
+  
 }

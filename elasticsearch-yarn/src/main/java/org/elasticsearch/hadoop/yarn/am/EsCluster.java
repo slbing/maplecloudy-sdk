@@ -175,6 +175,7 @@ class EsCluster implements AutoCloseable {
                 log.warn(String
                     .format("Container %s preempted...", containerId));
                 break;
+
               default:
                 log.warn(String.format(
                     "Container %s exited with an invalid/unknown exit code...",

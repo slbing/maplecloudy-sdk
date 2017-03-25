@@ -116,6 +116,7 @@ public class ApplicationMaster implements AutoCloseable {
     Assert.notNull(appId, "ApplicationAttemptId cannot be found in env %s"
         + env);
     amResponse = rpc.registerAM();
+    
     updateTokens();
     cluster = new EsCluster(rpc, appConfig, env);
     try {

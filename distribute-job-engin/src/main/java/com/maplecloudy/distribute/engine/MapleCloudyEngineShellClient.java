@@ -1,6 +1,7 @@
 package com.maplecloudy.distribute.engine;
 
 import java.io.IOException;
+import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,7 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
@@ -89,8 +91,7 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
             usage();
           }
           shellScript = args[i];
-        }
-        else if (args[i].equals("-p")) {
+        } else if (args[i].equals("-p")) {
           pps.add(args[i].substring(2));
         } else if (args[i].equals("-war")) {
           i++;
@@ -194,7 +195,7 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
         hmlr.put(jarf.getPath().getName(), tlr);
       }
       
-   // add shellScript
+      // add shellScript
       if (shellScript != null) {
         LocalResource tlr = Records.newRecord(LocalResource.class);
         FileStatus jarf = fs.getFileStatus(new Path(shellScript));
@@ -331,14 +332,32 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
     
   }
   
-  public static void main(String[] args) throws Exception {
-    int status = -1;
-    try {
-      status = ToolRunner.run(new MapleCloudyEngineShellClient(), args);
-    } catch (Exception ex) {
-      System.err.println("Abnormal execution:" + ex.getMessage());
-      ex.printStackTrace(System.err);
+  public static void main(final String[] args) throws Exception {
+    String user = "maplecloudy";
+    for (int i = 0; i < args.length; i++) {
+      if (args[i].equals("-user")) {
+        i++;
+        if (i >= args.length) {
+          usage();
+        }
+        user = args[i];
+      }
     }
-    System.exit(status);
+    System.out.println("login in user:" + UserGroupInformation.getLoginUser());
+    UserGroupInformation ugi = UserGroupInformation.createProxyUser(user,
+        UserGroupInformation.getLoginUser());
+    ugi.doAs(new PrivilegedAction<Void>() {
+      @Override
+      public Void run() {
+        try {
+          ToolRunner.run(new MapleCloudyEngineShellClient(), args);
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+        return null;
+      }
+      
+    });
+    System.exit(0);
   }
 }

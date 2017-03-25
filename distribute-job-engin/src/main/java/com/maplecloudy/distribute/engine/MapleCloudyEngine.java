@@ -1,9 +1,6 @@
 package com.maplecloudy.distribute.engine;
 
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadInfo;
-import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -17,9 +14,10 @@ import org.apache.hadoop.yarn.api.records.ContainerStatus;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.api.records.NodeReport;
 import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync;
-import org.apache.hadoop.yarn.client.api.async.NMClientAsync;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
+import org.apache.hadoop.yarn.webapp.WebApp;
+import org.apache.hadoop.yarn.webapp.WebApps;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -90,6 +88,22 @@ public class MapleCloudyEngine {
       // appSubmitterUgi = UserGroupInformation
       // .createRemoteUser(appSubmitterUserName);
       // appSubmitterUgi.addCredentials(credentials);
+      // WebApp wa = WebApps.$for(myApp).at(address, port).
+      // * with(configuration).
+      // * start(new WebApp() {
+      // * &#064;Override public void setup() {
+      // * route("/foo/action", FooController.class);
+      // * route("/foo/:id", FooController.class, "show");
+      // * }
+      // * });</pre>
+      
+      WebApps.$for("tracker-server").at("0.0.0.0").with(conf)
+          .start(new WebApp() {
+            @Override
+            public void setup() {
+              bind(MapleAppServices.class);
+            }
+          });
       
       AMRMClientAsync.CallbackHandler allocListener = new RMCallbackHandler();
       amRMClient = AMRMClientAsync.createAMRMClientAsync(1000, allocListener);
@@ -172,7 +186,7 @@ public class MapleCloudyEngine {
     @Override
     public void onError(Throwable e) {
       LOG.error("Error in RMCallbackHandler: ", e);
-      bRun =false;
+      bRun = false;
     }
     
     @Override
