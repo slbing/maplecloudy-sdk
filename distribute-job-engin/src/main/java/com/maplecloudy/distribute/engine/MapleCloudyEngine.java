@@ -96,15 +96,7 @@ public class MapleCloudyEngine {
       // * route("/foo/:id", FooController.class, "show");
       // * }
       // * });</pre>
-      
-      WebApps.$for("tracker-server").at("0.0.0.0").with(conf)
-          .start(new WebApp() {
-            @Override
-            public void setup() {
-              bind(MapleAppServices.class);
-            }
-          });
-      
+    
       AMRMClientAsync.CallbackHandler allocListener = new RMCallbackHandler();
       amRMClient = AMRMClientAsync.createAMRMClientAsync(1000, allocListener);
       amRMClient.init(conf);
