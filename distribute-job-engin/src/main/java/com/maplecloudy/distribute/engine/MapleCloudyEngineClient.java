@@ -131,6 +131,7 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
       // Create application via yarnClient
       
       YarnClientApplication app = yarnClient.createApplication();
+
       
       // Set up the container launch context for the application master
       ContainerLaunchContext amContainer = Records

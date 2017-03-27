@@ -96,7 +96,7 @@ public class MapleCloudyEngine {
       // * route("/foo/:id", FooController.class, "show");
       // * }
       // * });</pre>
-    
+      
       AMRMClientAsync.CallbackHandler allocListener = new RMCallbackHandler();
       amRMClient = AMRMClientAsync.createAMRMClientAsync(1000, allocListener);
       amRMClient.init(conf);
