@@ -21,6 +21,7 @@ package org.elasticsearch.hadoop.yarn.cli;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.security.PrivilegedAction;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.List;
@@ -31,6 +32,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -44,6 +46,7 @@ import org.elasticsearch.hadoop.yarn.util.HttpDownloader;
 import org.elasticsearch.hadoop.yarn.util.IOUtils;
 import org.elasticsearch.hadoop.yarn.util.PropertiesUtils;
 
+
 /**
  * Starts the client app, allowing defaults to be overridden.
  */
@@ -52,15 +55,54 @@ public class YarnBootstrap extends Configured implements Tool {
     private static String HELP = null;
     private Config cfg;
 
-    public static void main(String[] args) throws Exception {
-        int status = -1;
-        try {
-            status = ToolRunner.run(new YarnBootstrap(), args);
-        } catch (Exception ex) {
-            System.err.println("Abnormal execution:" + ex.getMessage());
-            ex.printStackTrace(System.err);
+    private static void usage() {
+      String message = "Usage: YarnBootStraop <mainClass> \n"
+          + "\nOptions:\n"
+          + "  "
+          + "  -user <string>   : the user submit the app,defaule is maplecloudy\n";
+      
+      System.err.println(message);
+      System.exit(1);
+    }
+    
+    public static void main(final String[] args) throws Exception {
+  
+      String user = "maplecloudy";
+      for (int i = 0; i < args.length; i++) {
+        if (args[i].equals("-user")) {
+          i++;
+          if (i >= args.length) {
+            usage();
+          }
+          user = args[i];
         }
-        System.exit(status);
+      }
+      System.out.println("login in user:" + UserGroupInformation.getLoginUser());
+      UserGroupInformation ugi = UserGroupInformation.createProxyUser(user,
+          UserGroupInformation.getLoginUser());
+      ugi.doAs(new PrivilegedAction<Void>() {
+        @Override
+        public Void run() {
+          try {
+            ToolRunner.run(new YarnBootstrap(), args);
+          } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(-1);
+          }
+          return null;
+        }
+        
+      });
+      System.exit(0);      
+      
+//        int status = -1;
+//        try {
+//            status = ToolRunner.run(new YarnBootstrap(), args);
+//        } catch (Exception ex) {
+//            System.err.println("Abnormal execution:" + ex.getMessage());
+//            ex.printStackTrace(System.err);
+//        }
+//        System.exit(status);
     }
 
     private void displayHelp(String message) {
