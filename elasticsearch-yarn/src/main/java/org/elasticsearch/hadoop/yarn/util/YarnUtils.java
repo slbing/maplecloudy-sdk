@@ -70,7 +70,7 @@ public abstract class YarnUtils {
 
         //
         // some es-yarn constants
-        //
+        //elasticsearch-5.3.0.zip/elasticsearch-5.3.0/bin/elasticsearch 
         addToEnv(env, EsYarnConstants.FS_URI, cfg.get(FileSystem.FS_DEFAULT_NAME_KEY, FileSystem.DEFAULT_FS));
 
         return env;

@@ -32,6 +32,7 @@ import org.apache.hadoop.yarn.util.Records;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.maplecloudy.distribute.engine.utils.Config;
 
 public class MapleCloudyEngineClient extends Configured implements Tool {
   
@@ -160,15 +161,13 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
       
       // add engine
       LocalResource elr = Records.newRecord(LocalResource.class);
-      
-      FileStatus enginejar = fs.getFileStatus(new Path(
-          "distribute-job-engin-0.3.0-SNAPSHOT.jar"));
+      FileStatus enginejar = fs.getFileStatus(new Path(Config.getEngieJar()));
       elr.setResource(ConverterUtils.getYarnUrlFromPath(enginejar.getPath()));
       elr.setSize(enginejar.getLen());
       elr.setTimestamp(enginejar.getModificationTime());
       elr.setType(LocalResourceType.FILE);
       elr.setVisibility(LocalResourceVisibility.PUBLIC);
-      hmlr.put("distribute-job-engin-0.3.0-SNAPSHOT.jar", elr);
+      hmlr.put(enginejar.getPath().getName(), elr);
       
       // add jar
       if (jar != null) {
@@ -311,21 +310,21 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
       }
     }
     System.out.println("login in user:" + UserGroupInformation.getLoginUser());
-    UserGroupInformation ugi = UserGroupInformation.createProxyUser(user,
-        UserGroupInformation.getLoginUser());
-    ugi.doAs(new PrivilegedAction<Void>() {
-      @Override
-      public Void run() {
-        try {
+//    UserGroupInformation ugi = UserGroupInformation.createProxyUser(user,
+//        UserGroupInformation.getLoginUser());
+//    ugi.doAs(new PrivilegedAction<Void>() {
+//      @Override
+//      public Void run() {
+//        try {
           ToolRunner.run(new MapleCloudyEngineClient(), args);
-        } catch (Exception e) {
-          e.printStackTrace();
-          System.exit(-1);
-        }
-        return null;
-      }
-      
-    });
+//        } catch (Exception e) {
+//          e.printStackTrace();
+//          System.exit(-1);
+//        }
+//        return null;
+//      }
+//      
+//    });
     System.exit(0);
   }
   

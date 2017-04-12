@@ -80,31 +80,31 @@ public class ApplicationMaster implements AutoCloseable {
     }
     // Note: Credentials, Token, UserGroupInformation, DataOutputBuffer class
     // are marked as LimitedPrivate
-//    Credentials credentials = UserGroupInformation.getCurrentUser()
-//        .getCredentials();
-//    DataOutputBuffer dob = new DataOutputBuffer();
-//    credentials.writeTokenStorageToStream(dob);
-//    // Now remove the AM->RM token so that containers cannot access it.
-//    Iterator<Token<?>> iter = credentials.getAllTokens().iterator();
-//    
-//    System.out.println("Executing with tokens:");
-//    while (iter.hasNext()) {
-//      Token<?> token = iter.next();
-//      System.out.println(token);
-//      if (token.getKind().equals(AMRMTokenIdentifier.KIND_NAME)) {
-//        iter.remove();
-//      }
-//    }
-//    allTokens = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
-//    
-//    // Create appSubmitterUgi and add original tokens to it
-//    String appSubmitterUserName = System
-//        .getenv(ApplicationConstants.Environment.USER.name());
-//    appSubmitterUgi = UserGroupInformation
-//        .createRemoteUser(appSubmitterUserName);
-//    appSubmitterUgi.addCredentials(credentials);
-//    System.out.println("appSubmitterUgi-----------"
-//        + appSubmitterUgi.toString());
+    // Credentials credentials = UserGroupInformation.getCurrentUser()
+    // .getCredentials();
+    // DataOutputBuffer dob = new DataOutputBuffer();
+    // credentials.writeTokenStorageToStream(dob);
+    // // Now remove the AM->RM token so that containers cannot access it.
+    // Iterator<Token<?>> iter = credentials.getAllTokens().iterator();
+    //
+    // System.out.println("Executing with tokens:");
+    // while (iter.hasNext()) {
+    // Token<?> token = iter.next();
+    // System.out.println(token);
+    // if (token.getKind().equals(AMRMTokenIdentifier.KIND_NAME)) {
+    // iter.remove();
+    // }
+    // }
+    // allTokens = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
+    //
+    // // Create appSubmitterUgi and add original tokens to it
+    // String appSubmitterUserName = System
+    // .getenv(ApplicationConstants.Environment.USER.name());
+    // appSubmitterUgi = UserGroupInformation
+    // .createRemoteUser(appSubmitterUserName);
+    // appSubmitterUgi.addCredentials(credentials);
+    // System.out.println("appSubmitterUgi-----------"
+    // + appSubmitterUgi.toString());
     
     if (rpc == null) {
       rpc = new AppMasterRpc(cfg, nmTokenCache);
@@ -118,6 +118,7 @@ public class ApplicationMaster implements AutoCloseable {
     amResponse = rpc.registerAM();
     
     updateTokens();
+    
     cluster = new EsCluster(rpc, appConfig, env);
     try {
       cluster.start();
@@ -159,12 +160,14 @@ public class ApplicationMaster implements AutoCloseable {
   }
   
   public static void main(String[] args) throws Exception {
+ 
     ApplicationMaster am = new ApplicationMaster(System.getenv());
     try {
       am.run();
     } catch (Exception e) {
       e.printStackTrace();
     } finally {
+      
       am.close();
     }
   }

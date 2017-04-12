@@ -175,7 +175,7 @@ class EsCluster implements AutoCloseable {
                 log.warn(String
                     .format("Container %s preempted...", containerId));
                 break;
-
+              
               default:
                 log.warn(String.format(
                     "Container %s exited with an invalid/unknown exit code...",
@@ -275,8 +275,12 @@ class EsCluster implements AutoCloseable {
             prop.getValue()));
       }
       YarnUtils.addToEnv(env, "ES_JAVA_OPTS", sb.toString());
+      
     }
-    
+    if (appConfig.javaHome() != null) {
+      YarnUtils.addToEnv(env, "JAVA_HOME", appConfig.javaHome());
+    }
+    System.out.println("ENV:"+env.toString());
     return env;
   }
   
@@ -286,11 +290,12 @@ class EsCluster implements AutoCloseable {
     
     LocalResource esZip = Records.newRecord(LocalResource.class);
     String esZipHdfsPath = conf.esZipHdfsPath();
-    String appSubmitterUserName = System
-        .getenv(ApplicationConstants.Environment.USER.name());
-    Path homePath = new Path("/user",appSubmitterUserName);
-    Path p = new Path(homePath,esZipHdfsPath);
+//    String appSubmitterUserName = System
+//        .getenv(ApplicationConstants.Environment.USER.name());
+//    Path homePath = new Path("/user", appSubmitterUserName);
     
+//    Path p = new Path(homePath, esZipHdfsPath);
+    Path p = new Path(esZipHdfsPath);
     FileStatus fsStat;
     try {
       fsStat = FileSystem.get(cfg).getFileStatus(p);
@@ -308,12 +313,40 @@ class EsCluster implements AutoCloseable {
     esZip.setVisibility(LocalResourceVisibility.PUBLIC);
     
     resources.put(conf.esZipName(), esZip);
+    
+    // add ext arc ,for example jdk1.8 tar
+    String[] extArcs = conf.extArcs();
+    if (extArcs != null) {
+      for (String extArc : extArcs) {
+        LocalResource extLr = Records.newRecord(LocalResource.class);
+        Path pe = new Path(extArc);
+        FileStatus fsState;
+        try {
+          fsState = FileSystem.get(cfg).getFileStatus(pe);
+        } catch (IOException ex) {
+          throw new IllegalArgumentException(
+              String.format(
+                  "Cannot find jar [%s]; make sure the artifacts have been properly provisioned and the correct permissions are in place.",
+                  pe), ex);
+        }
+        // use the normalized path as otherwise YARN chokes down the line
+        extLr.setResource(ConverterUtils.getYarnUrlFromPath(fsState.getPath()));
+        extLr.setSize(fsState.getLen());
+        extLr.setTimestamp(fsState.getModificationTime());
+        extLr.setType(LocalResourceType.ARCHIVE);
+        extLr.setVisibility(LocalResourceVisibility.PUBLIC);
+        resources.put(fsState.getPath().getName(), extLr);
+      }
+    }
+    
     return resources;
   }
   
   private List<String> setupEsScript(Config conf) {
     List<String> cmds = new ArrayList<String>();
     // don't use -jar since it overrides the classpath
+//    cmds.add("sleep 5000 \n");
+    cmds.add("ulimit -a \n");
     cmds.add(YarnCompat.$$(ApplicationConstants.Environment.SHELL));
     // make sure to include the ES.ZIP archive name used in the local resource
     // setup above (since it's the folder where it got unpacked)
@@ -322,6 +355,7 @@ class EsCluster implements AutoCloseable {
         + ApplicationConstants.STDOUT);
     cmds.add("2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/"
         + ApplicationConstants.STDERR);
+    System.out.println("run elasticsearch cmd:" + cmds.toString());
     return Collections.singletonList(StringUtils.concatenate(cmds, " "));
   }
   

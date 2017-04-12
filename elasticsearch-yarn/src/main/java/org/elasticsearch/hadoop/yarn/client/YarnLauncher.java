@@ -81,6 +81,7 @@ public class YarnLauncher {
         appContext.setPriority(Priority.newInstance(clientCfg.amPriority()));
         appContext.setQueue(clientCfg.amQueue());
         appContext.setApplicationType(clientCfg.appType());
+        appContext.setMaxAppAttempts(1);
         YarnCompat.setApplicationTags(appContext, clientCfg.appTags());
 
         return appContext;
@@ -123,8 +124,6 @@ public class YarnLauncher {
 
         Map<String, String> env = YarnUtils.setupEnv(cfg);
         YarnUtils.addToEnv(env, EsYarnConstants.CFG_PROPS, PropertiesUtils.propsToBase64(clientCfg.asProperties()));
-        YarnUtils.addToEnv(env, clientCfg.envVars());
-
         return env;
     }
 

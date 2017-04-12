@@ -32,6 +32,7 @@ import org.apache.hadoop.yarn.util.Records;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.maplecloudy.distribute.engine.utils.Config;
 
 public class MapleCloudyEngineShellClient extends Configured implements Tool {
   
@@ -174,14 +175,13 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
       // add engine
       LocalResource elr = Records.newRecord(LocalResource.class);
       
-      FileStatus enginejar = fs.getFileStatus(new Path(
-          "distribute-job-engin-0.3.0-SNAPSHOT.jar"));
+      FileStatus enginejar = fs.getFileStatus(new Path(Config.getEngieJar()));
       elr.setResource(ConverterUtils.getYarnUrlFromPath(enginejar.getPath()));
       elr.setSize(enginejar.getLen());
       elr.setTimestamp(enginejar.getModificationTime());
       elr.setType(LocalResourceType.FILE);
       elr.setVisibility(LocalResourceVisibility.PUBLIC);
-      hmlr.put("distribute-job-engin-0.3.0-SNAPSHOT.jar", elr);
+      hmlr.put(enginejar.getPath().getName(), elr);
       
       // add jar
       if (jar != null) {
@@ -227,6 +227,7 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
         tlr.setTimestamp(jarf.getModificationTime());
         tlr.setType(LocalResourceType.ARCHIVE);
         tlr.setVisibility(LocalResourceVisibility.PUBLIC);
+        
         hmlr.put(jarf.getPath().getName(), tlr);
       }
       if (jars != null) {
@@ -240,7 +241,7 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
             tlr.setSize(jfile.getLen());
             tlr.setTimestamp(jfile.getModificationTime());
             tlr.setType(LocalResourceType.FILE);
-            tlr.setVisibility(LocalResourceVisibility.PUBLIC);
+            tlr.setVisibility(LocalResourceVisibility.PRIVATE);
             hmlr.put(jfile.getPath().getName(), tlr);
           }
         }

@@ -88,6 +88,17 @@ public class Config {
     public String esZipHdfsPath() {
         return hdfsUploadDir() + esZipName();
     }
+    
+    public String[] extArcs()
+    {
+      
+      return cfg.getProperty("ext.arc")==null?null:cfg.getProperty("ext.arc").split(":");
+    }
+    
+    public String javaHome()
+    {
+      return cfg.getProperty("java.home");
+    }
 
     public String esZipName() {
         return "elasticsearch-" + downloadEsVersion() + ".zip";
