@@ -18,9 +18,9 @@ public class Config {
   
   public static String getEngieJar() {
     if (cfg != null) {
-      return cfg.getProperty("hdfs.engine.jar", "/user/mpalecloudy");
+      return cfg.getProperty("hdfs.engine.jar", "/user/maplecloudy");
     }
-    return "/user/mpalecloudy";
+    return "/user/maplecloudy";
   }
   
 }
