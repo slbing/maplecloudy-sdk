@@ -310,21 +310,21 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
       }
     }
     System.out.println("login in user:" + UserGroupInformation.getLoginUser());
-//    UserGroupInformation ugi = UserGroupInformation.createProxyUser(user,
-//        UserGroupInformation.getLoginUser());
-//    ugi.doAs(new PrivilegedAction<Void>() {
-//      @Override
-//      public Void run() {
-//        try {
+    UserGroupInformation ugi = UserGroupInformation.createProxyUser(user,
+        UserGroupInformation.getLoginUser());
+    ugi.doAs(new PrivilegedAction<Void>() {
+      @Override
+      public Void run() {
+        try {
           ToolRunner.run(new MapleCloudyEngineClient(), args);
-//        } catch (Exception e) {
-//          e.printStackTrace();
-//          System.exit(-1);
-//        }
-//        return null;
-//      }
-//      
-//    });
+        } catch (Exception e) {
+          e.printStackTrace();
+          System.exit(-1);
+        }
+        return null;
+      }
+      
+    });
     System.exit(0);
   }
   
