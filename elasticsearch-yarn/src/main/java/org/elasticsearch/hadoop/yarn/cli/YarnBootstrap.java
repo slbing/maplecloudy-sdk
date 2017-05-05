@@ -123,7 +123,7 @@ public class YarnBootstrap extends Configured implements Tool {
 
         String cmd = args[0];
 
-        cfg = new Config(PropertiesUtils.fromCmdLine(args, 1));
+        cfg = new Config(PropertiesUtils.fromCmdLine(args, 3));
 
         if ("-download-es".equals(cmd)) {
             downloadEs();
