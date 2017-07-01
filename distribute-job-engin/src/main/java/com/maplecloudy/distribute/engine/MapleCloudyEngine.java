@@ -2,12 +2,15 @@ package com.maplecloudy.distribute.engine;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.security.PrivilegedAction;
 import java.util.List;
 import java.util.StringTokenizer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.net.NetUtils;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.util.ToolRunner;
 import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterResponse;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerStatus;
@@ -24,20 +27,39 @@ import com.google.common.annotations.VisibleForTesting;
 public class MapleCloudyEngine {
   private static final Log LOG = LogFactory.getLog(MapleCloudyEngine.class);
   
-  public static void main(String[] args) throws Exception {
+  public static void main(final String[] args) throws Exception {
     //
+
     
-    final String mainClass = args[0];
-    final boolean damon = Boolean.valueOf(args[1]);
-    String[] arg = new String[args.length - 2];
-    if (args.length > 2) {
-      for (int i = 2; i < args.length; i++) {
-        arg[i - 2] = args[i];
+    System.out.println("login in user:" + UserGroupInformation.getLoginUser());
+    UserGroupInformation ugi = UserGroupInformation.createProxyUser("maplecloudy",
+        UserGroupInformation.getLoginUser());
+    ugi.doAs(new PrivilegedAction<Void>() {
+      @Override
+      public Void run() {
+        try {
+          
+          final String mainClass = args[0];
+          final boolean damon = Boolean.valueOf(args[1]);
+          String[] arg = new String[args.length - 2];
+          if (args.length > 2) {
+            for (int i = 2; i < args.length; i++) {
+              arg[i - 2] = args[i];
+            }
+          }
+          
+          MapleCloudyEngine mce = new MapleCloudyEngine();
+          mce.run(mainClass, arg, damon);
+        } catch (Exception e) {
+          e.printStackTrace();
+          System.exit(-1);
+        }
+        return null;
       }
-    }
+      
+    });
     
-    MapleCloudyEngine mce = new MapleCloudyEngine();
-    mce.run(mainClass, arg, damon);
+    
     
   }
   

@@ -1,4 +1,8 @@
 */.classpath
+distribute-job-engin/conf.cloudera.yarn/
+elasticsearch-yarn/cfg
+elasticsearch-yarn/cfg2.4.4
+elasticsearch-yarn/conf.cloudera.yarn/
 */src/test/java/org/apache/hadoop/util/Shell.java
 */.project
 */target

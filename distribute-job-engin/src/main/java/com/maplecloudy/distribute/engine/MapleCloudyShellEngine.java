@@ -1,9 +1,16 @@
 package com.maplecloudy.distribute.engine;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.URI;
 import java.nio.charset.Charset;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -12,7 +19,12 @@ import java.util.StringTokenizer;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.net.NetUtils;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterResponse;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerStatus;
@@ -23,6 +35,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.maplecloudy.distribute.engine.utils.FsUtils;
 
 public class MapleCloudyShellEngine {
   private static final Log LOG = LogFactory
@@ -30,7 +43,8 @@ public class MapleCloudyShellEngine {
   
   public static void main(String[] args) throws Exception {
     //
-    System.out.println(StringUtils.join(args,"\n"));
+    
+    System.out.println(StringUtils.join(args, "\n"));
     
     final String cmd = args[0];
     boolean damon = false;
@@ -123,7 +137,8 @@ public class MapleCloudyShellEngine {
   @VisibleForTesting
   class RMCallbackHandler implements AMRMClientAsync.CallbackHandler {
     
-    public void onContainersCompleted(List<ContainerStatus> completedContainers) {
+    public void onContainersCompleted(
+        List<ContainerStatus> completedContainers) {
       
     }
     
@@ -151,9 +166,20 @@ public class MapleCloudyShellEngine {
   }
   
   public void runCmd(String cmd) {
+    boolean fsOperation = false;
+    
     try {
       Map<String,String> env = System.getenv();
       ArrayList<String> envList = new ArrayList<String>();
+      
+      String[] cmds = cmd.split(" ");
+      cmd = cmds[0] + " " + cmds[1];
+      for (int i = 0; i < cmds.length; i++) {
+        if (cmds[i].equals("-fs")) {
+          fsOperation = true;
+          break;
+        }
+      }
       
       for (Map.Entry<String,String> entry : env.entrySet()) {
         String key = entry.getKey();
@@ -161,12 +187,12 @@ public class MapleCloudyShellEngine {
         envList.add(key + "=" + value);
       }
       String[] envAM = new String[envList.size()];
-      
+
+      LOG.info("cmd ------ " + cmd);
       Process amProc = Runtime.getRuntime().exec(cmd, envList.toArray(envAM));
       
-      final BufferedReader errReader = new BufferedReader(
-          new InputStreamReader(amProc.getErrorStream(),
-              Charset.forName("UTF-8")));
+      final BufferedReader errReader = new BufferedReader(new InputStreamReader(
+          amProc.getErrorStream(), Charset.forName("UTF-8")));
       final BufferedReader inReader = new BufferedReader(new InputStreamReader(
           amProc.getInputStream(), Charset.forName("UTF-8")));
       
@@ -208,6 +234,30 @@ public class MapleCloudyShellEngine {
       // wait for the process to finish and check the exit code
       try {
         int exitCode = amProc.waitFor();
+        LOG.info("Check fs cmd ------ " + fsOperation);
+        if (fsOperation) {
+          LOG.info("fs cmd is true -------");
+          String user = "";
+          String src = "";
+          String dst = "";
+          // String user = "maplecloudy";
+          // // project.zip/project/target/*bin
+          // String src = "myspring.zip/myspring/target/myspring-1.0.0.0";
+          // // /user/[user]/maple/projectowner/*bin
+          // String dst = "/user/maplecloudy";
+          
+          for (int i = 2; i < cmds.length; i++) {
+            if (cmds[i].equals("-fs")) {
+              fsOperation = true;
+              src = cmds[++i];
+              dst = cmds[++i];
+              user = cmds[++i];
+            }
+          }
+          
+          FsUtils.copyFromLocal(src, dst, user);
+        }
+        
         LOG.info("AM process exited with value: " + exitCode);
       } catch (InterruptedException e) {
         e.printStackTrace();
@@ -223,7 +273,8 @@ public class MapleCloudyShellEngine {
         inReader.close();
       } catch (InterruptedException ie) {
         LOG.info(
-            "ShellExecutor: Interrupted while reading the error/out stream", ie);
+            "ShellExecutor: Interrupted while reading the error/out stream",
+            ie);
       } catch (IOException ioe) {
         LOG.warn("Error while closing the error/out stream", ioe);
       }
