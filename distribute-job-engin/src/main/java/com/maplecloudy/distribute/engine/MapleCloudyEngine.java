@@ -3,6 +3,7 @@ package com.maplecloudy.distribute.engine;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -28,7 +29,12 @@ public class MapleCloudyEngine {
   private static final Log LOG = LogFactory.getLog(MapleCloudyEngine.class);
   
   public static void main(String[] args) throws Exception {
-    //
+//    //
+//    args = "org.apache.flume.node.Application true agent --f flume.conf --name agent -Dflume.monitoring.type=http -Dflume.monitoring.port=34545"
+//        .split(" ");
+//    
+    List<String> filtered_args = systemPropertyFilter(args);
+    args = filtered_args.toArray(new String[filtered_args.size()]);
     
     final String mainClass = args[0];
     final boolean damon = Boolean.valueOf(args[1]);
@@ -109,6 +115,8 @@ public class MapleCloudyEngine {
           .registerApplicationMaster(appMasterHostname, appMasterRpcPort,
               appMasterTrackingUrl);
       
+      systemPropertyFilter(args);
+      
       System.out.println("Classpath         :");
       System.out.println("------------------------");
       StringTokenizer st = new StringTokenizer(
@@ -157,6 +165,31 @@ public class MapleCloudyEngine {
       Runtime.getRuntime().exit(0);
       amRMClient.stop();
     }
+  }
+  
+  private static List<String> systemPropertyFilter(String[] args) {
+    
+    System.out.println("Before filter         :");
+    for (String arg : args) {
+      System.out.println("                    " + arg);
+    }
+    
+    List<String> strList = new ArrayList<String>();
+    
+    for (String arg : args) {
+      
+      if (arg.startsWith("-D")) {
+        setSystemProperty(arg);
+      } else strList.add(arg);
+    }
+    return strList;
+  }
+  
+  private static void setSystemProperty(String arg) {
+    String pair[] = arg.split("=");
+    String key = pair[0].substring(2, pair[0].length());
+    String value = pair[1];
+    System.setProperty(key, value);
   }
   
   @VisibleForTesting
