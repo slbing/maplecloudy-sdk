@@ -124,6 +124,8 @@ public class YarnLauncher {
 
         Map<String, String> env = YarnUtils.setupEnv(cfg);
         YarnUtils.addToEnv(env, EsYarnConstants.CFG_PROPS, PropertiesUtils.propsToBase64(clientCfg.asProperties()));
+        YarnUtils.addToEnv(env, clientCfg.envVars());
+
         return env;
     }
 

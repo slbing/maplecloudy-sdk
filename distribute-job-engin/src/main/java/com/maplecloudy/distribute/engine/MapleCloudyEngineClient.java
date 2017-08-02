@@ -194,7 +194,7 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
       }
       
       if (jars != null) {
-        Path pjars = new Path(jar);
+        Path pjars = new Path(jars);
         if (fs.isDirectory(pjars)) {
           FileStatus[] fss = fs.listStatus(pjars);
           for (FileStatus jfile : fss) {
