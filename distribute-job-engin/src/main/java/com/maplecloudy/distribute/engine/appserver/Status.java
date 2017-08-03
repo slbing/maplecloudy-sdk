@@ -1,4 +1,4 @@
-package com.maplecloudy.distribute.engine.server;
+package com.maplecloudy.distribute.engine.appserver;
 
 import org.apache.avro.reflect.Nullable;
 

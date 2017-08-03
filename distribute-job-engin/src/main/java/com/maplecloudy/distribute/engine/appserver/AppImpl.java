@@ -1,7 +1,8 @@
-package com.maplecloudy.distribute.engine.server;
+package com.maplecloudy.distribute.engine.appserver;
 
+import com.maplecloudy.distribute.engine.app.kibana.StartKibanaTask;
+import com.maplecloudy.distribute.engine.apptask.TaskPool;
 import com.maplecloudy.distribute.engine.task.TaskAction;
-import com.maplecloudy.distribute.engine.task.TaskManager;
 
 public class AppImpl implements IApp {
   
@@ -9,11 +10,10 @@ public class AppImpl implements IApp {
     
   }
   
-  public String startKibanaNum(String msg, int i) {
-    // TODO Auto-generated method stub
-    
-    System.out.println("Start Kibana:" + msg + " i:" + i);
-    return "100";
+  public int startKibana(AppPara para) {
+    StartKibanaTask task = new StartKibanaTask(para);
+    TaskPool.addTask(task);
+    return 0;
   }
   
   public Status checkStatus(String msg, int i) {
@@ -34,11 +34,12 @@ public class AppImpl implements IApp {
     
     return new Status();
   }
-  
+ 
+
   @Override
-  public int startKibana(String msg) {
+  public String startKibanaNum(String msg, int i) {
     // TODO Auto-generated method stub
-    return 0;
+    return null;
   }
   
 }

@@ -36,8 +36,11 @@ import com.maplecloudy.distribute.engine.utils.Config;
 
 public class MapleCloudyEngineShellClient extends Configured implements Tool {
   
-  Configuration conf = new YarnConfiguration();
-  
+  //Configuration conf = new YarnConfiguration();
+  public MapleCloudyEngineShellClient(Configuration conf)
+  {
+    this.setConf(conf);
+  }
   private static void usage() {
     String message = "Usage: MapleCloudyEngineClient <cmd> \n" + "\nOptions:\n"
         + "  " + "  -jar  <string>  : jar add to classpath\n"
@@ -332,7 +335,7 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
     
     StringBuilder classPathEnv = new StringBuilder(Environment.CLASSPATH.$$())
         .append(ApplicationConstants.CLASS_PATH_SEPARATOR).append("./*");
-    for (String c : conf.getStrings(
+    for (String c : this.getConf().getStrings(
         YarnConfiguration.YARN_APPLICATION_CLASSPATH,
         YarnConfiguration.DEFAULT_YARN_CROSS_PLATFORM_APPLICATION_CLASSPATH)) {
       classPathEnv.append(ApplicationConstants.CLASS_PATH_SEPARATOR);
@@ -360,7 +363,7 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
       @Override
       public Void run() {
         try {
-          ToolRunner.run(new MapleCloudyEngineShellClient(), args);
+          ToolRunner.run(new MapleCloudyEngineShellClient(new YarnConfiguration()), args);
         } catch (Exception e) {
           e.printStackTrace();
         }
