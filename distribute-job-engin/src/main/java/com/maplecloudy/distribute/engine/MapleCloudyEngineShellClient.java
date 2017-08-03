@@ -39,10 +39,8 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
   Configuration conf = new YarnConfiguration();
   
   private static void usage() {
-    String message = "Usage: MapleCloudyEngineClient <cmd> \n"
-        + "\nOptions:\n"
-        + "  "
-        + "  -jar  <string>  : jar add to classpath\n"
+    String message = "Usage: MapleCloudyEngineClient <cmd> \n" + "\nOptions:\n"
+        + "  " + "  -jar  <string>  : jar add to classpath\n"
         + "  -jars     <string>   : dir with all to add classpath\n"
         + "  -p<key=value>   : properties\n"
         + "  -sc<string>   : shell script to can be run\n"
@@ -138,6 +136,17 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
       }
       // Create yarnClient
       YarnConfiguration conf = new YarnConfiguration();
+
+//      conf.set("fs.defaultFS", "hdfs://zztz01.cluster-test.maplecloudy.com:8020");
+//      conf.set("yarn.resourcemanager.address", "zztz01.cluster-test.maplecloudy.com:8032");
+//      conf.set("yarn.resourcemanager.admin.address", "zztz01.cluster-test.maplecloudy.com:8033");
+//      conf.set("yarn.resourcemanager.scheduler.address", "zztz01.cluster-test.maplecloudy.com:8030");
+//      conf.set("yarn.resourcemanager.resource-tracker.address", "zztz01.cluster-test.maplecloudy.com:8031");
+//      conf.set("yarn.resourcemanager.webapp.address", "zztz01.cluster-test.maplecloudy.com:8088");
+//      conf.set("yarn.resourcemanager.webapp.https.address", "zztz01.cluster-test.maplecloudy.com:8090");
+//      conf.set("yarn.application.classpath", "$HADOOP_CLIENT_CONF_DIR,$HADOOP_CONF_DIR,$HADOOP_COMMON_HOME/*,$HADOOP_COMMON_HOME/lib/*,$HADOOP_HDFS_HOME/*,$HADOOP_HDFS_HOME/lib/*,$HADOOP_YARN_HOME/*,$HADOOP_YARN_HOME/lib/*");
+
+
       YarnClient yarnClient = YarnClient.createYarnClient();
       
       yarnClient.init(conf);
@@ -359,6 +368,6 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
       }
       
     });
-    System.exit(0);
+    // System.exit(0);
   }
 }
