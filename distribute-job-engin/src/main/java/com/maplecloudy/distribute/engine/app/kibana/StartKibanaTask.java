@@ -39,13 +39,13 @@ public class StartKibanaTask extends AppTask {
       final KibanaPara kpara = (KibanaPara) this.para;
       List<String> cmds = Lists.newArrayList();
       cmds.add("-sc");
-      cmds.add(kpara.getSc());
+      cmds.add(kpara.getScFile());
       cmds.add("-jar");
       cmds.add(kpara.getConfFile());
       cmds.add("-arc");
       cmds.add(KibanaInstallInfo.getPack());
       cmds.add("-args");
-      cmds.add("'sh kibana.sh'");
+      cmds.add("sh kibana.sh");
       cmds.add("-damon");
       final String[] args = cmds.toArray(new String[cmds.size()]);
       
@@ -71,8 +71,9 @@ public class StartKibanaTask extends AppTask {
         }
         
       });
+      System.out.println(checkInfo.toString());
     } catch (Exception e) {
-      
+      e.printStackTrace();
     }
     
   }
@@ -81,7 +82,8 @@ public class StartKibanaTask extends AppTask {
     boolean bret = true;
     checkInfo.clear();
     
-    final FileSystem fs = FileSystem.get(this.getConf());
+     FileSystem fs = FileSystem.get(this.getConf());
+     final Configuration conf = this.getConf();
     // check engint
     bret = checkEngine();
     if (fs.exists(new Path(KibanaInstallInfo.getPack()))) {
@@ -101,6 +103,11 @@ public class StartKibanaTask extends AppTask {
       @Override
       public Boolean run() {
         try {
+          
+         Path a = new Path(confFile);
+
+         FileSystem fs = FileSystem.get(conf);
+         
           fs.copyFromLocalFile(false, true, new Path(confFile), new Path(
               confFile));
         } catch (IllegalArgumentException | IOException e) {
@@ -115,7 +122,7 @@ public class StartKibanaTask extends AppTask {
     });
     
     checkInfo.add("Generate sc with para.");
-    final String scFile = kpara.GenerateConf();
+    final String scFile = kpara.GenerateSc();
     checkInfo.add("Generate sc sucess: " + scFile);
     ugi = UserGroupInformation.createProxyUser(this.para.user,
         UserGroupInformation.getLoginUser());
@@ -123,6 +130,9 @@ public class StartKibanaTask extends AppTask {
       @Override
       public Boolean run() {
         try {
+
+          FileSystem fs = FileSystem.get(conf);
+          
           fs.copyFromLocalFile(false, true, new Path(scFile), new Path(scFile));
         } catch (IllegalArgumentException | IOException e) {
           e.printStackTrace();

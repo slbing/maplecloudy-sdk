@@ -2,6 +2,7 @@ package com.maplecloudy.distribute.engine.appserver;
 
 import java.util.List;
 
+import com.maplecloudy.distribute.engine.app.kibana.KibanaPara;
 import com.maplecloudy.distribute.engine.app.kibana.StartKibanaTask;
 import com.maplecloudy.distribute.engine.apptask.AppTask;
 import com.maplecloudy.distribute.engine.apptask.TaskPool;
@@ -12,18 +13,11 @@ public class AppImpl implements IApp {
     
   }
   
-  public int startKibana(AppPara para) {
+  public int startKibana(KibanaPara para) {
     StartKibanaTask task = new StartKibanaTask(para);
     TaskPool.addTask(task);
     return 0;
   }
-  
-  @Override
-  public List<String> getTaskInfo(AppPara para) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-  
   @Override
   public AppStatus getAppStatus(AppPara para) {
     try {
@@ -35,5 +29,6 @@ public class AppImpl implements IApp {
       return as;
     }
   }
-  
+
+ 
 }

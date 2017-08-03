@@ -1,6 +1,7 @@
 package com.maplecloudy.distribute.engine.app.kibana;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 
@@ -43,6 +44,8 @@ public class KibanaPara extends AppPara {
     return getScFile();
   }
   public String GenerateConf() throws Exception {
+    File cf = new File(getConfFile());
+    new File(cf.getParent()).mkdirs();
     PrintWriter printWriter = new PrintWriter(getConfFile());
     BufferedReader bufReader = new BufferedReader(new InputStreamReader(this
         .getClass().getResourceAsStream("kibana.yml")));
