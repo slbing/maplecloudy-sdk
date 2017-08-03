@@ -9,12 +9,14 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.yarn.api.records.ApplicationId;
+import org.apache.hadoop.yarn.api.records.ApplicationReport;
+import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.hadoop.yarn.exceptions.YarnException;
 
 import com.google.common.collect.Lists;
 import com.maplecloudy.distribute.engine.MapleCloudyEngineShellClient;
-import com.maplecloudy.distribute.engine.app.engine.EngineInstallInfo;
 import com.maplecloudy.distribute.engine.appserver.AppPara;
 import com.maplecloudy.distribute.engine.apptask.AppTask;
 
@@ -28,10 +30,13 @@ public class StartKibanaTask extends AppTask {
   @Override
   public void run() {
     try {
+      
       this.checkInfo.add("Start Task!");
+      if(this.checkTaskApp())
+        return;
       this.checkEnv();
       
-      KibanaPara kpara = (KibanaPara) this.para;
+      final KibanaPara kpara = (KibanaPara) this.para;
       List<String> cmds = Lists.newArrayList();
       cmds.add("-sc");
       cmds.add(kpara.getSc());
@@ -47,20 +52,22 @@ public class StartKibanaTask extends AppTask {
       final Configuration conf = this.getConf();
       UserGroupInformation ugi = UserGroupInformation.createProxyUser(
           this.para.user, UserGroupInformation.getLoginUser());
-      ugi.doAs(new PrivilegedAction<Boolean>() {
+      appid = ugi.doAs(new PrivilegedAction<ApplicationId>() {
         @Override
-        public Boolean run() {
+        public ApplicationId run() {
           try {
-            
-            ToolRunner.run(new MapleCloudyEngineShellClient(
-                new YarnConfiguration(conf)), args);
+            MapleCloudyEngineShellClient mcsc = new MapleCloudyEngineShellClient(
+                new YarnConfiguration(conf));
+            ApplicationId appid = mcsc.submitApp(args, kpara.getName());
+            checkInfo.add("kibana submit yarn sucess,with application id:"
+                + appid);
+            return appid;
           } catch (Exception e) {
             e.printStackTrace();
             checkInfo.add("run kibana error with:" + e.getMessage());
-            return false;
+            return null;
           }
-          checkInfo.add("kibana submit yarn sucess,with application id:");
-          return true;
+          
         }
         
       });
@@ -131,8 +138,26 @@ public class StartKibanaTask extends AppTask {
     return bret;
   }
   
-  @Override
-  public String getName() {
+  public boolean checkTaskApp() throws YarnException, IOException
+  {
+    boolean bret = false;
+    YarnClient yarnClient = YarnClient.createYarnClient();
+    Configuration conf = new YarnConfiguration(this.getConf());
+    yarnClient.init(conf);
+    yarnClient.start();
+    List<ApplicationReport> reports = yarnClient.getApplications(Collections.singleton("MAPLECLOUDY-APP"));
+    for(ApplicationReport report : reports)
+    {
+      if(report.getName().equals(this.getName()))
+      {
+        checkInfo.add("App has run with appid:"+report.getApplicationId());
+        bret = true;
+      }
+      
+    }
+    return bret;
+  }
+  @Override public String getName() {
     return para.getName();
   }
   

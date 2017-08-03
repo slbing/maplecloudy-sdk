@@ -7,7 +7,7 @@ import java.util.concurrent.Executors;
 public class TaskPool {
   private static  ExecutorService cachedThreadPool = Executors.newCachedThreadPool();
   
-  public static HashMap<String,Runnable> taskMap = new HashMap<String,Runnable>();
+  public static HashMap<String,AppTask> taskMap = new HashMap<String,AppTask>();
   
   public static void addTask(AppTask runable)
   {

@@ -1,8 +1,10 @@
 package com.maplecloudy.distribute.engine.appserver;
 
+import java.util.List;
+
 import com.maplecloudy.distribute.engine.app.kibana.StartKibanaTask;
+import com.maplecloudy.distribute.engine.apptask.AppTask;
 import com.maplecloudy.distribute.engine.apptask.TaskPool;
-import com.maplecloudy.distribute.engine.task.TaskAction;
 
 public class AppImpl implements IApp {
   
@@ -16,30 +18,22 @@ public class AppImpl implements IApp {
     return 0;
   }
   
-  public Status checkStatus(String msg, int i) {
-    // TODO Auto-generated method stub
-    return new Status();
-  }
-  
-  public String putStatus(Status stats) {
-    // TODO Auto-generated method stub
-    
-    System.out.println("put status success:" + stats.name);
-    return "put status success";
-  }
-  
-  public Status processTask(TaskAction ta) {
-    
-//    TaskManager.processTask(ta);
-    
-    return new Status();
-  }
- 
-
   @Override
-  public String startKibanaNum(String msg, int i) {
+  public List<String> getTaskInfo(AppPara para) {
     // TODO Auto-generated method stub
     return null;
+  }
+  
+  @Override
+  public AppStatus getAppStatus(AppPara para) {
+    try {
+      AppTask task = TaskPool.taskMap.get(para.getName());
+      return task.getAppStatus();
+    } catch (Exception e) {
+      AppStatus as = new AppStatus();
+      as.error = "get app info error with:" + e.getMessage();
+      return as;
+    }
   }
   
 }
