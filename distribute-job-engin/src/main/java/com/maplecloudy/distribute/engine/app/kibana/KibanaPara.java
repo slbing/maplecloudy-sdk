@@ -24,25 +24,29 @@ public class KibanaPara extends AppPara {
     } else return sc;
   }
   
-  public static final String elasticsearchUrlLine = "#elasticsearch.url:";
+  public static final String elasticsearchUrlLine = "#elasticsearch.url: \"\"";
   public static final String serverPort = "#server.port: 5601";
   
-  public String getConfFile()
-  {
-    return this.user + "/" + this.project
-        + "/" + this.appConf + "/" + this.appId + "/kibana.yml";
+  public String getConfFile() {
+    return this.user + "/" + this.project + "/" + this.appConf + "/"
+        + this.appId + "/kibana.yml";
   }
-  public String getScFile()
-  {
-    return this.user + "/" + this.project
-        + "/" + this.appConf + "/" + this.appId + "/kibana.sh";
+  
+  public String getScFile() {
+    return this.user + "/" + this.project + "/" + this.appConf + "/"
+        + this.appId + "/kibana.sh";
   }
+  
   public String GenerateSc() throws Exception {
+    File cf = new File(getScFile());
+    new File(cf.getParent()).mkdirs();
     PrintWriter printWriter = new PrintWriter(getScFile());
     printWriter.append(this.getSc());
+    printWriter.flush();
     printWriter.close();
     return getScFile();
   }
+  
   public String GenerateConf() throws Exception {
     File cf = new File(getConfFile());
     new File(cf.getParent()).mkdirs();
@@ -51,10 +55,10 @@ public class KibanaPara extends AppPara {
         .getClass().getResourceAsStream("kibana.yml")));
     for (String temp = null; (temp = bufReader.readLine()) != null; temp = null) {
       if (elasticsearchUrlLine.equals(temp.trim())) {
-        temp = "elasticsearch.url:" + elasticsearchUrl;
+        temp = "elasticsearch.url: " + elasticsearchUrl;
       }
       if (serverPort.equals(temp.trim())) {
-        temp = "server.port:" + this.port;
+        temp = "server.port: " + this.port;
       }
       printWriter.append(temp);
       printWriter.append(System.getProperty("line.separator"));// 行与行之间的分割

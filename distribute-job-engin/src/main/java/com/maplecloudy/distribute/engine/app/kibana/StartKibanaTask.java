@@ -32,27 +32,30 @@ public class StartKibanaTask extends AppTask {
     try {
       checkInfo.clear();
       this.checkInfo.add("Start Task!");
-      if(this.checkTaskApp())
-        return;
-      this.checkEnv();
+      if (this.checkTaskApp()) return;
+      if (!this.checkEnv()) return;
       
       final KibanaPara kpara = (KibanaPara) this.para;
       List<String> cmds = Lists.newArrayList();
+      cmds.add("-m");
+      cmds.add(""+kpara.memory);
+      cmds.add("-cpu");
+      cmds.add(""+kpara.cpu);
       cmds.add("-sc");
-      cmds.add(kpara.getSc());
+      cmds.add(kpara.getScFile());
       cmds.add("-jar");
       cmds.add(kpara.getConfFile());
       cmds.add("-arc");
       cmds.add(KibanaInstallInfo.getPack());
       cmds.add("-args");
-      cmds.add("'sh kibana.sh'");
+      cmds.add("sh kibana.sh");
       cmds.add("-damon");
       final String[] args = cmds.toArray(new String[cmds.size()]);
       
       final Configuration conf = this.getConf();
       UserGroupInformation ugi = UserGroupInformation.createProxyUser(
           this.para.user, UserGroupInformation.getLoginUser());
-      appid = ugi.doAs(new PrivilegedAction<ApplicationId>() {
+      ApplicationId appid = ugi.doAs(new PrivilegedAction<ApplicationId>() {
         @Override
         public ApplicationId run() {
           try {
@@ -71,16 +74,19 @@ public class StartKibanaTask extends AppTask {
         }
         
       });
+      if(appid != null)
+        this.appids.add(appid);
+      // checkInfo.add("yarn app have submit");
     } catch (Exception e) {
-      
+      e.printStackTrace();
     }
     
   }
   
   public boolean checkEnv() throws Exception {
     boolean bret = true;
-    
-    final FileSystem fs = FileSystem.get(this.getConf());
+    final Configuration conf = this.getConf();
+    FileSystem fs = FileSystem.get(this.getConf());
     // check engint
     bret = checkEngine();
     if (fs.exists(new Path(KibanaInstallInfo.getPack()))) {
@@ -96,10 +102,12 @@ public class StartKibanaTask extends AppTask {
     checkInfo.add("GenerateConf sucess: " + confFile);
     UserGroupInformation ugi = UserGroupInformation.createProxyUser(
         this.para.user, UserGroupInformation.getLoginUser());
-    bret = ugi.doAs(new PrivilegedAction<Boolean>() {
+    
+    boolean bupload = ugi.doAs(new PrivilegedAction<Boolean>() {
       @Override
       public Boolean run() {
         try {
+          FileSystem fs = FileSystem.get(conf);
           fs.copyFromLocalFile(false, true, new Path(confFile), new Path(
               confFile));
         } catch (IllegalArgumentException | IOException e) {
@@ -112,16 +120,17 @@ public class StartKibanaTask extends AppTask {
       }
       
     });
-    
+    if (!bupload) bret = bupload;
     checkInfo.add("Generate sc with para.");
-    final String scFile = kpara.GenerateConf();
+    final String scFile = kpara.GenerateSc();
     checkInfo.add("Generate sc sucess: " + scFile);
     ugi = UserGroupInformation.createProxyUser(this.para.user,
         UserGroupInformation.getLoginUser());
-    bret = ugi.doAs(new PrivilegedAction<Boolean>() {
+    bupload = ugi.doAs(new PrivilegedAction<Boolean>() {
       @Override
       public Boolean run() {
         try {
+          FileSystem fs = FileSystem.get(conf);
           fs.copyFromLocalFile(false, true, new Path(scFile), new Path(scFile));
         } catch (IllegalArgumentException | IOException e) {
           e.printStackTrace();
@@ -133,12 +142,12 @@ public class StartKibanaTask extends AppTask {
       }
       
     });
-    
+    if (!bupload) bret = bupload;
     return bret;
   }
   
- 
-  @Override public String getName() {
+  @Override
+  public String getName() {
     return para.getName();
   }
   

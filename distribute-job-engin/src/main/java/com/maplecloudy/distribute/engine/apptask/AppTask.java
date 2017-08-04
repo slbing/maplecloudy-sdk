@@ -13,17 +13,22 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
+import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
+import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 
+import com.google.common.collect.Lists;
 import com.maplecloudy.distribute.engine.app.engine.EngineInstallInfo;
 import com.maplecloudy.distribute.engine.appserver.AppPara;
 import com.maplecloudy.distribute.engine.appserver.AppStatus;
 
 public abstract class AppTask extends Configured implements Runnable {
+  
+  public static final String DEFAULT_INSTALL_USER = "maplecloudy";
   public AppPara para;
-  public ApplicationId appid = null;
+  public List<ApplicationId> appids = Lists.newArrayList();
   
   public AppTask(AppPara para) {
     this.para = para;
@@ -67,20 +72,50 @@ public abstract class AppTask extends Configured implements Runnable {
     return bret;
   }
   
-  public AppStatus getAppStatus() throws Exception {
-    AppStatus as = new AppStatus();
-    if (this.appid == null) as.error = "this app not runing";
-    else {
-      YarnClient yarnClient = YarnClient.createYarnClient();
-      Configuration conf = new YarnConfiguration(this.getConf());
-      yarnClient.init(conf);
-      yarnClient.start();
-      ApplicationReport report = yarnClient.getApplicationReport(this.appid);
-      as.appStatus = report.getFinalApplicationStatus().name();
-      as.appid = this.appid.toString();
-      yarnClient.close();
+  public List<AppStatus> getAppStatus() throws Exception {
+    List<AppStatus> las = Lists.newArrayList();
+    this.appids.clear();
+    YarnClient yarnClient = YarnClient.createYarnClient();
+    Configuration conf = new YarnConfiguration(this.getConf());
+    yarnClient.init(conf);
+    yarnClient.start();
+    List<ApplicationReport> reports = yarnClient.getApplications(Collections
+        .singleton("MAPLECLOUDY-APP"));
+    for (ApplicationReport report : reports) {
+      if (report.getName().equals(this.getName())) {
+        AppStatus as = new AppStatus();
+        as.appStatus = report.getFinalApplicationStatus().name();
+        as.appid = report.getApplicationId().toString();
+        as.diagnostics = report.getDiagnostics();
+        as.host = report.getHost();
+        checkInfo.add("App has run with appid:" + report.getApplicationId());
+        this.appids.add(report.getApplicationId());
+        las.add(as);
+      }
     }
-    return as;
+    
+    return las;
+  }
+  
+  public int stopApp() throws Exception {
+    
+    YarnClient yarnClient = YarnClient.createYarnClient();
+    Configuration conf = new YarnConfiguration(this.getConf());
+    yarnClient.init(conf);
+    yarnClient.start();
+    List<ApplicationReport> reports = yarnClient.getApplications(Collections
+        .singleton("MAPLECLOUDY-APP"));
+    for (ApplicationReport report : reports) {
+      if (report.getName().equals(this.getName())) {
+        if (report.getYarnApplicationState() != YarnApplicationState.FAILED
+            && report.getYarnApplicationState() != YarnApplicationState.FINISHED
+            && report.getYarnApplicationState() != YarnApplicationState.KILLED) {
+          checkInfo.add("Stop app as status:" + report.getApplicationId());
+          yarnClient.killApplication(report.getApplicationId());
+        }
+      }
+    }
+    return 0;
   }
   
   public boolean checkTaskApp() throws YarnException, IOException {
@@ -94,7 +129,17 @@ public abstract class AppTask extends Configured implements Runnable {
     for (ApplicationReport report : reports) {
       if (report.getName().equals(this.getName())) {
         checkInfo.add("App has run with appid:" + report.getApplicationId());
-        bret = true;
+        
+        if (report.getYarnApplicationState() == YarnApplicationState.FAILED
+            || report.getYarnApplicationState() == YarnApplicationState.FINISHED
+            || report.getYarnApplicationState() == YarnApplicationState.KILLED) {
+          checkInfo.add("App have run with appid:" + report.getApplicationId()
+              + ", and not runing with status:"
+              + report.getYarnApplicationState());
+        } else {
+          this.appids.add(report.getApplicationId());
+          bret = true;
+        }
       }
       
     }

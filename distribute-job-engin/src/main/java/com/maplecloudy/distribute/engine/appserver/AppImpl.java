@@ -7,6 +7,7 @@ import com.maplecloudy.distribute.engine.app.kibana.KibanaPara;
 import com.maplecloudy.distribute.engine.app.kibana.StartKibanaTask;
 import com.maplecloudy.distribute.engine.apptask.AppTask;
 import com.maplecloudy.distribute.engine.apptask.TaskPool;
+import com.maplecloudy.distribute.engine.task.KibanaTask;
 
 public class AppImpl implements IApp {
   
@@ -21,14 +22,17 @@ public class AppImpl implements IApp {
   }
   
   @Override
-  public AppStatus getAppStatus(KibanaPara para) {
+  public List<AppStatus> getAppStatus(KibanaPara para) {
     try {
       AppTask task = TaskPool.taskMap.get(para.getName());
+      if (task == null) {
+        new StartKibanaTask(para).checkTaskApp();
+      }
       return task.getAppStatus();
     } catch (Exception e) {
       AppStatus as = new AppStatus();
       as.error = "get app info error with:" + e.getMessage();
-      return as;
+      return Lists.newArrayList();
     }
   }
   
@@ -38,6 +42,19 @@ public class AppImpl implements IApp {
       return task.checkInfo;
     } else {
       return Lists.newArrayList();
+    }
+  }
+  
+  @Override
+  public int stopAppTask(KibanaPara para) {
+    try {
+      AppTask task = TaskPool.taskMap.get(para.getName());
+      if (task == null) {
+        new StartKibanaTask(para);
+      }
+      return task.stopApp();
+    } catch (Exception e) {
+      return -1;
     }
   }
   

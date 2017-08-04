@@ -8,8 +8,10 @@ public interface IApp {
 
   public int startKibana(KibanaPara para);
 //  public List<String> getTaskInfo(AppPara para);
-  public AppStatus getAppStatus(KibanaPara para);
+  public List<AppStatus> getAppStatus(KibanaPara para);
   
   public List<String> getAppTaskInfo(KibanaPara para);
+  
+  public int stopAppTask(KibanaPara para);
  
 }
