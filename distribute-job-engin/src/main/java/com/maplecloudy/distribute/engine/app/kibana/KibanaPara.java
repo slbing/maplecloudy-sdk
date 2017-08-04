@@ -24,7 +24,7 @@ public class KibanaPara extends AppPara {
     } else return sc;
   }
   
-  public static final String elasticsearchUrlLine = "#elasticsearch.url: ";
+  public static final String elasticsearchUrlLine = "#elasticsearch.url:";
   public static final String serverPort = "#server.port: 5601";
   
   public String getConfFile()

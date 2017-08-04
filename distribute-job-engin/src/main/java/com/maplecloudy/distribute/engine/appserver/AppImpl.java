@@ -2,6 +2,7 @@ package com.maplecloudy.distribute.engine.appserver;
 
 import java.util.List;
 
+import com.google.common.collect.Lists;
 import com.maplecloudy.distribute.engine.app.kibana.KibanaPara;
 import com.maplecloudy.distribute.engine.app.kibana.StartKibanaTask;
 import com.maplecloudy.distribute.engine.apptask.AppTask;
@@ -18,8 +19,9 @@ public class AppImpl implements IApp {
     TaskPool.addTask(task);
     return 0;
   }
+  
   @Override
-  public AppStatus getAppStatus(AppPara para) {
+  public AppStatus getAppStatus(KibanaPara para) {
     try {
       AppTask task = TaskPool.taskMap.get(para.getName());
       return task.getAppStatus();
@@ -29,6 +31,14 @@ public class AppImpl implements IApp {
       return as;
     }
   }
-
- 
+  
+  public List<String> getAppTaskInfo(KibanaPara para) {
+    AppTask task = TaskPool.taskMap.get(para.getName());
+    if (task != null) {
+      return task.checkInfo;
+    } else {
+      return Lists.newArrayList();
+    }
+  }
+  
 }

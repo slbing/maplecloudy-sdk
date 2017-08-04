@@ -30,7 +30,7 @@ public class StartKibanaTask extends AppTask {
   @Override
   public void run() {
     try {
-      
+      checkInfo.clear();
       this.checkInfo.add("Start Task!");
       if(this.checkTaskApp())
         return;
@@ -39,13 +39,13 @@ public class StartKibanaTask extends AppTask {
       final KibanaPara kpara = (KibanaPara) this.para;
       List<String> cmds = Lists.newArrayList();
       cmds.add("-sc");
-      cmds.add(kpara.getScFile());
+      cmds.add(kpara.getSc());
       cmds.add("-jar");
       cmds.add(kpara.getConfFile());
       cmds.add("-arc");
       cmds.add(KibanaInstallInfo.getPack());
       cmds.add("-args");
-      cmds.add("sh kibana.sh");
+      cmds.add("'sh kibana.sh'");
       cmds.add("-damon");
       final String[] args = cmds.toArray(new String[cmds.size()]);
       
@@ -71,19 +71,16 @@ public class StartKibanaTask extends AppTask {
         }
         
       });
-      System.out.println(checkInfo.toString());
     } catch (Exception e) {
-      e.printStackTrace();
+      
     }
     
   }
   
   public boolean checkEnv() throws Exception {
     boolean bret = true;
-    checkInfo.clear();
     
-     FileSystem fs = FileSystem.get(this.getConf());
-     final Configuration conf = this.getConf();
+    final FileSystem fs = FileSystem.get(this.getConf());
     // check engint
     bret = checkEngine();
     if (fs.exists(new Path(KibanaInstallInfo.getPack()))) {
@@ -103,11 +100,6 @@ public class StartKibanaTask extends AppTask {
       @Override
       public Boolean run() {
         try {
-          
-         Path a = new Path(confFile);
-
-         FileSystem fs = FileSystem.get(conf);
-         
           fs.copyFromLocalFile(false, true, new Path(confFile), new Path(
               confFile));
         } catch (IllegalArgumentException | IOException e) {
@@ -122,7 +114,7 @@ public class StartKibanaTask extends AppTask {
     });
     
     checkInfo.add("Generate sc with para.");
-    final String scFile = kpara.GenerateSc();
+    final String scFile = kpara.GenerateConf();
     checkInfo.add("Generate sc sucess: " + scFile);
     ugi = UserGroupInformation.createProxyUser(this.para.user,
         UserGroupInformation.getLoginUser());
@@ -130,9 +122,6 @@ public class StartKibanaTask extends AppTask {
       @Override
       public Boolean run() {
         try {
-
-          FileSystem fs = FileSystem.get(conf);
-          
           fs.copyFromLocalFile(false, true, new Path(scFile), new Path(scFile));
         } catch (IllegalArgumentException | IOException e) {
           e.printStackTrace();
@@ -148,25 +137,7 @@ public class StartKibanaTask extends AppTask {
     return bret;
   }
   
-  public boolean checkTaskApp() throws YarnException, IOException
-  {
-    boolean bret = false;
-    YarnClient yarnClient = YarnClient.createYarnClient();
-    Configuration conf = new YarnConfiguration(this.getConf());
-    yarnClient.init(conf);
-    yarnClient.start();
-    List<ApplicationReport> reports = yarnClient.getApplications(Collections.singleton("MAPLECLOUDY-APP"));
-    for(ApplicationReport report : reports)
-    {
-      if(report.getName().equals(this.getName()))
-      {
-        checkInfo.add("App has run with appid:"+report.getApplicationId());
-        bret = true;
-      }
-      
-    }
-    return bret;
-  }
+ 
   @Override public String getName() {
     return para.getName();
   }
