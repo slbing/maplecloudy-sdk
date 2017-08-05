@@ -39,19 +39,19 @@ public class NginxGateway {
   
   public static void mergeNginx() {
     
-    for(NginxGateway ng:NginxGateway.arrAdd)
+    for(int i = 0; i < NginxGateway.arrAdd.size();i++)
     {
-      ng.checkInfo.add("passing to remote");
-      NginxGateway.arrNg.add(ng);
-      NginxGateway.arrAdd.remove(ng);
+      NginxGateway.arrNg.add(NginxGateway.arrAdd.get(i));
+      NginxGateway.arrNg.get(i).checkInfo.add("passing to remote");
     }
+    NginxGateway.arrAdd.clear();;
 
-    for(NginxGateway ng:NginxGateway.arrDel)
+    for(int i = 0; i < NginxGateway.arrDel.size();i++)
     {
-      ng.checkInfo.add("passing to remote");
-      NginxGateway.arrNg.add(ng);
-      NginxGateway.arrDel.remove(ng);
+      NginxGateway.arrNg.add(NginxGateway.arrAdd.get(i));
+      NginxGateway.arrNg.get(i).checkInfo.add("passing to remote");
     }
+    NginxGateway.arrDel.clear();;
   }
   
   public static String getAppInfo(String appId) {
@@ -63,6 +63,18 @@ public class NginxGateway {
   }
   
   public static void main(String args[]) {
+    NginxGateway ng = new NginxGateway();
+    ng.id = "1";
+    ng.confPath = "";
+    ng.portNginx = "5555";
+    ng.hostAddress = "8080";
+    ng.portApp = "";
     
+    for(NginxGateway n:NginxGateway.arrAdd)
+    {
+      ng.checkInfo.add("passing to remote");
+      NginxGateway.arrNg.add(n);
+      NginxGateway.arrAdd.remove(n);
+    }
   }
 }

@@ -3,6 +3,7 @@ package com.maplecloudy.distribute.engine.appserver;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -13,31 +14,45 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
-public class NginxGatewayManager implements Runnable {
+import com.maplecloudy.distribute.engine.apptask.AppTask;
+
+public class NginxGatewayManager extends AppTask {
   
-  static private String nginxPath = "/etc/nginx/conf.d";
+  public NginxGatewayManager(AppPara para) {
+    super(para);
+    // TODO Auto-generated constructor stub
+  }
+  
+  static private String nginxPath = "/usr/local/webservices/nginx/conf/conf.d"; //demo.maplecloudy.com
   HashSet<String> hostInvolved = new HashSet<String>();
   
   private String logPath = "";
   private String ansiYml = "";
+  public boolean brun = true;
+
   
   @Override
   public void run() {
     
-    hostInvolved.clear();
-    try {
-      updateNginxConfLocal();
-      updateNginxConfRemote();
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-  }
-  
-  public void Update() {
+    while (brun) {
+      
     
-    Thread t = new Thread(this);
-    t.start();
+      hostInvolved.clear();
+      try {
+        updateNginxConfLocal();
+        updateNginxConfRemote();
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+      
+      try {
+        Thread.sleep(60000);
+      } catch (InterruptedException e1) {
+        // TODO Auto-generated catch block
+        e1.printStackTrace();
+      }
+    }
   }
   
   public void updateNginxConfLocal() throws IOException {
@@ -54,7 +69,10 @@ public class NginxGatewayManager implements Runnable {
       deleteFile(host + ".conf");
     }
     
-    for (NginxGateway ng : NginxGateway.arrNg) {
+    for (int i = 0; i < NginxGateway.arrNg.size(); i++) {
+      
+      NginxGateway ng = NginxGateway.arrNg.get(i);
+      
       if (hostInvolved.contains(ng.hostAddress)) {
         
         File file = new File(ng.hostAddress + ".conf");
@@ -69,18 +87,19 @@ public class NginxGatewayManager implements Runnable {
   }
   
   public void appendConf(String fileName, NginxGateway ng)
-      throws FileNotFoundException {
-    PrintWriter printWriter = new PrintWriter(fileName);
-    printWriter.append("server {\n" + " listen " + ng.portNginx + ";\n"
+      throws IOException {
+    FileWriter writer = new FileWriter(fileName, true);
+    
+    String content = "server {\n" + " listen " + ng.portNginx + ";\n"
         + " access_log kang_kibana.log;\n" + "\n" + " location / {\n"
-        + " proxy_pass \"" + ng.hostAddress + ":" + ng.hostAddress + "\";\n"
+        + " proxy_pass \"http://" + ng.hostAddress + ":" + ng.portApp + "\";\n"
         + " proxy_set_header Host $host:7090;\n"
         + " proxy_set_header X-Real-IP $remote_addr;\n"
         + " proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n"
-        + " proxy_set_header Via \"nginx\";\n" + " }\n" + "}"
+        + " proxy_set_header Via \"nginx\";\n" + " }\n" + "}\n\n";
     
-    );
-    printWriter.close();
+    writer.write(content);
+    writer.close();
   }
   
   public void updateNginxConfRemote() throws IOException {
@@ -100,16 +119,16 @@ public class NginxGatewayManager implements Runnable {
   
   public String assembleCmd(String yml) {
     
-    return "ansible-playbook " + yml;
+    return "/usr/local/bin/ansible-playbook " + yml;
   }
   
   public void createAnsibleYml(String host) throws FileNotFoundException {
-    PrintWriter printWriter = new PrintWriter(host+".yml");
-    printWriter.append(
-        "- hosts: kang \n" + " remote_user: root\n" + " gather_facts: no\n"
-            + " tasks:\n" + " - name: copy config\n" + " copy:\n" + " src : "
-            + host +".conf" + "\n" + " dest: /etc/nginx/conf.d/\n" + "\n"
-            + " - service:\n" + " name: nginx\n" + " state: restarted"
+    PrintWriter printWriter = new PrintWriter(host + ".yml");
+    printWriter.append("- hosts: demo\n" + "  remote_user: root\n"
+        + "  gather_facts: no\n" + "  tasks:\n" + "    - name: copy config\n"
+        + "      copy:\n" + "       src : " + host + ".conf" + "\n"
+        + "       dest: "+nginxPath+"/\n" + "\n" + "    - service:\n"
+        + "        name: nginx\n" + "        state: restarted\n"
     
     );
     printWriter.close();
@@ -205,5 +224,33 @@ public class NginxGatewayManager implements Runnable {
   
   public static void main(String args[]) {
     
+    NginxGateway ng = new NginxGateway();
+    ng.id = "1";
+    ng.confPath = "";
+    ng.portNginx = "5551";
+    ng.hostAddress = "10.0.4.1";
+    ng.portApp = "62794";
+    NginxGateway.addNginx(ng);
+
+    ng = new NginxGateway();
+    ng.id = "1";
+    ng.confPath = "";
+    ng.portNginx = "5552";
+    ng.hostAddress = "10.0.4.1";
+    ng.portApp = "62794";
+    NginxGateway.addNginx(ng);
+    
+    
+    NginxGatewayManager ngm = new NginxGatewayManager(new NginxGatewayPara());
+    ngm.run();
+    
+    // ngm.runCmd("/usr/local/bin/ansible-playbook ");
+    // ngm.runCmd("ls");
+  }
+  
+  @Override
+  public String getName() {
+    // TODO Auto-generated method stub
+    return null;
   }
 }
