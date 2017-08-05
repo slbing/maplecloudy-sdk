@@ -8,16 +8,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 
 import com.maplecloudy.distribute.engine.apptask.AppTask;
 
 public class NginxGatewayManager extends AppTask {
   
+  public static final int REFRESH_RIME = 60000;
   public NginxGatewayManager(AppPara para) {
     super(para);
     // TODO Auto-generated constructor stub
@@ -83,6 +80,12 @@ public class NginxGatewayManager extends AppTask {
         appendConf(ng.hostAddress + ".conf", ng);
       }
     }
+    
+  }
+  
+  public void updateNigx(AppPara para)
+  {
+    String confFile = "nginx/"+para.getAppType().toLowerCase()+".conf";
     
   }
   

@@ -1,4 +1,4 @@
-package com.maplecloudy.distribute.engine.app.kibana;
+package com.maplecloudy.distribute.engine.app.elasticsearch;
 
 import java.io.IOException;
 import java.security.PrivilegedAction;
@@ -9,20 +9,18 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
-import org.apache.hadoop.yarn.api.records.ApplicationReport;
-import org.apache.hadoop.yarn.api.records.YarnApplicationState;
-import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 
 import com.google.common.collect.Lists;
 import com.maplecloudy.distribute.engine.MapleCloudyEngineShellClient;
 import com.maplecloudy.distribute.engine.appserver.AppPara;
-import com.maplecloudy.distribute.engine.appserver.NginxGateway;
 import com.maplecloudy.distribute.engine.apptask.AppTask;
+import com.maplecloudy.distribute.engine.utils.EngineUtils;
 
-public class StartKibanaTask extends AppTask {
+public class ElasticSearchTask extends AppTask {
   
-  public StartKibanaTask(AppPara para) {
+  
+  public ElasticSearchTask(AppPara para) {
     super(para);
     
   }
@@ -35,18 +33,18 @@ public class StartKibanaTask extends AppTask {
       if (this.checkTaskApp()) return;
       if (!this.checkEnv()) return;
       
-      final KibanaPara kpara = (KibanaPara) this.para;
+      final ElatisticSearchPara kpara = (ElatisticSearchPara) this.para;
       List<String> cmds = Lists.newArrayList();
       cmds.add("-m");
-      cmds.add("" + kpara.memory);
+      cmds.add(""+kpara.memory);
       cmds.add("-cpu");
-      cmds.add("" + kpara.cpu);
+      cmds.add(""+kpara.cpu);
       cmds.add("-sc");
       cmds.add(kpara.getScFile());
       cmds.add("-jar");
       cmds.add(kpara.getConfFile());
       cmds.add("-arc");
-      cmds.add(KibanaInstallInfo.getPack());
+      cmds.add(ElasticsearchInstallInfo.getPack());
       cmds.add("-args");
       cmds.add("sh kibana.sh");
       cmds.add("-type");
@@ -76,42 +74,9 @@ public class StartKibanaTask extends AppTask {
         }
         
       });
-      if (appid != null) {
+      if(appid != null)
         this.appids.add(appid);
-        boolean updateNginx = true;
-        while (updateNginx) {
-          YarnClient yarnClient = YarnClient.createYarnClient();
-          
-          yarnClient.init(new YarnConfiguration(this.getConf()));
-          yarnClient.start();
-          ApplicationReport report = yarnClient.getApplicationReport(appid);
-          if (report.getYarnApplicationState() == YarnApplicationState.FAILED
-              || report.getYarnApplicationState() == YarnApplicationState.FINISHED
-              || report.getYarnApplicationState() == YarnApplicationState.KILLED) {
-            checkInfo.add("App have run with appid:"
-                + report.getApplicationId() + ", and finishedwith with status:"
-                + report.getYarnApplicationState());
-            updateNginx = false;
-          } else if (report.getYarnApplicationState() == YarnApplicationState.RUNNING) {
-
-            checkInfo.add("App have run with appid:"
-                + report.getApplicationId() + ", now status"
-                + report.getYarnApplicationState()+",start update nginx!");
-//            NginxGateway ng = new NginxGateway();
-//            ng.
-            updateNginx = false;
-            
-          } else {
-            checkInfo.add("App have run with appid:"
-                + report.getApplicationId() + ", now status is::"
-                + report.getYarnApplicationState());
-          }
-          Thread.sleep(5000);
-        }
-       
-      }
       // checkInfo.add("yarn app have submit");
-      
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -124,16 +89,16 @@ public class StartKibanaTask extends AppTask {
     FileSystem fs = FileSystem.get(this.getConf());
     // check engint
     bret = checkEngine();
-    if (fs.exists(new Path(KibanaInstallInfo.getPack()))) {
+    if (fs.exists(new Path(ElasticsearchInstallInfo.getPack()))) {
       checkInfo.add("kibana install is ok!");
     } else {
-      checkInfo.add(KibanaInstallInfo.getPack() + " not exist!");
+      checkInfo.add(ElasticsearchInstallInfo.getPack() + " not exist!");
       bret = false;
     }
     
-    KibanaPara kpara = (KibanaPara) this.para;
+    ElatisticSearchPara kpara = (ElatisticSearchPara) this.para;
     checkInfo.add("GenerateConf with para.");
-    final String confFile = kpara.GenerateConf(this.getPort());
+    final String confFile = kpara.GenerateConf(port);
     checkInfo.add("GenerateConf sucess: " + confFile);
     UserGroupInformation ugi = UserGroupInformation.createProxyUser(
         this.para.user, UserGroupInformation.getLoginUser());
@@ -179,7 +144,7 @@ public class StartKibanaTask extends AppTask {
     });
     if (!bupload) bret = bupload;
     
-    // send update ngix
+    //send update ngix
     return bret;
     
   }
@@ -189,4 +154,5 @@ public class StartKibanaTask extends AppTask {
     return para.getName();
   }
   
+ 
 }

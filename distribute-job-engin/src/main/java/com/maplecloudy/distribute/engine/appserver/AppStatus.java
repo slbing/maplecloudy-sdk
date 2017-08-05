@@ -11,4 +11,5 @@ public class AppStatus {
   @Nullable
   public String error = null;
   public String host = "";
+  public int port = 0;
 }

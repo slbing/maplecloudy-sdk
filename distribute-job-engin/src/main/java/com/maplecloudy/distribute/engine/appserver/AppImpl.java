@@ -7,7 +7,6 @@ import com.maplecloudy.distribute.engine.app.kibana.KibanaPara;
 import com.maplecloudy.distribute.engine.app.kibana.StartKibanaTask;
 import com.maplecloudy.distribute.engine.apptask.AppTask;
 import com.maplecloudy.distribute.engine.apptask.TaskPool;
-import com.maplecloudy.distribute.engine.task.KibanaTask;
 
 public class AppImpl implements IApp {
   
@@ -30,6 +29,7 @@ public class AppImpl implements IApp {
       }
       return task.getAppStatus();
     } catch (Exception e) {
+      e.printStackTrace();
       AppStatus as = new AppStatus();
       as.error = "get app info error with:" + e.getMessage();
       return Lists.newArrayList();

@@ -7,5 +7,11 @@ public class NginxGatewayPara extends AppPara {
     // TODO Auto-generated method stub
     return "nginx";
   }
+
+  @Override
+  public String getAppType() {
+    // TODO Auto-generated method stub
+    return "NGINX";
+  }
   
 }

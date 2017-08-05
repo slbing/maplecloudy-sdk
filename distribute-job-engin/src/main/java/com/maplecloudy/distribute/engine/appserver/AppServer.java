@@ -1,7 +1,6 @@
 package com.maplecloudy.distribute.engine.appserver;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 
 import org.apache.avro.ipc.HttpServer;
 import org.apache.avro.ipc.Server;

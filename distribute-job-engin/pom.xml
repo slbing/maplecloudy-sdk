@@ -22,7 +22,17 @@
 	<artifactId>distribute-job-engin</artifactId>
 	<name>maplecloudy distribute engine</name>
 	<dependencies>
-	<dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.7</version>
+		</dependency>
+		<dependency>
+			<groupId>com.maplecloudy.maple</groupId>
+			<artifactId>elasticsearch-yarn</artifactId>
+			<version>0.3.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.avro</groupId>
 			<artifactId>avro</artifactId>
 			<version>1.7.6-kf-cdh5.7.3</version>
@@ -32,7 +42,7 @@
 			<artifactId>avro-ipc</artifactId>
 			<version>1.7.6-kf-cdh5.7.3</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.apache.hadoop</groupId>
 			<artifactId>hadoop-yarn-client</artifactId>

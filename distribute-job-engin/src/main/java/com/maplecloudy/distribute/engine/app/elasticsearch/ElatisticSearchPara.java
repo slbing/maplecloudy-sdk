@@ -1,4 +1,4 @@
-package com.maplecloudy.distribute.engine.app.kibana;
+package com.maplecloudy.distribute.engine.app.elasticsearch;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -7,9 +7,9 @@ import java.io.PrintWriter;
 
 import com.maplecloudy.distribute.engine.appserver.AppPara;
 
-public class KibanaPara extends AppPara {
+public class ElatisticSearchPara extends AppPara {
   public static String APP_TYPE = "KIBANA";
-  public KibanaPara() {
+  public ElatisticSearchPara() {
     this.isDistribution = false;
   }
   
@@ -79,7 +79,7 @@ public class KibanaPara extends AppPara {
     return this.user + "|" + this.project + "|" + this.appConf + "|"
         + this.appId;
   }
-  
+
   @Override
   public String getAppType() {
   
