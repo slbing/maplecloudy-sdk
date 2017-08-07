@@ -40,7 +40,8 @@ public class LogSchemaSource {
     return mLogSchemaSource;
   }
   
-  public AvroFileSerializer getAvroSerializer(String schemaName, String ver) throws IOException {
+  public AvroFileSerializer getAvroSerializer(String schemaName, String ver)
+      throws IOException {
     String schema = schemaName + "-" + ver;
     AvroFileSerializer avroSerializer = avroSerializers.get(schema);
     
@@ -67,7 +68,11 @@ public class LogSchemaSource {
             + "is not of type LocalFileSystem: " + hdfs.getClass().getName());
       }
     }
-    valueSchema = new Schema.Parser().parse(hdfs.open(dstPath));
+    if (hdfs.exists(dstPath)) {
+      valueSchema = new Schema.Parser().parse(hdfs.open(dstPath));
+    } else {
+      valueSchema = Schema.create(Schema.Type.STRING);
+    }
     return valueSchema;
   }
   

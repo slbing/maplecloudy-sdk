@@ -30,7 +30,7 @@ public class ElasticSearchTask extends AppTask {
     try {
       checkInfo.clear();
       this.checkInfo.add("Start Task!");
-      if (this.checkTaskApp()) return;
+      if (checkTaskApp() != null) return;
       if (!this.checkEnv()) return;
       
       final ElatisticSearchPara kpara = (ElatisticSearchPara) this.para;
