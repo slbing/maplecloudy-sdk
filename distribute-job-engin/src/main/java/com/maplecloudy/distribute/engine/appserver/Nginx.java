@@ -144,7 +144,6 @@ public class Nginx {
   
   public void runCmd(String cmd) {
     
-    boolean success = true;
     try {
       Process amProc = Runtime.getRuntime().exec(cmd);
       
@@ -156,7 +155,7 @@ public class Nginx {
       
       // read error and input streams as this would free up the buffers
       // free the error stream buffer
-      Thread errThread = new Thread() {
+      Thread errThread = new CmdReader() {
         @Override
         public void run() {
           try {
@@ -164,20 +163,23 @@ public class Nginx {
             while ((line != null) && !isInterrupted()) {
               System.err.println("cmd output------:" + line);
               line = errReader.readLine();
+              if(line.contains("fail")) this.success=false;
             }
           } catch (IOException ioe) {
             // LOG.warn("Error reading the error stream", ioe);
           }
         }
       };
-      Thread outThread = new Thread() {
+      Thread outThread = new CmdReader() {
         @Override
         public void run() {
           try {
             String line = inReader.readLine();
             while ((line != null) && !isInterrupted()) {
               System.out.println("cmd output------:" + line);
+              
               line = inReader.readLine();
+              if(line.contains("fail")) this.success=false;
             }
           } catch (IOException ioe) {
             // LOG.warn("Error reading the out stream", ioe);
@@ -239,3 +241,9 @@ public class Nginx {
     
   }
 }
+
+class CmdReader extends Thread {
+  
+  boolean success = true;
+}
+

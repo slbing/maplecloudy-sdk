@@ -148,8 +148,8 @@ public abstract class AppTask extends Configured implements Runnable {
     return bret;
   }
   
-  public boolean checkTaskApp() throws YarnException, IOException {
-    boolean bret = false;
+  public ApplicationId checkTaskApp() throws YarnException, IOException {
+    ApplicationId bret = null;
     YarnClient yarnClient = YarnClient.createYarnClient();
     Configuration conf = new YarnConfiguration(this.getConf());
     yarnClient.init(conf);
@@ -168,7 +168,7 @@ public abstract class AppTask extends Configured implements Runnable {
               + report.getYarnApplicationState());
         } else {
           this.appids.add(report.getApplicationId());
-          bret = true;
+          bret = report.getApplicationId();
         }
       }
       
