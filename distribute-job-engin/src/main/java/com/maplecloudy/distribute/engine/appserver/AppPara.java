@@ -16,7 +16,7 @@ public abstract class AppPara {
   //nginx para
   public String domain;
   public String nginxIp ;
-  public String nginxDimain;
+  public String nginxDomain;
   public int port ;
 //  @Nullable
 //  public NgixGateway gateway;

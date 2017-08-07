@@ -121,27 +121,9 @@ public class ElasticSearchTask extends AppTask {
       
     });
     if (!bupload) bret = bupload;
-    checkInfo.add("Generate sc with para.");
-    final String scFile = kpara.GenerateSc();
-    checkInfo.add("Generate sc sucess: " + scFile);
     ugi = UserGroupInformation.createProxyUser(this.para.user,
         UserGroupInformation.getLoginUser());
-    bupload = ugi.doAs(new PrivilegedAction<Boolean>() {
-      @Override
-      public Boolean run() {
-        try {
-          FileSystem fs = FileSystem.get(conf);
-          fs.copyFromLocalFile(false, true, new Path(scFile), new Path(scFile));
-        } catch (IllegalArgumentException | IOException e) {
-          e.printStackTrace();
-          checkInfo.add("intall :" + scFile + " error with:" + e.getMessage());
-          return false;
-        }
-        checkInfo.add("Install scfile succes!");
-        return true;
-      }
-      
-    });
+    
     if (!bupload) bret = bupload;
     
     //send update ngix

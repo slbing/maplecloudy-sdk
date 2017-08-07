@@ -95,27 +95,26 @@ public class StartKibanaTask extends AppTask {
                 + report.getYarnApplicationState());
             updateNginx = false;
           } else if (report.getYarnApplicationState() == YarnApplicationState.RUNNING) {
-
+            
             checkInfo.add("App have run with appid:"
                 + report.getApplicationId() + ", now status"
-                + report.getYarnApplicationState()+",start update nginx!");
-
+                + report.getYarnApplicationState() + ",start update nginx!");
+            
             NginxGatewayPara ngpara = new NginxGatewayPara();
-
+            
             ngpara.nginxIp = this.para.nginxIp;
             ngpara.appHost = report.getHost();
-            ngpara.domain = para.nginxDimain;
+            ngpara.domain = para.nginxDomain;
             ngpara.appPort = this.getPort();
             ngpara.proxyPort = para.port;
             ngpara.nginxId = this.para.nginxIp;
             ngpara.appConf = this.para.appConf;
             ngpara.appType = this.para.getAppType();
             
-            Nginx ng = Nginx.getNginx(ngpara);
-            ng.update();
+            Nginx ng = Nginx.updateLocal(ngpara);
+            ng.updateRemote();
             
-            updateNginx = false;
-            
+            checkInfo.add("update nginx finished!");
           } else {
             checkInfo.add("App have run with appid:"
                 + report.getApplicationId() + ", now status is::"
@@ -123,7 +122,7 @@ public class StartKibanaTask extends AppTask {
           }
           Thread.sleep(5000);
         }
-       
+        
       }
       // checkInfo.add("yarn app have submit");
       

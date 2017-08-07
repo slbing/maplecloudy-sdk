@@ -305,7 +305,8 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
     appContext.setResource(capability);
     appContext.setQueue("default"); // queue
     appContext.setMaxAppAttempts(1);
-    
+    //set true for container for reuse
+    appContext.setKeepContainersAcrossApplicationAttempts(true);
     // Submit application
     ApplicationId appId = appContext.getApplicationId();
     System.out.println("Submitting application " + appId);

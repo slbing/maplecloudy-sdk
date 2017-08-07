@@ -50,7 +50,7 @@ public class AppImpl implements IApp {
     try {
       AppTask task = TaskPool.taskMap.get(para.getName());
       if (task == null) {
-        new StartKibanaTask(para);
+        TaskPool.taskMap.put(para.getName(),new StartKibanaTask(para));
       }
       return task.stopApp();
     } catch (Exception e) {

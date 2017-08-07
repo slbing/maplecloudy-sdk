@@ -39,8 +39,8 @@ public class Nginx {
     }
   }
   
-  public void load()
-      throws JsonSyntaxException, JsonIOException, FileNotFoundException {
+  public void load() throws JsonSyntaxException, JsonIOException,
+      FileNotFoundException {
     apps.clear();
     Gson gson = new GsonBuilder().create();
     File nginxF = new File(name);
@@ -57,7 +57,7 @@ public class Nginx {
     File nginxPath = new File("nginx/" + this.name);
     for (Map.Entry<String,NginxConf> entry : apps.entrySet()) {
       if (!nginxPath.exists()) nginxPath.mkdirs();
-      File nginxConf = new File(nginxPath,entry.getKey() + ".conf");
+      File nginxConf = new File(nginxPath, entry.getKey() + ".conf");
       
       FileWriter wr = new FileWriter(nginxConf);
       for (Map.Entry<String,WebProxyServer> wps : entry.getValue().psm
@@ -70,18 +70,18 @@ public class Nginx {
     }
   }
   
-  public static boolean hasServer(NginxConf nc, NginxGatewayPara para) {
+  public static  boolean hasServer(NginxConf nc, NginxGatewayPara para) {
     
     for (Map.Entry<String,WebProxyServer> wps : nc.psm.entrySet()) {
       
-      if (wps.getKey() == para.appConf && wps.getValue().appPort == para.appPort
-          && wps.getValue().proxyPort == para.proxyPort)
-        return true;
+      if (wps.getKey() == para.appConf
+          && wps.getValue().appPort == para.appPort
+          && wps.getValue().proxyPort == para.proxyPort) return true;
     }
     return false;
   }
   
-  public static Nginx getNginx(NginxGatewayPara para) {
+  public static synchronized Nginx updateLocal(NginxGatewayPara para) {
     
     if (nginxs.get(para.nginxIp) == null) {
       
@@ -112,13 +112,13 @@ public class Nginx {
     return nginxs.get(para.nginxIp);
   }
   
-  synchronized boolean update() throws IOException {
+  public synchronized boolean updateRemote() throws IOException {
     this.removeNginxConf();
     this.generateNginxConf();
     
     for (Map.Entry<String,NginxConf> entry : apps.entrySet()) {
-      String cmd = createAnsibleYml(this.name,entry.getValue().name);
-      runCmd(ansibleCmd +cmd);
+      String cmd = createAnsibleYml(this.name, entry.getValue().name);
+      runCmd(ansibleCmd + cmd);
     }
     return true;
   }
@@ -129,17 +129,17 @@ public class Nginx {
   
   public String createAnsibleYml(String nginxIp, String appType)
       throws FileNotFoundException {
-    PrintWriter printWriter = new PrintWriter("nginx/"+this.name+"/restart.yml");
-    printWriter.append(
-        "- hosts: demo\n" + "  remote_user: root\n" + "  gather_facts: no\n"
-            + "  tasks:\n" + "    - name: copy config\n" + "      copy:\n"
-            + "       src : " + appType + ".conf" + "\n"
-            + "       dest: " + nginxPath + "/\n" + "\n" + "    - service:\n"
-            + "        name: nginx\n" + "        state: restarted\n"
+    PrintWriter printWriter = new PrintWriter("nginx/" + this.name
+        + "/restart.yml");
+    printWriter.append("- hosts: demo\n" + "  remote_user: root\n"
+        + "  gather_facts: no\n" + "  tasks:\n" + "    - name: copy config\n"
+        + "      copy:\n" + "       src : " + appType + ".conf" + "\n"
+        + "       dest: " + nginxPath + "/\n" + "\n" + "    - service:\n"
+        + "        name: nginx\n" + "        state: restarted\n"
     
     );
     printWriter.close();
-    return "nginx/"+this.name+"/restart.yml";
+    return "nginx/" + this.name + "/restart.yml";
   }
   
   public void runCmd(String cmd) {
@@ -148,8 +148,9 @@ public class Nginx {
     try {
       Process amProc = Runtime.getRuntime().exec(cmd);
       
-      final BufferedReader errReader = new BufferedReader(new InputStreamReader(
-          amProc.getErrorStream(), Charset.forName("UTF-8")));
+      final BufferedReader errReader = new BufferedReader(
+          new InputStreamReader(amProc.getErrorStream(),
+              Charset.forName("UTF-8")));
       final BufferedReader inReader = new BufferedReader(new InputStreamReader(
           amProc.getInputStream(), Charset.forName("UTF-8")));
       
@@ -229,8 +230,8 @@ public class Nginx {
     
     ngpara.appType = "kibana";
     
-    ng = Nginx.getNginx(ngpara);
-    ng.update();
+    ng = Nginx.updateLocal(ngpara);
+    ng.updateRemote();
     
     // Nginx ng = new Nginx();
     // ng.name = "demo.maplecloudy.com";

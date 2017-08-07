@@ -20,7 +20,6 @@ package org.elasticsearch.hadoop.yarn.client;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +46,6 @@ import org.elasticsearch.hadoop.yarn.am.ApplicationMaster;
 import org.elasticsearch.hadoop.yarn.cfg.Config;
 import org.elasticsearch.hadoop.yarn.compat.YarnCompat;
 import org.elasticsearch.hadoop.yarn.util.PropertiesUtils;
-import org.elasticsearch.hadoop.yarn.util.StringUtils;
 import org.elasticsearch.hadoop.yarn.util.YarnUtils;
 
 public class YarnLauncher {
@@ -82,6 +80,7 @@ public class YarnLauncher {
         appContext.setQueue(clientCfg.amQueue());
         appContext.setApplicationType(clientCfg.appType());
         appContext.setMaxAppAttempts(1);
+        appContext.setKeepContainersAcrossApplicationAttempts(true);
         YarnCompat.setApplicationTags(appContext, clientCfg.appTags());
 
         return appContext;
