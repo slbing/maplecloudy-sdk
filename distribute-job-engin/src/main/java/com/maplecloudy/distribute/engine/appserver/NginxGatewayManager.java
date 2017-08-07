@@ -227,25 +227,25 @@ public class NginxGatewayManager extends AppTask {
   
   public static void main(String args[]) {
     
-    NginxGateway ng = new NginxGateway();
-    ng.id = "1";
-    ng.confPath = "";
-    ng.portNginx = "5551";
-    ng.hostAddress = "10.0.4.1";
-    ng.portApp = "62794";
-    NginxGateway.addNginx(ng);
-
-    ng = new NginxGateway();
-    ng.id = "1";
-    ng.confPath = "";
-    ng.portNginx = "5552";
-    ng.hostAddress = "10.0.4.1";
-    ng.portApp = "62794";
-    NginxGateway.addNginx(ng);
-    
-    
-    NginxGatewayManager ngm = new NginxGatewayManager(new NginxGatewayPara());
-    ngm.run();
+//    NginxGateway ng = new NginxGateway();
+//    ng.id = "1";
+//    ng.confPath = "";
+//    ng.portNginx = "5551";
+//    ng.hostAddress = "10.0.4.1";
+//    ng.portApp = "62794";
+//    NginxGateway.addNginx(ng);
+//
+//    ng = new NginxGateway();
+//    ng.id = "1";
+//    ng.confPath = "";
+//    ng.portNginx = "5552";
+//    ng.hostAddress = "10.0.4.1";
+//    ng.portApp = "62794";
+//    NginxGateway.addNginx(ng);
+//    
+//    
+//    NginxGatewayManager ngm = new NginxGatewayManager(new NginxGatewayPara());
+//    ngm.run();
     
     // ngm.runCmd("/usr/local/bin/ansible-playbook ");
     // ngm.runCmd("ls");

@@ -17,7 +17,9 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import com.google.common.collect.Lists;
 import com.maplecloudy.distribute.engine.MapleCloudyEngineShellClient;
 import com.maplecloudy.distribute.engine.appserver.AppPara;
+import com.maplecloudy.distribute.engine.appserver.Nginx;
 import com.maplecloudy.distribute.engine.appserver.NginxGateway;
+import com.maplecloudy.distribute.engine.appserver.NginxGatewayPara;
 import com.maplecloudy.distribute.engine.apptask.AppTask;
 
 public class StartKibanaTask extends AppTask {
@@ -97,8 +99,21 @@ public class StartKibanaTask extends AppTask {
             checkInfo.add("App have run with appid:"
                 + report.getApplicationId() + ", now status"
                 + report.getYarnApplicationState()+",start update nginx!");
-//            NginxGateway ng = new NginxGateway();
-//            ng.
+
+            NginxGatewayPara ngpara = new NginxGatewayPara();
+
+            ngpara.nginxIp = this.para.nginxIp;
+            ngpara.appHost = report.getHost();
+            ngpara.domain = para.nginxDimain;
+            ngpara.appPort = this.getPort();
+            ngpara.proxyPort = para.port;
+            ngpara.nginxId = this.para.nginxIp;
+            ngpara.appConf = this.para.appConf;
+            ngpara.appType = this.para.getAppType();
+            
+            Nginx ng = Nginx.getNginx(ngpara);
+            ng.update();
+            
             updateNginx = false;
             
           } else {
@@ -115,7 +130,6 @@ public class StartKibanaTask extends AppTask {
     } catch (Exception e) {
       e.printStackTrace();
     }
-    
   }
   
   public boolean checkEnv() throws Exception {
