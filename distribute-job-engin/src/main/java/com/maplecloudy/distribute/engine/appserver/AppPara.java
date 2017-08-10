@@ -9,7 +9,7 @@ public abstract class AppPara {
   public String project = "";
   
   public String appConf = "";
-  public int appId = 0;
+  public int[] appId = {0};
   public int memory = 1024;
   public int cpu = 1;
   

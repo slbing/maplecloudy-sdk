@@ -15,10 +15,8 @@ import com.google.common.collect.Lists;
 import com.maplecloudy.distribute.engine.MapleCloudyEngineShellClient;
 import com.maplecloudy.distribute.engine.appserver.AppPara;
 import com.maplecloudy.distribute.engine.apptask.AppTask;
-import com.maplecloudy.distribute.engine.utils.EngineUtils;
 
 public class ElasticSearchTask extends AppTask {
-  
   
   public ElasticSearchTask(AppPara para) {
     super(para);
@@ -28,17 +26,17 @@ public class ElasticSearchTask extends AppTask {
   @Override
   public void run() {
     try {
-      checkInfo.clear();
-      this.checkInfo.add("Start Task!");
+      runInfo.clear();
+      this.runInfo.add("Start Task:" + this.para.getName());
       if (checkTaskApp() != null) return;
       if (!this.checkEnv()) return;
       
       final ElatisticSearchPara kpara = (ElatisticSearchPara) this.para;
       List<String> cmds = Lists.newArrayList();
       cmds.add("-m");
-      cmds.add(""+kpara.memory);
+      cmds.add("" + kpara.memory);
       cmds.add("-cpu");
-      cmds.add(""+kpara.cpu);
+      cmds.add("" + kpara.cpu);
       cmds.add("-sc");
       cmds.add(kpara.getScFile());
       cmds.add("-jar");
@@ -62,21 +60,20 @@ public class ElasticSearchTask extends AppTask {
             MapleCloudyEngineShellClient mcsc = new MapleCloudyEngineShellClient(
                 new YarnConfiguration(conf));
             ApplicationId appid = mcsc.submitApp(args, kpara.getName());
-            checkInfo.add("kibana submit yarn sucess,with application id:"
+            runInfo.add("kibana submit yarn sucess,with application id:"
                 + appid);
             return appid;
           } catch (Exception e) {
             e.printStackTrace();
-            checkInfo.add("run kibana error with:" + e.getMessage());
+            runInfo.add("run kibana error with:" + e.getMessage());
             return null;
           }
           
         }
         
       });
-      if(appid != null)
-        this.appids.add(appid);
-      // checkInfo.add("yarn app have submit");
+      if (appid != null) this.appids.add(appid);
+      // runInfo.add("yarn app have submit");
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -90,16 +87,16 @@ public class ElasticSearchTask extends AppTask {
     // check engint
     bret = checkEngine();
     if (fs.exists(new Path(ElasticsearchInstallInfo.getPack()))) {
-      checkInfo.add("kibana install is ok!");
+      runInfo.add("ElasticSearch install is ok!");
     } else {
-      checkInfo.add(ElasticsearchInstallInfo.getPack() + " not exist!");
+      runInfo.add(ElasticsearchInstallInfo.getPack() + " not exist!");
       bret = false;
     }
     
     ElatisticSearchPara kpara = (ElatisticSearchPara) this.para;
-    checkInfo.add("GenerateConf with para.");
-    final String confFile = kpara.GenerateConf(port);
-    checkInfo.add("GenerateConf sucess: " + confFile);
+    runInfo.add("GenerateConf with para.");
+    final String confFile = kpara.GenerateConf();
+    runInfo.add("GenerateConf sucess: " + confFile);
     UserGroupInformation ugi = UserGroupInformation.createProxyUser(
         this.para.user, UserGroupInformation.getLoginUser());
     
@@ -112,21 +109,39 @@ public class ElasticSearchTask extends AppTask {
               confFile));
         } catch (IllegalArgumentException | IOException e) {
           e.printStackTrace();
-          checkInfo.add("intall :" + confFile + " error with:" + e.getMessage());
+          runInfo.add("intall :" + confFile + " error with:" + e.getMessage());
           return false;
         }
-        checkInfo.add("Install confile succes!");
+        runInfo.add("Install confile succes!");
         return true;
       }
       
     });
     if (!bupload) bret = bupload;
-    ugi = UserGroupInformation.createProxyUser(this.para.user,
-        UserGroupInformation.getLoginUser());
     
+    runInfo.add("Generate Jvm Options file with para:" + para.getName());
+    final String jvmFile = kpara.GenerateJvmOptions();
+    runInfo.add("Generate Jvm Options file sucess: " + jvmFile);
+    
+    bupload = ugi.doAs(new PrivilegedAction<Boolean>() {
+      @Override
+      public Boolean run() {
+        try {
+          FileSystem fs = FileSystem.get(conf);
+          fs.copyFromLocalFile(false, true, new Path(jvmFile),
+              new Path(jvmFile));
+        } catch (IllegalArgumentException | IOException e) {
+          e.printStackTrace();
+          runInfo.add("intall :" + jvmFile + " error with:" + e.getMessage());
+          return false;
+        }
+        runInfo.add("Install Jvm Options file  succes!");
+        return true;
+      }
+      
+    });
     if (!bupload) bret = bupload;
     
-    //send update ngix
     return bret;
     
   }
@@ -136,5 +151,4 @@ public class ElasticSearchTask extends AppTask {
     return para.getName();
   }
   
- 
 }
