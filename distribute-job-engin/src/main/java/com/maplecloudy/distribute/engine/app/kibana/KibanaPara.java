@@ -77,7 +77,7 @@ public class KibanaPara extends AppPara {
   @Override
   public String getName() {
     return this.user + "|" + this.project + "|" + this.appConf + "|"
-        + this.appId;
+        + this.appId[0];
   }
   
   @Override

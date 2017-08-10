@@ -4,7 +4,7 @@
   tasks:
     - name: copy config
       copy:
-       src : KIBANA.conf
+       src : JETTY.conf
        dest: /usr/local/webservices/nginx/conf/conf.d/
 
     - service:

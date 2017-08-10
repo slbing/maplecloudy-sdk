@@ -5,6 +5,8 @@ import java.util.List;
 import com.google.common.collect.Lists;
 import com.maplecloudy.distribute.engine.app.jetty.JettyPara;
 import com.maplecloudy.distribute.engine.app.jetty.StartJettyTask;
+import com.maplecloudy.distribute.engine.app.elasticsearch.ElasticSearchTask;
+import com.maplecloudy.distribute.engine.app.elasticsearch.ElatisticSearchPara;
 import com.maplecloudy.distribute.engine.app.kibana.KibanaPara;
 import com.maplecloudy.distribute.engine.app.kibana.StartKibanaTask;
 import com.maplecloudy.distribute.engine.apptask.AppTask;
@@ -15,7 +17,13 @@ public class AppImpl implements IApp {
   public AppImpl() {
     
   }
-  
+
+  public int startElasticSearch(ElatisticSearchPara para)
+  {
+    ElasticSearchTask task = new ElasticSearchTask(para);
+    TaskPool.addTask(task);
+    return 0;
+  } 
   public int startKibana(KibanaPara para) {
     System.out.println("startKibana:" + para.getName());
     StartKibanaTask task = new StartKibanaTask(para);
@@ -45,7 +53,7 @@ public class AppImpl implements IApp {
     System.out.println("getAppTaskInfo:" + para.getName());
     AppTask task = TaskPool.taskMap.get(para.getName());
     if (task != null) {
-      return task.checkInfo;
+      return task.runInfo;
     } else {
       return Lists.newArrayList();
     }
@@ -95,7 +103,7 @@ public class AppImpl implements IApp {
     System.out.println("getAppTaskInfo:" + para.getName());
     AppTask task = TaskPool.taskMap.get(para.getName());
     if (task != null) {
-      return task.checkInfo;
+      return task.runInfo;
     } else {
       return Lists.newArrayList();
     }
@@ -130,7 +138,7 @@ public class AppImpl implements IApp {
       para.user = "maplecloudy";
       para.project = "11";
       para.appConf = "11";
-      para.appId = 0;
+//      para.appId = 0;
       para.memory = 1024;
       para.cpu = 1;
       
@@ -153,7 +161,7 @@ public class AppImpl implements IApp {
       para.user = "gxiang";
       para.project = "11";
       para.appConf = "11";
-      para.appId = 0;
+//      para.appId = 0;
       para.memory = 1024;
       para.cpu = 1;
       
@@ -179,5 +187,4 @@ public class AppImpl implements IApp {
       server.stopJettyTask(para);
     }
   }
-  
 }

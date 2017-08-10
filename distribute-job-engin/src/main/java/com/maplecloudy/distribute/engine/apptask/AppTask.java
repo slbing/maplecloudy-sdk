@@ -47,15 +47,15 @@ public abstract class AppTask extends Configured implements Runnable {
   
   public abstract String getName();
   
-  public List<String> checkInfo = new ArrayList<String>();
+  public List<String> runInfo = new ArrayList<String>();
   
   public boolean checkEngine() throws IOException {
     boolean bret = true;
     final FileSystem fs = FileSystem.get(getConf());
     if (fs.exists(new Path(EngineInstallInfo.getPack()))) {
-      checkInfo.add("Maplecloudy Engine install ok!");
+      runInfo.add("Maplecloudy Engine install ok!");
     } else {
-      checkInfo.add("Try install Maplecloudy engine!");
+      runInfo.add("Try install Maplecloudy engine!");
       UserGroupInformation ugi = UserGroupInformation.createProxyUser(
           "maplecloudy", UserGroupInformation.getLoginUser());
       bret = ugi.doAs(new PrivilegedAction<Boolean>() {
@@ -67,11 +67,11 @@ public abstract class AppTask extends Configured implements Runnable {
                 new Path(EngineInstallInfo.getPack()));
           } catch (IllegalArgumentException | IOException e) {
             e.printStackTrace();
-            checkInfo.add("Install Maplecloudy engine faild whit:"
+            runInfo.add("Install Maplecloudy engine faild whit:"
                 + e.getMessage());
             return false;
           }
-          checkInfo.add("Install Maplecloudy engine succes!");
+          runInfo.add("Install Maplecloudy engine succes!");
           return true;
         }
         
@@ -97,7 +97,7 @@ public abstract class AppTask extends Configured implements Runnable {
         as.diagnostics = report.getDiagnostics();
         as.host = report.getHost();
         as.port = this.getPort();
-        checkInfo.add("App has run with appid:" + report.getApplicationId());
+//        checkInfo.add("App has run with appid:" + report.getApplicationId());
         this.appids.add(report.getApplicationId());
         las.add(as);
         Collections.sort(las, new Comparator<AppStatus>() {
@@ -139,7 +139,7 @@ public abstract class AppTask extends Configured implements Runnable {
         if (report.getYarnApplicationState() != YarnApplicationState.FAILED
             && report.getYarnApplicationState() != YarnApplicationState.FINISHED
             && report.getYarnApplicationState() != YarnApplicationState.KILLED) {
-          checkInfo.add("Stop app as status:" + report.getApplicationId());
+          runInfo.add("Stop app as status:" + report.getApplicationId());
           yarnClient.killApplication(report.getApplicationId());
           bret = 0;
         }
@@ -158,12 +158,12 @@ public abstract class AppTask extends Configured implements Runnable {
         .singleton(this.para.getAppType()));
     for (ApplicationReport report : reports) {
       if (report.getName().equals(this.getName())) {
-        checkInfo.add("App has run with appid:" + report.getApplicationId());
+        runInfo.add("App has run with appid:" + report.getApplicationId());
         
         if (report.getYarnApplicationState() == YarnApplicationState.FAILED
             || report.getYarnApplicationState() == YarnApplicationState.FINISHED
             || report.getYarnApplicationState() == YarnApplicationState.KILLED) {
-          checkInfo.add("App have run with appid:" + report.getApplicationId()
+          runInfo.add("App have run with appid:" + report.getApplicationId()
               + ", and not runing with status:"
               + report.getYarnApplicationState());
         } else {

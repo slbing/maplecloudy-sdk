@@ -19,7 +19,6 @@ import com.google.common.collect.Lists;
 import com.maplecloudy.distribute.engine.MapleCloudyEngineShellClient;
 import com.maplecloudy.distribute.engine.appserver.AppPara;
 import com.maplecloudy.distribute.engine.appserver.Nginx;
-import com.maplecloudy.distribute.engine.appserver.NginxGateway;
 import com.maplecloudy.distribute.engine.appserver.NginxGatewayPara;
 import com.maplecloudy.distribute.engine.apptask.AppTask;
 
@@ -33,8 +32,8 @@ public class StartKibanaTask extends AppTask {
 	@Override
 	public void run() {
 		try {
-			checkInfo.clear();
-			this.checkInfo.add("Start Task!");
+		  runInfo.clear();
+			this.runInfo.add("Start Task:"+this.para.getName());
 			ApplicationId appid = this.checkTaskApp();
 			if (appid != null) {
 				updateNginx(appid);
@@ -72,11 +71,11 @@ public class StartKibanaTask extends AppTask {
 						MapleCloudyEngineShellClient mcsc = new MapleCloudyEngineShellClient(
 								new YarnConfiguration(conf));
 						ApplicationId appid = mcsc.submitApp(args, kpara.getName());
-						checkInfo.add("kibana submit yarn sucess,with application id:" + appid);
+						runInfo.add("kibana submit yarn sucess,with application id:" + appid);
 						return appid;
 					} catch (Exception e) {
 						e.printStackTrace();
-						checkInfo.add("run kibana error with:" + e.getMessage());
+						runInfo.add("run kibana error with:" + e.getMessage());
 						return null;
 					}
 
@@ -88,7 +87,7 @@ public class StartKibanaTask extends AppTask {
 
 				updateNginx(appid);
 			}
-			// checkInfo.add("yarn app have submit");
+			// runInfo.add("yarn app have submit");
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -107,12 +106,12 @@ public class StartKibanaTask extends AppTask {
 			if (report.getYarnApplicationState() == YarnApplicationState.FAILED
 					|| report.getYarnApplicationState() == YarnApplicationState.FINISHED
 					|| report.getYarnApplicationState() == YarnApplicationState.KILLED) {
-				checkInfo.add("App have run with appid:" + report.getApplicationId() + ", and finishedwith with status:"
+				runInfo.add("App have run with appid:" + report.getApplicationId() + ", and finishedwith with status:"
 						+ report.getYarnApplicationState());
 				updateNginx = false;
 			} else if (report.getYarnApplicationState() == YarnApplicationState.RUNNING) {
 
-				checkInfo.add("App have run with appid:" + report.getApplicationId() + ", now status"
+				runInfo.add("App have run with appid:" + report.getApplicationId() + ", now status"
 						+ report.getYarnApplicationState() + ",start update nginx!");
 
 				NginxGatewayPara ngpara = new NginxGatewayPara();
@@ -139,9 +138,9 @@ public class StartKibanaTask extends AppTask {
 
 				updateNginx = false;
 
-				checkInfo.add("update nginx finished!");
+				runInfo.add("update nginx finished!");
 			} else {
-				checkInfo.add("App have run with appid:" + report.getApplicationId() + ", now status is::"
+				runInfo.add("App have run with appid:" + report.getApplicationId() + ", now status is::"
 						+ report.getYarnApplicationState());
 			}
 			Thread.sleep(5000);
@@ -155,16 +154,16 @@ public class StartKibanaTask extends AppTask {
 		// check engint
 		bret = checkEngine();
 		if (fs.exists(new Path(KibanaInstallInfo.getPack()))) {
-			checkInfo.add("kibana install is ok!");
+			runInfo.add("kibana install is ok!");
 		} else {
-			checkInfo.add(KibanaInstallInfo.getPack() + " not exist!");
+			runInfo.add(KibanaInstallInfo.getPack() + " not exist!");
 			bret = false;
 		}
 
 		KibanaPara kpara = (KibanaPara) this.para;
-		checkInfo.add("GenerateConf with para.");
+		runInfo.add("GenerateConf with para.");
 		final String confFile = kpara.GenerateConf(this.getPort());
-		checkInfo.add("GenerateConf sucess: " + confFile);
+		runInfo.add("GenerateConf sucess: " + confFile);
 		UserGroupInformation ugi = UserGroupInformation.createProxyUser(this.para.user,
 				UserGroupInformation.getLoginUser());
 
@@ -176,19 +175,19 @@ public class StartKibanaTask extends AppTask {
 					fs.copyFromLocalFile(false, true, new Path(confFile), new Path(confFile));
 				} catch (IllegalArgumentException | IOException e) {
 					e.printStackTrace();
-					checkInfo.add("intall :" + confFile + " error with:" + e.getMessage());
+					runInfo.add("intall :" + confFile + " error with:" + e.getMessage());
 					return false;
 				}
-				checkInfo.add("Install confile succes!");
+				runInfo.add("Install confile succes!");
 				return true;
 			}
 
 		});
 		if (!bupload)
 			bret = bupload;
-		checkInfo.add("Generate sc with para.");
+		runInfo.add("Generate sc with para.");
 		final String scFile = kpara.GenerateSc();
-		checkInfo.add("Generate sc sucess: " + scFile);
+		runInfo.add("Generate sc sucess: " + scFile);
 		ugi = UserGroupInformation.createProxyUser(this.para.user, UserGroupInformation.getLoginUser());
 		bupload = ugi.doAs(new PrivilegedAction<Boolean>() {
 			@Override
@@ -198,10 +197,10 @@ public class StartKibanaTask extends AppTask {
 					fs.copyFromLocalFile(false, true, new Path(scFile), new Path(scFile));
 				} catch (IllegalArgumentException | IOException e) {
 					e.printStackTrace();
-					checkInfo.add("intall :" + scFile + " error with:" + e.getMessage());
+					runInfo.add("intall :" + scFile + " error with:" + e.getMessage());
 					return false;
 				}
-				checkInfo.add("Install scfile succes!");
+				runInfo.add("Install scfile succes!");
 				return true;
 			}
 
