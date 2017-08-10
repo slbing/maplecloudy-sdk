@@ -162,11 +162,12 @@ public class Nginx {
             String line = errReader.readLine();
             while ((line != null) && !isInterrupted()) {
               System.err.println("cmd output------:" + line);
-              line = errReader.readLine();
               if(line.contains("fail")) this.success=false;
+              line = errReader.readLine();
+              
             }
           } catch (IOException ioe) {
-            // LOG.warn("Error reading the error stream", ioe);
+             System.out.println("Error reading the error stream:"+ioe.getMessage());
           }
         }
       };
@@ -177,12 +178,13 @@ public class Nginx {
             String line = inReader.readLine();
             while ((line != null) && !isInterrupted()) {
               System.out.println("cmd output------:" + line);
-              
-              line = inReader.readLine();
               if(line.contains("fail")) this.success=false;
+              line = inReader.readLine();
+              
             }
           } catch (IOException ioe) {
             // LOG.warn("Error reading the out stream", ioe);
+        	  System.out.println("Error reading the error stream:"+ioe.getMessage());
           }
         }
       };

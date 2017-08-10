@@ -18,16 +18,16 @@ public class AppServer {
   }
   
   public static void main(String[] args) throws IOException {
-    System.out.println(ReflectData.get().getSchema(String.class));
-//    int port = 9002;
-//    if (args.length > 0)
-//    
-//    port = Integer.parseInt(args[0]);
-//    System.out.println("Starting server");
-//    // usually this would be another app, but for simplicity
-//    startServer(port);
-//    System.out.println("Server started");
-//    
-//    System.out.println(ReflectData.get().getProtocol(IApp.class));
+//    System.out.println(ReflectData.get().getSchema(String.class));
+    int port = 9002;
+    if (args.length > 0)
+    
+    port = Integer.parseInt(args[0]);
+    System.out.println("Starting server");
+    // usually this would be another app, but for simplicity
+    startServer(port);
+    System.out.println("Server started");
+    
+    System.out.println(ReflectData.get().getProtocol(IApp.class));
   }
 }

@@ -1,0 +1,12 @@
+- hosts: demo
+  remote_user: root
+  gather_facts: no
+  tasks:
+    - name: copy config
+      copy:
+       src : KIBANA.conf
+       dest: /usr/local/webservices/nginx/conf/conf.d/
+
+    - service:
+        name: nginx
+        state: restarted
