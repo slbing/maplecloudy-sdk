@@ -213,7 +213,6 @@ public class StartJettyTask extends AppTask {
 
 		// send update ngix
 		return bret;
-
 	}
 
 	@Override

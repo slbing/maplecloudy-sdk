@@ -2,11 +2,13 @@ package com.maplecloudy.distribute.engine.appserver;
 
 import java.util.List;
 
+import org.codehaus.jettison.json.JSONException;
+
 import com.google.common.collect.Lists;
-import com.maplecloudy.distribute.engine.app.jetty.JettyPara;
-import com.maplecloudy.distribute.engine.app.jetty.StartJettyTask;
 import com.maplecloudy.distribute.engine.app.elasticsearch.ElasticSearchTask;
 import com.maplecloudy.distribute.engine.app.elasticsearch.ElatisticSearchPara;
+import com.maplecloudy.distribute.engine.app.jetty.JettyPara;
+import com.maplecloudy.distribute.engine.app.jetty.StartJettyTask;
 import com.maplecloudy.distribute.engine.app.kibana.KibanaPara;
 import com.maplecloudy.distribute.engine.app.kibana.StartKibanaTask;
 import com.maplecloudy.distribute.engine.apptask.AppTask;
@@ -18,6 +20,7 @@ public class AppImpl implements IApp {
     
   }
 
+  
   public int startElasticSearch(ElatisticSearchPara para)
   {
     ElasticSearchTask task = new ElasticSearchTask(para);
@@ -124,13 +127,16 @@ public class AppImpl implements IApp {
     }
   }
   
-  public static void main(String args[]) throws InterruptedException {
+  public static void main(String args[]) throws InterruptedException, JSONException {
     
-    String type;
+    String type="";
     AppImpl server = new AppImpl();
     
+  
+  
+    
     // type = "kibana";
-    type = "jetty";
+    //type = "jetty";
     
     if (type == "kibana") {
       KibanaPara para = new KibanaPara();
@@ -187,4 +193,5 @@ public class AppImpl implements IApp {
       server.stopJettyTask(para);
     }
   }
+
 }

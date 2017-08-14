@@ -12,14 +12,14 @@ public class AppServer {
   private static Server server = null;
   
   private static void startServer(int port) throws IOException {
-    server = new HttpServer(new ReflectResponder(IApp.class, new AppImpl()), port);
+    server = new HttpServer(new ReflectResponder(IApp2.class, new AppImpl2()), port);
     server.start();
     // the server implements the Mail protocol (MailImpl)
   }
   
   public static void main(String[] args) throws IOException {
 //    System.out.println(ReflectData.get().getSchema(String.class));
-    int port = 9002;
+    int port = 9003;
     if (args.length > 0)
     
     port = Integer.parseInt(args[0]);
@@ -28,6 +28,6 @@ public class AppServer {
     startServer(port);
     System.out.println("Server started");
     
-    System.out.println(ReflectData.get().getProtocol(IApp.class));
+    System.out.println(ReflectData.get().getProtocol(IApp2.class));
   }
 }

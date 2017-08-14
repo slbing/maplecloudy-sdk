@@ -55,7 +55,8 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
         + "  -m<string>   : memory set for this app,default 256M\n"
         + "  -cpu<string>   : CPU Virtual Cores set for this app, defaule 1\n"
         + "  -damon   : after run the main class, then wait for kill the application\n"
-        + "  -type <string>   : the application type ,default is MAPLECLOUDY-APP\n";
+        + "  -type <string>   : the application type ,default is MAPLECLOUDY-APP\n"
+        + "  -f   : list of files to be used by this appliation\n";
     
     System.err.println(message);
     System.exit(1);
@@ -68,6 +69,7 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
     String margs = null;
     String war = null;
     List<String> arcs = Lists.newArrayList();
+    List<String> files = Lists.newArrayList();
     int memory = 256;
     boolean damon = false;
     String shellScript = null;
@@ -101,6 +103,12 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
           usage();
         }
         war = args[i];
+      } else if (args[i].equals("-f")) {
+        i++;
+        if (i >= args.length) {
+          usage();
+        }
+        files.add(args[i]);
       } else if (args[i].equals("-args")) {
         i++;
         if (i >= args.length) {
@@ -236,7 +244,17 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
       tlr.setVisibility(LocalResourceVisibility.PUBLIC);
       hmlr.put(jarf.getPath().getName(), tlr);
     }
-    
+    for (String f : files) {
+      LocalResource tlr = Records.newRecord(LocalResource.class);
+      FileStatus fstatus = fs.getFileStatus(new Path(f));
+      tlr.setResource(ConverterUtils.getYarnUrlFromPath(fstatus.getPath()));
+      tlr.setSize(fstatus.getLen());
+      tlr.setTimestamp(fstatus.getModificationTime());
+      tlr.setType(LocalResourceType.FILE);
+      tlr.setVisibility(LocalResourceVisibility.PUBLIC);
+      
+      hmlr.put(fstatus.getPath().getName(), tlr);
+    }
     for (String arc : arcs) {
       LocalResource tlr = Records.newRecord(LocalResource.class);
       FileStatus jarf = fs.getFileStatus(new Path(arc));

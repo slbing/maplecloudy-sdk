@@ -10,5 +10,4 @@ public class JettyInstallInfo {
   {
     return "/user/"+kii.user+"/"+kii.intallPath+"/"+kii.version+"/"+kii.pack;
   }
-  
 }
