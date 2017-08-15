@@ -1,0 +1,33 @@
+{
+	"user":"gxiang",
+	"project":"12",
+	"appId":"202",
+	"appConf":"12",
+	"memory":1024,
+	"cpu":1,
+	"domain":"jetty01",
+	"nginxIp":"60.205.171.123",
+	"nginxDomain":"maplecloudy.com",
+	"port":0,
+	"proxyPort":55551,
+	"defaultFS":"hdfs:\/\/hadoop02.aliyun.bj.maplecloudy.com:8020",
+	"resourceManagerAddress":"hadoop02.aliyun.bj.maplecloudy.com:8032",
+	"isDistribution":false,
+	"run.shell":"sh jetty.sh",
+	"type":"JETTY",
+	"conf.files":[
+					{
+						"fileName":"jetty.xml",
+						"<port>":8080
+					},
+					{
+						"fileName":"jetty.sh"
+					}
+				],
+	"files":[
+				"\/user\/gxiang\/maple\/gxiang\/rs-dist-0.0.1-SNAPSHOT-bin\/lib\/rs-0.0.1-SNAPSHOT.war"
+			],
+	"arcs":[
+				"\/user\/maplecloudy\/com\/webserver\/jetty\/7.6.21\/jetty-distribution-7.6.21.v20160908.zip"
+			]
+}
