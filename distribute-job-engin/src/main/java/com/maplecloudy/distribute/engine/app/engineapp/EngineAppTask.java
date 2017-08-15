@@ -25,6 +25,7 @@ import org.codehaus.jettison.json.JSONObject;
 import com.google.common.collect.Lists;
 import com.maplecloudy.distribute.engine.MapleCloudyEngineShellClient;
 import com.maplecloudy.distribute.engine.app.jetty.JettyInstallInfo;
+import com.maplecloudy.distribute.engine.app.kibana.KibanaInstallInfo;
 import com.maplecloudy.distribute.engine.appserver.Nginx;
 import com.maplecloudy.distribute.engine.appserver.NginxGatewayPara;
 import com.maplecloudy.distribute.engine.apptask.AppTaskBaseline;
@@ -36,7 +37,7 @@ public class EngineAppTask extends AppTaskBaseline {
   public EngineAppTask(JSONObject json) {
     super(json);
     this.json = json;
-   
+    
   }
   
   @Override
@@ -176,13 +177,32 @@ public class EngineAppTask extends AppTaskBaseline {
     FileSystem fs = FileSystem.get(this.getConf());
     // check engint
     bret = checkEngine();
-    if (fs.exists(new Path(JettyInstallInfo.getPack()))) {
-      runInfo.add("jetty install is ok!");
-    } else {
-      runInfo.add(JettyInstallInfo.getPack() + " not exist!");
-      bret = false;
+    
+    // check files and archives
+    String path = "";
+    for (int i = 0; i < json.getJSONArray("files").length(); i++) {
+      
+      path = json.getJSONArray("files").getString(i);
+      if (fs.exists(new Path(path))) {
+        runInfo.add(path + " is ok!");
+      } else {
+        runInfo.add(path + " not exist!");
+        bret = false;
+      }
     }
     
+    for (int i = 0; i < json.getJSONArray("arcs").length(); i++) {
+      
+      path = json.getJSONArray("arcs").getString(i);
+      if (fs.exists(new Path(path))) {
+        runInfo.add(path + " is ok!");
+      } else {
+        runInfo.add(path + " not exist!");
+        bret = false;
+      }
+    }
+    
+    // generate confs and upload
     String filePath = "";
     for (int i = 0; i < json.getJSONArray("conf.files").length(); i++) {
       
@@ -249,7 +269,7 @@ public class EngineAppTask extends AppTaskBaseline {
           runInfo.add("intall :" + filePath + " error with:" + e.getMessage());
           return false;
         }
-        runInfo.add("Install confile succes! "+ filePath);
+        runInfo.add("Install confile succes! " + filePath);
         return true;
       }
       
@@ -257,19 +277,20 @@ public class EngineAppTask extends AppTaskBaseline {
     return true;
   }
   
-  public String replacePara(String str, JSONObject json) throws JSONException, IOException {
+  public String replacePara(String str, JSONObject json)
+      throws JSONException, IOException {
     
     Iterator it = json.keys();
     String key = "";
     String value = "";
     while (it.hasNext()) {
-       
-        key = (String) it.next();
-        if(key.equals("<port>")){
-          str = str.replace(key,""+getPort());
-        }
-        value = json.getString(key);
-        str = str.replace(key, value); 
+      
+      key = (String) it.next();
+      if (key.equals("<port>")) {
+        str = str.replace(key, "" + getPort());
+      }
+      value = json.getString(key);
+      str = str.replace(key, value);
     }
     
     return str;
