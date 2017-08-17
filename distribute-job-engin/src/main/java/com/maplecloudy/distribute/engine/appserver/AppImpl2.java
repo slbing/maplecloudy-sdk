@@ -136,18 +136,19 @@ public class AppImpl2 implements IApp2 {
     AppImpl2 server = new AppImpl2();
     
     JSONObject json = new JSONObject();
-    
+
     json.put("user", "gxiang");
-    json.put("project", "13");
-    JSONArray appArr = new JSONArray();
-    appArr.put(203);
-    appArr.put(204);
-    appArr.put(205);
-    json.put("appId", appArr);
-    json.put("appConf", "13");
+    json.put("project", "119");
+    JSONArray jarr = new JSONArray();
+    jarr.put(268);
+    jarr.put(269);
+    jarr.put(270);
+    jarr.put(271);
+    json.put("appId", jarr);
+    json.put("appConf", "37");
     json.put("memory", 1024);
     json.put("cpu", 1);
-    json.put("domain", "kibana01");
+    json.put("domain", "www.ads");
     json.put("nginxIp", "60.205.171.123");
     json.put("nginxDomain", "maplecloudy.com");
     json.put("port", 0);
@@ -156,44 +157,46 @@ public class AppImpl2 implements IApp2 {
     json.put("resourceManagerAddress",
         "hadoop02.aliyun.bj.maplecloudy.com:8032");
     json.put("isDistribution", false);
-    json.put("run.shell", "sh kibana.sh");
-    json.put("type", "KIBANA");
+    json.put("run.shell", "sh jetty.sh");
+    json.put("type", "JETTY");
+    
     
     //
     JSONArray confFiles = new JSONArray();
     JSONObject file = new JSONObject();
-    file.put("fileName", "kibana.yml");
-    file.put("<port>", 5601);
-    file.put("<es_url:es_port>", "10.0.16.21:9200");
+    file.put("fileName", "jetty.xml");
+    file.put("<port>", 8080);
+    
     
     JSONObject shell = new JSONObject();
-    shell.put("fileName", "kibana.sh");
+    shell.put("fileName", "jetty.sh");
+     
     
     confFiles.put(file);
     confFiles.put(shell);
-    
+
     //
     JSONArray files = new JSONArray();
+    files.put("/user/gxiang/maple/gxiang/rs-dist-0.0.1-SNAPSHOT-bin/lib/rs-0.0.1-SNAPSHOT.war");
     
     //
     JSONArray arcs = new JSONArray();
-    arcs.put(
-        "/user/maplecloudy/com/elasticsearch/kibana/5.3.0/kibana-5.3.0-linux-x86_64.zip");
-    
+    arcs.put("/user/maplecloudy/com/elasticsearch/kibana/5.3.0/kibana-5.3.0-linux-x86_64.zip");
+
     json.put("conf.files", confFiles);
     json.put("files", files);
     json.put("arcs", arcs);
     
     System.out.println(json);
     
-//    server.startEngineApp(json.toString());
+    server.startEngineApp(json.toString());
 //    Thread.sleep(10000);
 //    List<AppStatus> la = server.getAppStatus(json.toString());
 //    Thread.sleep(1000);
 //    List<String> ls = server.getAppTaskInfo(json.toString());
-//    Thread.sleep(1000);
+    Thread.sleep(10000);
     server.stopAppTask(json.toString());
-    
+
   }
   
 }

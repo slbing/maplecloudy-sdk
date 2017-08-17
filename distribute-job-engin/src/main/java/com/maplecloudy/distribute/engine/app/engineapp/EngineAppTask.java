@@ -24,8 +24,6 @@ import org.codehaus.jettison.json.JSONObject;
 
 import com.google.common.collect.Lists;
 import com.maplecloudy.distribute.engine.MapleCloudyEngineShellClient;
-import com.maplecloudy.distribute.engine.app.jetty.JettyInstallInfo;
-import com.maplecloudy.distribute.engine.app.kibana.KibanaInstallInfo;
 import com.maplecloudy.distribute.engine.appserver.Nginx;
 import com.maplecloudy.distribute.engine.appserver.NginxGatewayPara;
 import com.maplecloudy.distribute.engine.apptask.AppTaskBaseline;
@@ -65,8 +63,8 @@ public class EngineAppTask extends AppTaskBaseline {
       
       for (int i = 0; i < json.getJSONArray("conf.files").length(); i++) {
         cmds.add("-f");
-        cmds.add(json.getJSONArray("conf.files").getJSONObject(i)
-            .getString("fileName"));
+        cmds.add(converRemotePath(json.getJSONArray("conf.files")
+            .getJSONObject(i).getString("fileName")));
       }
       
       for (int i = 0; i < json.getJSONArray("files").length(); i++) {
@@ -203,17 +201,14 @@ public class EngineAppTask extends AppTaskBaseline {
     }
     
     // generate confs and upload
-    String filePath = "";
+    String fileName = "";
     for (int i = 0; i < json.getJSONArray("conf.files").length(); i++) {
       
       JSONObject f = (JSONObject) json.getJSONArray("conf.files").get(i);
       runInfo.add("Generate file with para:" + f.getString("fileName"));
-      filePath = processConfigFile(f);
-      this.json.getJSONArray("conf.files").getJSONObject(i).put("fileName",
-          filePath);
-      runInfo.add("GenerateConf sucess: " + filePath);
-      
-      boolean b = uploadFile(filePath);
+      fileName = processConfigFile(f);
+      runInfo.add("GenerateConf sucess: " + fileName);
+      boolean b = uploadFile(converRemotePath(fileName));
       if (!b) bret = bret;
     }
     
@@ -246,7 +241,7 @@ public class EngineAppTask extends AppTaskBaseline {
     printWriter.flush();
     printWriter.close();
     
-    return filePath;
+    return fileName;
   }
   
   public boolean uploadFile(final String filePath) throws IOException {
@@ -294,5 +289,10 @@ public class EngineAppTask extends AppTaskBaseline {
     }
     
     return str;
+  }
+  
+  public String converRemotePath(String fileName) {
+    return this.user + "/" + this.project + "/" + this.appConf + "/"
+        + this.appId + "/" + fileName;
   }
 }
