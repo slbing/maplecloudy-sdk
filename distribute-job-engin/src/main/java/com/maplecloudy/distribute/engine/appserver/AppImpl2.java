@@ -45,6 +45,7 @@ public class AppImpl2 implements IApp2 {
     String appName = "";
     try {
       json = new JSONObject(para);
+      json.put("appId", json.getJSONArray("appId").getInt(0));
       appName = json.getString("user") + "|" + json.getString("project") + "|"
           + json.getString("appConf") + "|" + json.getString("appId");
       
@@ -74,6 +75,7 @@ public class AppImpl2 implements IApp2 {
     String appName = "";
     try {
       json = new JSONObject(para);
+      json.put("appId", json.getJSONArray("appId").getInt(0));
       appName = json.getString("user") + "|" + json.getString("project") + "|"
           + json.getString("appConf") + "|" + json.getString("appId");
       
@@ -184,8 +186,8 @@ public class AppImpl2 implements IApp2 {
     
     System.out.println(json);
     
-    server.startEngineApp(json.toString());
-    Thread.sleep(10000);
+//    server.startEngineApp(json.toString());
+//    Thread.sleep(10000);
 //    List<AppStatus> la = server.getAppStatus(json.toString());
 //    Thread.sleep(1000);
 //    List<String> ls = server.getAppTaskInfo(json.toString());
