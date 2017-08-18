@@ -8,12 +8,7 @@ import org.codehaus.jettison.json.JSONObject;
 
 import com.google.common.collect.Lists;
 import com.maplecloudy.distribute.engine.app.engineapp.EngineAppTask;
-import com.maplecloudy.distribute.engine.app.kibana.KibanaInstallInfo;
-import com.maplecloudy.distribute.engine.app.kibana.KibanaPara;
-import com.maplecloudy.distribute.engine.app.kibana.StartKibanaTask;
-import com.maplecloudy.distribute.engine.apptask.AppTask;
 import com.maplecloudy.distribute.engine.apptask.AppTaskBaseline;
-import com.maplecloudy.distribute.engine.apptask.TaskPool;
 import com.maplecloudy.distribute.engine.apptask.TaskPool2;
 
 public class AppImpl2 implements IApp2 {
@@ -141,9 +136,6 @@ public class AppImpl2 implements IApp2 {
     json.put("project", "119");
     JSONArray jarr = new JSONArray();
     jarr.put(268);
-    jarr.put(269);
-    jarr.put(270);
-    jarr.put(271);
     json.put("appId", jarr);
     json.put("appConf", "37");
     json.put("memory", 1024);
@@ -157,31 +149,28 @@ public class AppImpl2 implements IApp2 {
     json.put("resourceManagerAddress",
         "hadoop02.aliyun.bj.maplecloudy.com:8032");
     json.put("isDistribution", false);
-    json.put("run.shell", "sh jetty.sh");
-    json.put("type", "JETTY");
-    
+    json.put("run.shell", "sh build.sh -fs demo.zip/home/maple/.maple/user/gxiang/build/gxiang/rs/rs-dist/target/rs-dist-0.0.1-SNAPSHOT-bin /user/gxiang/maple/gxiang gxiang");
+    json.put("type", "BUILD");
+    json.put("damon", false);
+    json.put("nginx", false);
     
     //
     JSONArray confFiles = new JSONArray();
-    JSONObject file = new JSONObject();
-    file.put("fileName", "jetty.xml");
-    file.put("<port>", 8080);
-    
     
     JSONObject shell = new JSONObject();
-    shell.put("fileName", "jetty.sh");
+    shell.put("fileName", "build.sh");
      
     
-    confFiles.put(file);
     confFiles.put(shell);
 
     //
     JSONArray files = new JSONArray();
-    files.put("/user/gxiang/maple/gxiang/rs-dist-0.0.1-SNAPSHOT-bin/lib/rs-0.0.1-SNAPSHOT.war");
     
     //
     JSONArray arcs = new JSONArray();
-    arcs.put("/user/maplecloudy/com/elasticsearch/kibana/5.3.0/kibana-5.3.0-linux-x86_64.zip");
+    arcs.put("/user/gxiang/demo.zip");
+    arcs.put("/user/maplecloudy/apache-maven-3.3.9.zip");
+    arcs.put("/user/maplecloudy/settings.xml");
 
     json.put("conf.files", confFiles);
     json.put("files", files);
@@ -194,8 +183,8 @@ public class AppImpl2 implements IApp2 {
 //    List<AppStatus> la = server.getAppStatus(json.toString());
 //    Thread.sleep(1000);
 //    List<String> ls = server.getAppTaskInfo(json.toString());
-    Thread.sleep(10000);
-    server.stopAppTask(json.toString());
+//    Thread.sleep(10000);
+//    server.stopAppTask(json.toString());
 
   }
   

@@ -63,6 +63,9 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
   public String type;
   
   public boolean isDistribution = true;
+
+  public boolean damon = true;
+  public boolean nginx = true;
   
   public AppTaskBaseline(JSONObject json) {
     
@@ -82,8 +85,17 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
       this.isDistribution = json.getBoolean("isDistribution");
       this.type = json.getString("type");
       this.user = json.getString("user");
+      if(json.has("damon") && !json.getBoolean("damon"))
+        this.damon = false;
+      if(json.has("nginx") && !json.getBoolean("nginx"))
+        this.nginx = false;
+      
+      exportJson(json);
       
     } catch (JSONException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    } catch (IOException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
@@ -279,5 +291,22 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
     
     conf.set("yarn.application.classpath",
         "$HADOOP_CLIENT_CONF_DIR,$HADOOP_CONF_DIR,$HADOOP_COMMON_HOME/*,$HADOOP_COMMON_HOME/lib/*,$HADOOP_HDFS_HOME/*,$HADOOP_HDFS_HOME/lib/*,$HADOOP_YARN_HOME/*,$HADOOP_YARN_HOME/lib/*");
+  }
+  
+  public void exportJson(JSONObject json) throws IOException {
+    String runJsonFile = this.user + "/" + this.project + "/" + this.appConf
+        + "/" + this.appId + "/run.json";
+    File rpf = new File(runJsonFile);
+    
+    Gson gson = new GsonBuilder().create();
+    
+    if (!rpf.exists()) {
+      new File(rpf.getParent()).mkdirs();
+    }
+    FileWriter wr = new FileWriter(rpf);
+    gson.toJson(json, wr);
+    wr.flush();
+    wr.close();
+    
   }
 }

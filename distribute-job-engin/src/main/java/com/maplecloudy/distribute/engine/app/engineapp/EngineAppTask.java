@@ -77,7 +77,7 @@ public class EngineAppTask extends AppTaskBaseline {
         cmds.add(json.getJSONArray("arcs").getString(i));
       }
       
-      cmds.add("-damon");
+      if (this.damon) cmds.add("-damon");
       
       final String[] args = cmds.toArray(new String[cmds.size()]);
       
@@ -115,6 +115,9 @@ public class EngineAppTask extends AppTaskBaseline {
   
   public void updateNginx(ApplicationId appid)
       throws YarnException, IOException, InterruptedException, JSONException {
+    
+    if(!this.nginx) return;
+    
     boolean updateNginx = true;
     YarnClient yarnClient = YarnClient.createYarnClient();
     

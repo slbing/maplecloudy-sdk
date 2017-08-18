@@ -1,0 +1,1 @@
+apache-maven-3.3.9.zip/apache-maven-3.3.9/bin/mvn clean install -f demo.zip/home/maple/.maple/user/gxiang/build/gxiang/rs/pom.xml --settings settings.xml
