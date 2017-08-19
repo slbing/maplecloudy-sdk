@@ -1,4 +1,4 @@
-package com.maplecloudy.distribute.engine.appserver;
+package com.maplecloudy.distribute.engine.nginx;
 
 public class NginxGatewayPara {
   

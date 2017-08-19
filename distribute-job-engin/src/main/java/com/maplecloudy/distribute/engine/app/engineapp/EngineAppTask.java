@@ -24,9 +24,9 @@ import org.codehaus.jettison.json.JSONObject;
 
 import com.google.common.collect.Lists;
 import com.maplecloudy.distribute.engine.MapleCloudyEngineShellClient;
-import com.maplecloudy.distribute.engine.appserver.Nginx;
-import com.maplecloudy.distribute.engine.appserver.NginxGatewayPara;
 import com.maplecloudy.distribute.engine.apptask.AppTaskBaseline;
+import com.maplecloudy.distribute.engine.nginx.Nginx;
+import com.maplecloudy.distribute.engine.nginx.NginxGatewayPara;
 
 public class EngineAppTask extends AppTaskBaseline {
   
@@ -158,8 +158,8 @@ public class EngineAppTask extends AppTaskBaseline {
         ngpara.appConf = this.appConf;
         ngpara.appType = this.getAppType();
         
-        Nginx ng = Nginx.updateLocal(ngpara);
-        ng.updateRemote();
+        Nginx.updateLocal(ngpara);
+        Nginx.updateRemote();
         
         updateNginx = false;
         

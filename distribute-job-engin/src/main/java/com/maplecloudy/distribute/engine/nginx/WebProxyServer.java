@@ -1,4 +1,4 @@
-package com.maplecloudy.distribute.engine.appserver;
+package com.maplecloudy.distribute.engine.nginx;
 
 public class WebProxyServer extends ProxyServer {
   
@@ -15,5 +15,4 @@ public class WebProxyServer extends ProxyServer {
         .replaceAll("<appHost>", "" + appHost).replaceAll("<logFile>", name+".log");
     return ret;
   }
-  
 }

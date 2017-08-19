@@ -12,7 +12,7 @@ public class AppServer {
   private static Server server = null;
   
   private static void startServer(int port) throws IOException {
-    server = new HttpServer(new ReflectResponder(IApp2.class, new AppImpl2()), port);
+    server = new HttpServer(new ReflectResponder(IApp.class, new AppImpl()), port);
     server.start();
     // the server implements the Mail protocol (MailImpl)
   }
@@ -28,6 +28,6 @@ public class AppServer {
     startServer(port);
     System.out.println("Server started");
     
-    System.out.println(ReflectData.get().getProtocol(IApp2.class));
+    System.out.println(ReflectData.get().getProtocol(IApp.class));
   }
 }

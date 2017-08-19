@@ -1,4 +1,4 @@
-package com.maplecloudy.distribute.engine.appserver;
+package com.maplecloudy.distribute.engine.nginx;
 
 public abstract class ProxyServer {
   public String name;// 用一个app的conf对应一个名字
