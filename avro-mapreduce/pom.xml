@@ -50,12 +50,6 @@
 			<groupId>com.jayway.restassured</groupId>
 			<artifactId>json-path</artifactId>
 			<version>1.8.1</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.codehaus.groovy</groupId>
-					<artifactId>groovy</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>com.jayway.jsonpath</groupId>
