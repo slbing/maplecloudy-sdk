@@ -2,7 +2,9 @@ package com.maplecloudy.distribute.engine.app.engineapp;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.security.PrivilegedAction;
@@ -231,7 +233,8 @@ public class EngineAppTask extends AppTaskBaseline {
     new File(cf.getParent()).mkdirs();
     PrintWriter printWriter = new PrintWriter(filePath);
     BufferedReader bufReader = new BufferedReader(
-        new InputStreamReader(this.getClass().getResourceAsStream(fileName)));
+        new InputStreamReader(new FileInputStream("engine-apps/"+fileName)));
+//    new InputStreamReader(this.getClass().getResourceAsStream(fileName)));
     for (String temp = null; (temp = bufReader
         .readLine()) != null; temp = null) {
       

@@ -190,8 +190,8 @@ public class AppImpl implements IApp {
 //    Thread.sleep(1000);
 //    List<String> ls = server.getAppTaskInfo(json.toString());
     
-//    Thread.sleep(20000);
-//    server.stopAppTask(json.toString());
+    Thread.sleep(20000);
+    server.stopAppTask(json.toString());
 
   }
   

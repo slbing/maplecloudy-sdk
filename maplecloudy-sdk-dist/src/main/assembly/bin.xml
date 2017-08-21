@@ -46,6 +46,13 @@
 				<include>pom.xml</include>
 			</includes>
 		</fileSet>
+		<fileSet>
+   			<directory>../distribute-job-engin/engine-apps</directory>
+   			<outputDirectory>engine-apps</outputDirectory>
+   			<includes>
+   			 <include>**</include>
+   			</includes>
+  		</fileSet>
 	</fileSets>
 </assembly>
 
