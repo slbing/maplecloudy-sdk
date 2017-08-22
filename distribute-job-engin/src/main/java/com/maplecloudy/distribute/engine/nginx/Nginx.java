@@ -16,7 +16,8 @@ public class Nginx {
   
   static String nginxRoot = "nginx";
   static String nginxPath = "/usr/local/webservices/nginx/conf/conf.d"; // demo.maplecloudy.com
-  static String ansibleCmd = "/usr/local/bin/ansible-playbook ";
+  static String ansibleCmd = "ansible-playbook ";
+//  static String ansibleCmd = "/usr/local/bin/ansible-playbook ";
   public static Map<String,NginxServer> nginxServers = Maps.newHashMap();
   public String name;
   
