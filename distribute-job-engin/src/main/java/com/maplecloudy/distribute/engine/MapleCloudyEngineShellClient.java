@@ -42,10 +42,8 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
   }
   
   private static void usage() {
-    String message = "Usage: MapleCloudyEngineClient <cmd> \n"
-        + "\nOptions:\n"
-        + "  "
-        + "  -jar  <string>  : jar add to classpath\n"
+    String message = "Usage: MapleCloudyEngineClient <cmd> \n" + "\nOptions:\n"
+        + "  " + "  -jar  <string>  : jar add to classpath\n"
         + "  -jars     <string>   : dir with all to add classpath\n"
         + "  -p<key=value>   : properties\n"
         + "  -sc<string>   : shell script to can be run\n"
@@ -56,7 +54,8 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
         + "  -cpu<string>   : CPU Virtual Cores set for this app, defaule 1\n"
         + "  -damon   : after run the main class, then wait for kill the application\n"
         + "  -type <string>   : the application type ,default is MAPLECLOUDY-APP\n"
-        + "  -f   : list of files to be used by this appliation\n";
+        + "  -f <string>   : list of files to be used by this appliation\n"
+        + " -dir <string>  : list of dir";
     
     System.err.println(message);
     System.exit(1);
@@ -70,6 +69,7 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
     String war = null;
     List<String> arcs = Lists.newArrayList();
     List<String> files = Lists.newArrayList();
+    List<String> dirs = Lists.newArrayList();
     int memory = 256;
     boolean damon = false;
     String shellScript = null;
@@ -143,6 +143,12 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
           usage();
         }
         arcs.add(args[i]);
+      } else if (args[i].equals("-dir")) {
+        i++;
+        if (i >= args.length) {
+          usage();
+        }
+        dirs.add(args[i]);
       }
     }
     // Create yarnClient
@@ -266,8 +272,29 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
       
       hmlr.put(jarf.getPath().getName(), tlr);
     }
+    
+    for (String dir : dirs) {
+      
+      if (dir != null) {
+        Path pdir = new Path(dir);
+        if (fs.isDirectory(pdir)) {
+          FileStatus[] fss = fs.listStatus(pdir);
+          for (FileStatus jfile : fss) {
+            LocalResource tlr = Records.newRecord(LocalResource.class);
+            
+            tlr.setResource(ConverterUtils.getYarnUrlFromPath(jfile.getPath()));
+            tlr.setSize(jfile.getLen());
+            tlr.setTimestamp(jfile.getModificationTime());
+            tlr.setType(LocalResourceType.FILE);
+            tlr.setVisibility(LocalResourceVisibility.PRIVATE);
+            hmlr.put(jfile.getPath().getName(), tlr);
+          }
+        }
+      }
+    }
+    
     if (jars != null) {
-      Path pjars = new Path(jar);
+      Path pjars = new Path(jars);
       if (fs.isDirectory(pjars)) {
         FileStatus[] fss = fs.listStatus(pjars);
         for (FileStatus jfile : fss) {
@@ -323,7 +350,7 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
     appContext.setResource(capability);
     appContext.setQueue("default"); // queue
     appContext.setMaxAppAttempts(1);
-    //set true for container for reuse
+    // set true for container for reuse
     appContext.setKeepContainersAcrossApplicationAttempts(true);
     // Submit application
     ApplicationId appId = appContext.getApplicationId();
@@ -394,8 +421,8 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
       @Override
       public Void run() {
         try {
-          ToolRunner.run(new MapleCloudyEngineShellClient(
-              new YarnConfiguration()), args);
+          ToolRunner.run(
+              new MapleCloudyEngineShellClient(new YarnConfiguration()), args);
         } catch (Exception e) {
           e.printStackTrace();
         }

@@ -63,22 +63,31 @@ public class EngineAppTask extends AppTaskBaseline {
       cmds.add("-args");
       cmds.add(json.getString("run.shell"));
       
-      for (int i = 0; i < json.getJSONArray("conf.files").length(); i++) {
-        cmds.add("-f");
-        cmds.add(converRemotePath(json.getJSONArray("conf.files")
-            .getJSONObject(i).getString("fileName")));
+      if (json.has("conf.files")) {
+        for (int i = 0; i < json.getJSONArray("conf.files").length(); i++) {
+          cmds.add("-f");
+          cmds.add(converRemotePath(json.getJSONArray("conf.files")
+              .getJSONObject(i).getString("fileName")));
+        }
       }
-      
-      for (int i = 0; i < json.getJSONArray("files").length(); i++) {
-        cmds.add("-f");
-        cmds.add(json.getJSONArray("files").getString(0));
+      if (json.has("files")) {
+        for (int i = 0; i < json.getJSONArray("files").length(); i++) {
+          cmds.add("-f");
+          cmds.add(json.getJSONArray("files").getString(0));
+        }
       }
-      
-      for (int i = 0; i < json.getJSONArray("arcs").length(); i++) {
-        cmds.add("-arc");
-        cmds.add(json.getJSONArray("arcs").getString(i));
+      if (json.has("arcs")) {
+        for (int i = 0; i < json.getJSONArray("arcs").length(); i++) {
+          cmds.add("-arc");
+          cmds.add(json.getJSONArray("arcs").getString(i));
+        }
       }
-      
+      if (json.has("dirs")) {
+        for (int i = 0; i < json.getJSONArray("dirs").length(); i++) {
+          cmds.add("-dir");
+          cmds.add(json.getJSONArray("dirs").getString(i));
+        }
+      }
       if (this.damon) cmds.add("-damon");
       
       final String[] args = cmds.toArray(new String[cmds.size()]);
@@ -118,7 +127,7 @@ public class EngineAppTask extends AppTaskBaseline {
   public void updateNginx(ApplicationId appid)
       throws YarnException, IOException, InterruptedException, JSONException {
     
-    if(!this.nginx) return;
+    if (!this.nginx) return;
     
     boolean updateNginx = true;
     YarnClient yarnClient = YarnClient.createYarnClient();
@@ -183,28 +192,43 @@ public class EngineAppTask extends AppTaskBaseline {
     
     // check files and archives
     String path = "";
-    for (int i = 0; i < json.getJSONArray("files").length(); i++) {
-      
-      path = json.getJSONArray("files").getString(i);
-      if (fs.exists(new Path(path))) {
-        runInfo.add(path + " is ok!");
-      } else {
-        runInfo.add(path + " not exist!");
-        bret = false;
+    
+    if (json.has("files")) {
+      for (int i = 0; i < json.getJSONArray("files").length(); i++) {
+        
+        path = json.getJSONArray("files").getString(i);
+        if (fs.exists(new Path(path))) {
+          runInfo.add(path + " is ok!");
+        } else {
+          runInfo.add(path + " not exist!");
+          bret = false;
+        }
       }
     }
-    
-    for (int i = 0; i < json.getJSONArray("arcs").length(); i++) {
-      
-      path = json.getJSONArray("arcs").getString(i);
-      if (fs.exists(new Path(path))) {
-        runInfo.add(path + " is ok!");
-      } else {
-        runInfo.add(path + " not exist!");
-        bret = false;
+    if (json.has("arcs")) {
+      for (int i = 0; i < json.getJSONArray("arcs").length(); i++) {
+        
+        path = json.getJSONArray("arcs").getString(i);
+        if (fs.exists(new Path(path))) {
+          runInfo.add(path + " is ok!");
+        } else {
+          runInfo.add(path + " not exist!");
+          bret = false;
+        }
       }
     }
-    
+    if (json.has("dirs")) {
+      for (int i = 0; i < json.getJSONArray("dirs").length(); i++) {
+        
+        path = json.getJSONArray("dirs").getString(i);
+        if (fs.exists(new Path(path))) {
+          runInfo.add(path + " is ok!");
+        } else {
+          runInfo.add(path + " not exist!");
+          bret = false;
+        }
+      }
+    }
     // generate confs and upload
     String fileName = "";
     for (int i = 0; i < json.getJSONArray("conf.files").length(); i++) {
@@ -233,8 +257,8 @@ public class EngineAppTask extends AppTaskBaseline {
     new File(cf.getParent()).mkdirs();
     PrintWriter printWriter = new PrintWriter(filePath);
     BufferedReader bufReader = new BufferedReader(
-        new InputStreamReader(new FileInputStream("engine-apps/"+fileName)));
-//    new InputStreamReader(this.getClass().getResourceAsStream(fileName)));
+        new InputStreamReader(new FileInputStream("engine-apps/" + fileName)));
+    // new InputStreamReader(this.getClass().getResourceAsStream(fileName)));
     for (String temp = null; (temp = bufReader
         .readLine()) != null; temp = null) {
       

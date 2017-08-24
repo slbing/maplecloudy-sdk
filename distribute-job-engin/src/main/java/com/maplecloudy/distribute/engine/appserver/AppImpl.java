@@ -129,54 +129,48 @@ public class AppImpl implements IApp {
       throws InterruptedException, JSONException {
     
     AppImpl server = new AppImpl();
-    
+   
     JSONObject json = new JSONObject();
+
     json.put("user", "gxiang");
-    json.put("project", "12");
+    json.put("project", "119");
     JSONArray jarr = new JSONArray();
-    jarr.put(201);
-    jarr.put(202);
-    jarr.put(203);
+    jarr.put(268);
     json.put("appId", jarr);
-    json.put("appConf", "12");
+    json.put("appConf", "37");
     json.put("memory", 1024);
     json.put("cpu", 1);
-    json.put("domain", "jetty01");
+    json.put("domain", "www.ads");
     json.put("nginxIp", "60.205.171.123");
     json.put("nginxDomain", "maplecloudy.com");
     json.put("port", 0);
-    json.put("proxyPort", 55551);
+    json.put("proxyPort", 55552);
     json.put("defaultFS", "hdfs://hadoop02.aliyun.bj.maplecloudy.com:8020");
     json.put("resourceManagerAddress",
         "hadoop02.aliyun.bj.maplecloudy.com:8032");
     json.put("isDistribution", false);
-    json.put("run.shell", "sh jetty.sh");
-    json.put("type", "JETTY");
+    json.put("run.shell", "sh build.sh -fs demo.zip/home/maple/.maple/user/gxiang/build/gxiang/rs/rs-dist/target/rs-dist-0.0.1-SNAPSHOT-bin /user/gxiang/maple/gxiang gxiang");
+    json.put("type", "BUILD");
+    json.put("damon", true);
+    json.put("nginx", false);
     
-   
     //
     JSONArray confFiles = new JSONArray();
-    JSONObject file = new JSONObject();
-    file.put("fileName", "jetty.xml");
-    file.put("data.path", "/log");
-    file.put("<port>", 8080);
     
     JSONObject shell = new JSONObject();
-    shell.put("fileName", "jetty.sh");
+    shell.put("fileName", "build.sh");
+     
     
-    JSONObject war = new JSONObject();
-    
-    confFiles.put(file);
     confFiles.put(shell);
-    
+
     //
     JSONArray files = new JSONArray();
-    files.put("/user/gxiang/maple/gxiang/rs-dist-0.0.1-SNAPSHOT-bin/lib/rs-0.0.1-SNAPSHOT.war");
     
     //
     JSONArray arcs = new JSONArray();
-    arcs.put("/user/maplecloudy/com/webserver/jetty/7.6.21/jetty-distribution-7.6.21.v20160908.zip");
-    
+    arcs.put("/user/gxiang/demo.zip");
+    arcs.put("/user/maplecloudy/apache-maven-3.3.9.zip");
+    arcs.put("/user/maplecloudy/settings.xml");
 
     json.put("conf.files", confFiles);
     json.put("files", files);
@@ -184,14 +178,15 @@ public class AppImpl implements IApp {
     
     System.out.println(json);
     
-    server.startEngineApp(json.toString());
+    String a = "{'proxyPort': 0, 'project': '119', 'domain': '', 'resourceManagerAddress': 'hadoop02.aliyun.bj.maplecloudy.com:8032', 'run.shell': 'sh build.sh -fs demo.zip/home/maple/.maple/user/zyi/build/gxiang/rs/rs-dist/target/rs-dist-0.0.1-SNAPSHOT-bin /user/zyi/maple/gxiang zyi', 'conf.files': [{'fileName': 'build.sh'}], 'nginxIp': '', 'arcs': ['/user/zyi/demo.zip', '/user/maplecloudy/apache-maven-3.3.9.zip', '/user/maplecloudy/settings.xml'], 'appId': [974], 'port': 0, 'appConf': '9999', 'nginx': False, 'nginxDomain': '', 'user': 'zyi', 'isDistribution': False, 'memory': 1024, 'damon': True, 'defaultFS': 'hdfs://hadoop02.aliyun.bj.maplecloudy.com:8020', 'type': 'BUILD', 'cpu': 1, 'files': []}";
+    server.startEngineApp(a);
 //    Thread.sleep(10000);
 //    List<AppStatus> la = server.getAppStatus(json.toString());
 //    Thread.sleep(1000);
 //    List<String> ls = server.getAppTaskInfo(json.toString());
     
-    Thread.sleep(20000);
-    server.stopAppTask(json.toString());
+//    Thread.sleep(20000);
+//    server.stopAppTask(json.toString());
 
   }
   
