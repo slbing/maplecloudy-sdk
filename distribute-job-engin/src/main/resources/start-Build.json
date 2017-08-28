@@ -1,0 +1,35 @@
+{
+	"user": "gxiang",
+	"project": "119",
+	"appId": [
+		268
+	],
+	"appConf": "37",
+	"memory": 1024,
+	"cpu": 1,
+	"domain": "www.ads",
+	"nginxIp": "60.205.171.123",
+	"nginxDomain": "maplecloudy.com",
+	"port": 0,
+	"proxyPort": 55552,
+	"defaultFS": "hdfs:\/\/kkyl02.bj.maplecloudy.com:8020",
+	"resourceManagerAddress": "kkyl02.bj.maplecloudy.com:8032",
+	"isDistribution": false,
+	"run.shell": "sh build.sh -fs demo.zip\/home\/maple\/.maple\/user\/gxiang\/build\/gxiang\/rs\/rs-dist\/target\/rs-dist-0.0.1-SNAPSHOT-bin \/user\/gxiang\/maple\/gxiang gxiang",
+	"type": "BUILD",
+	"damon": false,
+	"nginx": false,
+	"conf.files": [{
+		"fileName": "build.sh",
+		"<mvn_args>": "clean install",
+		"<user>": "gxiang",
+		"<team>": "gxiang",
+		"<project>": "rs"
+	}],
+	"files": [],
+	"arcs": [
+		"\/user\/gxiang\/demo.zip",
+		"\/user\/maplecloudy\/apache-maven-3.3.9.zip",
+		"\/user\/maplecloudy\/settings.xml"
+	]
+}
