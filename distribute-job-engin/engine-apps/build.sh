@@ -1,1 +1,1 @@
-apache-maven-3.3.9.zip/apache-maven-3.3.9/bin/mvn clean install -f demo.zip/home/maple/.maple/user/<user>/build/<team>/<project>/pom.xml --settings settings.xml
+apache-maven-3.3.9.zip/apache-maven-3.3.9/bin/mvn <mvn_args> -f demo.zip/home/maple/.maple/user/<user>/build/<team>/<project>/pom.xml --settings settings.xml
