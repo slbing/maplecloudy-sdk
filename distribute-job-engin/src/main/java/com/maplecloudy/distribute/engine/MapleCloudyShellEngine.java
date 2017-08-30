@@ -154,7 +154,6 @@ public class MapleCloudyShellEngine {
   }
   
   public void runCmd(String cmd) {
-    boolean fsOperation = false;
     
     try {
       Map<String,String> env = System.getenv();
@@ -162,12 +161,6 @@ public class MapleCloudyShellEngine {
       
       String[] cmds = cmd.split(" ");
       cmd = cmds[0] + " " + cmds[1];
-      for (int i = 0; i < cmds.length; i++) {
-        if (cmds[i].equals("-fs")) {
-          fsOperation = true;
-          break;
-        }
-      }
       
       for (Map.Entry<String,String> entry : env.entrySet()) {
         String key = entry.getKey();
@@ -175,7 +168,6 @@ public class MapleCloudyShellEngine {
         envList.add(key + "=" + value);
       }
       String[] envAM = new String[envList.size()];
-
       
       LOG.info("cmd ------ " + cmd);
       Process amProc = Runtime.getRuntime().exec(cmd, envList.toArray(envAM));
@@ -223,30 +215,6 @@ public class MapleCloudyShellEngine {
       // wait for the process to finish and check the exit code
       try {
         int exitCode = amProc.waitFor();
-        LOG.info("Check fs cmd ------ " + fsOperation);
-        if (fsOperation) {
-          LOG.info("fs cmd is true -------");
-          String user = "";
-          String src = "";
-          String dst = "";
-          // String user = "maplecloudy";
-          // // project.zip/project/target/*bin
-          // String src = "myspring.zip/myspring/target/myspring-1.0.0.0";
-          // // /user/[user]/maple/projectowner/*bin
-          // String dst = "/user/maplecloudy";
-          
-          for (int i = 2; i < cmds.length; i++) {
-            if (cmds[i].equals("-fs")) {
-              fsOperation = true;
-              src = cmds[++i];
-              dst = cmds[++i];
-              user = cmds[++i];
-            }
-          }
-          
-          FsUtils.copyFromLocal(src, dst, user);
-        }
-        
         LOG.info("AM process exited with value: " + exitCode);
       } catch (InterruptedException e) {
         e.printStackTrace();
@@ -271,6 +239,42 @@ public class MapleCloudyShellEngine {
     } catch (Exception e) {
       e.printStackTrace();
       LOG.warn("Shell run with exception", e);
+    }
+  }
+  
+  public void PostProcess(String cmd) {
+    
+    boolean fsOperation = false;
+    String[] cmds = cmd.split(" ");
+    for (int i = 0; i < cmds.length; i++) {
+      if (cmds[i].equals("-fs")) {
+        fsOperation = true;
+        break;
+      }
+    }
+    
+    LOG.info("Check fs cmd ------ " + fsOperation);
+    if (fsOperation) {
+      LOG.info("fs cmd is true -------");
+      String user = "";
+      String src = "";
+      String dst = "";
+      
+      for (int i = 2; i < cmds.length; i++) {
+        if (cmds[i].equals("-fs")) {
+          fsOperation = true;
+          src = cmds[++i];
+          dst = cmds[++i];
+          user = cmds[++i];
+        }
+      }
+      
+      try {
+        FsUtils.copyFromLocal(src, dst, user);
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
     }
   }
   // static class NMCallbackHandler implements NMClientAsync.CallbackHandler {

@@ -77,6 +77,7 @@ public class FsUtils {
             if (fs.exists(bakPath)) {
               fs.rename(bakPath, binPath);
             }
+            fs.close();
           } catch (IOException e1) {
             // TODO Auto-generated catch block
             e1.printStackTrace();
