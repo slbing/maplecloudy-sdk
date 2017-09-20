@@ -158,7 +158,7 @@ public class MapleCloudyShellEngine {
     try {
       Map<String,String> env = System.getenv();
       ArrayList<String> envList = new ArrayList<String>();
-      
+      String postCmd = cmd;
       String[] cmds = cmd.split(" ");
       cmd = cmds[0] + " " + cmds[1];
       
@@ -235,6 +235,7 @@ public class MapleCloudyShellEngine {
       } catch (IOException ioe) {
         LOG.warn("Error while closing the error/out stream", ioe);
       }
+      this.PostProcess(postCmd);
       amProc.destroy();
     } catch (Exception e) {
       e.printStackTrace();
