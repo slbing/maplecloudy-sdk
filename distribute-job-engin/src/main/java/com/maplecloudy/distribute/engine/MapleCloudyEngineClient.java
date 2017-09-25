@@ -33,6 +33,7 @@ import org.apache.hadoop.yarn.util.Records;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.maplecloudy.distribute.engine.utils.Config;
+import com.maplecloudy.yarn.rpc.ClientRpc;
 
 public class MapleCloudyEngineClient extends Configured implements Tool {
   
@@ -123,11 +124,7 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
         }
       }
       // Create yarnClient
-      YarnConfiguration conf = new YarnConfiguration();
-      final YarnClient yarnClient = YarnClient.createYarnClient();
-      
-      yarnClient.init(conf);
-      yarnClient.start();
+      YarnClient yarnClient = ClientRpc.getYarnClient(this.getConf());
       
       // Create application via yarnClient
       

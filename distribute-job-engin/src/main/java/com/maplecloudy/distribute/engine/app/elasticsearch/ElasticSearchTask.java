@@ -141,7 +141,6 @@ public class ElasticSearchTask extends AppTask {
       
     });
     if (!bupload) bret = bupload;
-    
     return bret;
     
   }

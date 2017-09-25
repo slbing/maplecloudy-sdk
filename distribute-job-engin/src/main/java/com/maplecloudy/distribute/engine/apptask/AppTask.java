@@ -31,6 +31,7 @@ import com.maplecloudy.distribute.engine.app.engine.EngineInstallInfo;
 import com.maplecloudy.distribute.engine.appserver.AppPara;
 import com.maplecloudy.distribute.engine.appserver.AppStatus;
 import com.maplecloudy.distribute.engine.utils.EngineUtils;
+import com.maplecloudy.yarn.rpc.ClientRpc;
 
 public abstract class AppTask extends Configured implements Runnable {
   public int port = 0;
@@ -83,10 +84,7 @@ public abstract class AppTask extends Configured implements Runnable {
   public List<AppStatus> getAppStatus() throws Exception {
     List<AppStatus> las = Lists.newArrayList();
     this.appids.clear();
-    YarnClient yarnClient = YarnClient.createYarnClient();
-    Configuration conf = new YarnConfiguration(this.getConf());
-    yarnClient.init(conf);
-    yarnClient.start();
+    YarnClient yarnClient = ClientRpc.getYarnClient(this.getConf());
     List<ApplicationReport> reports = yarnClient.getApplications(Collections
         .singleton(this.para.getAppType()));
     for (ApplicationReport report : reports) {
@@ -124,10 +122,7 @@ public abstract class AppTask extends Configured implements Runnable {
   
   public int stopApp() throws Exception {
     
-    YarnClient yarnClient = YarnClient.createYarnClient();
-    Configuration conf = new YarnConfiguration(this.getConf());
-    yarnClient.init(conf);
-    yarnClient.start();
+    YarnClient yarnClient = ClientRpc.getYarnClient(this.getConf());
     List<ApplicationReport> reports = yarnClient.getApplications(Collections
         .singleton(this.para.getAppType()));
     
@@ -150,10 +145,7 @@ public abstract class AppTask extends Configured implements Runnable {
   
   public ApplicationId checkTaskApp() throws YarnException, IOException {
     ApplicationId bret = null;
-    YarnClient yarnClient = YarnClient.createYarnClient();
-    Configuration conf = new YarnConfiguration(this.getConf());
-    yarnClient.init(conf);
-    yarnClient.start();
+    YarnClient yarnClient = ClientRpc.getYarnClient(this.getConf());
     List<ApplicationReport> reports = yarnClient.getApplications(Collections
         .singleton(this.para.getAppType()));
     for (ApplicationReport report : reports) {

@@ -33,6 +33,7 @@ import org.apache.hadoop.yarn.util.Records;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.maplecloudy.distribute.engine.utils.Config;
+import com.maplecloudy.yarn.rpc.ClientRpc;
 
 public class MapleCloudyEngineShellClient extends Configured implements Tool {
   
@@ -153,28 +154,7 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
     }
     // Create yarnClient
     
-    // conf.set("fs.defaultFS",
-    // "hdfs://zztz01.cluster-test.maplecloudy.com:8020");
-    // conf.set("yarn.resourcemanager.address",
-    // "zztz01.cluster-test.maplecloudy.com:8032");
-    // conf.set("yarn.resourcemanager.admin.address",
-    // "zztz01.cluster-test.maplecloudy.com:8033");
-    // conf.set("yarn.resourcemanager.scheduler.address",
-    // "zztz01.cluster-test.maplecloudy.com:8030");
-    // conf.set("yarn.resourcemanager.resource-tracker.address",
-    // "zztz01.cluster-test.maplecloudy.com:8031");
-    // conf.set("yarn.resourcemanager.webapp.address",
-    // "zztz01.cluster-test.maplecloudy.com:8088");
-    // conf.set("yarn.resourcemanager.webapp.https.address",
-    // "zztz01.cluster-test.maplecloudy.com:8090");
-    // conf.set("yarn.application.classpath",
-    // "$HADOOP_CLIENT_CONF_DIR,$HADOOP_CONF_DIR,$HADOOP_COMMON_HOME/*,$HADOOP_COMMON_HOME/lib/*,$HADOOP_HDFS_HOME/*,$HADOOP_HDFS_HOME/lib/*,$HADOOP_YARN_HOME/*,$HADOOP_YARN_HOME/lib/*");
-    
-    YarnClient yarnClient = YarnClient.createYarnClient();
-    
-    yarnClient.init(this.getConf());
-    yarnClient.start();
-    
+    YarnClient yarnClient = ClientRpc.getYarnClient(this.getConf());
     // Create application via yarnClient
     
     YarnClientApplication app = yarnClient.createApplication();
@@ -316,7 +296,7 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
     // wlr.setSize(wfs.getLen());
     // wlr.setTimestamp(wfs.getModificationTime());
     // wlr.setType(LocalResourceType.FILE);
-    // wlr.setVisibility(LocalResourceVisibility.PUBLIC);
+    // wlr.setVisibility(LocalResourceVisibility.PUBLIC); 
     // hmlr.put("tomcat/apache-tomcat-8.5.9/webapps/", wlr);
     
     amContainer.setLocalResources(hmlr);

@@ -1,0 +1,45 @@
+{
+   "user": "gxiang",
+   "project": "13",
+   "appId": "203",
+   "appConf": "13",
+   "memory": 1024,
+   "cpu": 1,
+   "containers":1,
+   "ammemory": 64,
+   "amcpu": 1,
+   "priority":-1,
+   "domain": "elasticsearch",
+   "nginxIp": "60.205.171.123",
+   "nginxDomain": "maplecloudy.com",
+   "port": 0,
+   "proxyPort": 55552,
+   "defaultFS": "hdfs:\/\/hadoop02.aliyun.bj.maplecloudy.com:8020",
+   "resourceManagerAddress": "hadoop02.aliyun.bj.maplecloudy.com:8032",
+   "isDistribution": false
+   "isCluster": true
+   "run.shell": "sh kibana.sh",
+   "type": "ELASTICSEARCH",
+   "conf.files": [
+     {
+       "fileName": "elasticsearch.yml",
+       "<network.host>": 0.0.0.0,
+       "<path.data>": "path.data=/tmp/elasticsearch/data"
+       "<path.logs>": "path.logs=/tmp/elasticsearch/logs"
+     },
+      {
+       "fileName": "jvm.options",
+       "<Xms>":"-Xms2g",
+       "<Xmx>": "-Xmx2g"
+     },
+     {
+       "fileName": elasticsearch.sh"
+     }
+   ],
+   "files": [
+    
+   ],
+   l"arcs": [
+     "\/user\/maplecloudy\/com\/elasticsearch\/elasticsearch\/5.3.0\/elasticsearch-5.3.0.zip.zip"
+   ]
+ }
