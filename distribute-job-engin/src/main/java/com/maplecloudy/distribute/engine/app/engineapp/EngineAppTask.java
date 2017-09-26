@@ -73,7 +73,7 @@ public class EngineAppTask extends AppTaskBaseline {
       if (json.has("files")) {
         for (int i = 0; i < json.getJSONArray("files").length(); i++) {
           cmds.add("-f");
-          cmds.add(json.getJSONArray("files").getString(0));
+          cmds.add(json.getJSONArray("files").getString(i));
         }
       }
       if (json.has("arcs")) {
