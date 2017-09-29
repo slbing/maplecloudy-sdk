@@ -1,35 +1,39 @@
 {
-	"user": "gxiang",
-	"project": "119",
-	"appId": [
-		268
-	],
-	"appConf": "37",
-	"memory": 1024,
-	"cpu": 1,
-	"domain": "www.ads",
-	"nginxIp": "60.205.171.123",
-	"nginxDomain": "maplecloudy.com",
-	"port": 0,
-	"proxyPort": 55552,
-	"defaultFS": "hdfs:\/\/kkyl02.bj.maplecloudy.com:8020",
-	"resourceManagerAddress": "kkyl02.bj.maplecloudy.com:8032",
-	"isDistribution": false,
-	"run.shell": "sh build.sh -fs demo.zip\/home\/maple\/.maple\/user\/gxiang\/build\/gxiang\/rs\/rs-dist\/target\/rs-dist-0.0.1-SNAPSHOT-bin \/user\/gxiang\/maple\/gxiang gxiang",
-	"type": "BUILD",
-	"damon": false,
-	"nginx": false,
-	"conf.files": [{
-		"fileName": "build.sh",
-		"<mvn_args>": "clean install",
-		"<user>": "gxiang",
-		"<team>": "gxiang",
-		"<project>": "rs"
-	}],
-	"files": [],
-	"arcs": [
-		"\/user\/gxiang\/demo.zip",
-		"\/user\/maplecloudy\/apache-maven-3.3.9.zip",
-		"\/user\/maplecloudy\/settings.xml"
-	]
+  "proxyPort": 0,
+  "project": "31",
+  "domain": "",
+  "resourceManagerAddress": "wx01.maplecloudy.com:8032",
+  "run.shell": "sh build.sh -fs pioneer-dist-0.0.1-SNAPSHOT-1506502639.97-src.zip/home/maple/.maple/user/mapledemo/project/mapledemo/pioneer-welfare/pioneer-dist/target/pioneer-dist-0.0.1-SNAPSHOT-bin /user/mapledemo/maple/mapledemo mapledemo",
+  "conf.files": [
+    {
+      "<team>": "mapledemo",
+      "<project>": "pioneer-welfare",
+      "fileName": "build.sh",
+      "<mvn_args>": "clean install",
+      "<src_zip>": "pioneer-dist-0.0.1-SNAPSHOT-1506502639.97-src.zip",
+      "<user>": "mapledemo"
+    }
+  ],
+  "nginxIp": "",
+  "arcs": [
+    "/user/mapledemo/maplecloudy/mapledemo/pioneer-welfare/pioneer-dist-0.0.1-SNAPSHOT-1506502639.97-src.zip",
+    "/user/maplecloudy/apache-maven-3.3.9.zip",
+    "/user/maplecloudy/settings.xml"
+  ],
+  "appId": [
+    44
+  ],
+  "port": 0,
+  "appConf": "9999",
+  "nginx": False,
+  "nginxDomain": "",
+  "user": "mapledemo",
+  "isDistribution": False,
+  "memory": 2048,
+  "damon": False,
+  "defaultFS": "hdfs://wx02.maplecloudy.com:8020",
+  "type": "BUILD",
+  "cpu": 1,
+  "files": [
+  ]
 }

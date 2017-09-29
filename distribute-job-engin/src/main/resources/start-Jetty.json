@@ -1,33 +1,41 @@
 {
-	"user":"gxiang",
-	"project":"12",
-	"appId":"202",
-	"appConf":"12",
-	"memory":1024,
-	"cpu":1,
-	"domain":"jetty01",
-	"nginxIp":"60.205.171.123",
-	"nginxDomain":"maplecloudy.com",
-	"port":0,
-	"proxyPort":55551,
-	"defaultFS":"hdfs:\/\/hadoop02.aliyun.bj.maplecloudy.com:8020",
-	"resourceManagerAddress":"hadoop02.aliyun.bj.maplecloudy.com:8032",
-	"isDistribution":false,
-	"run.shell":"sh jetty.sh",
-	"type":"JETTY",
-	"conf.files":[
-					{
-						"fileName":"jetty.xml",
-						"<port>":8080
-					},
-					{
-						"fileName":"jetty.sh"
-					}
-				],
-	"files":[
-				"\/user\/gxiang\/maple\/gxiang\/rs-dist-0.0.1-SNAPSHOT-bin\/lib\/rs-0.0.1-SNAPSHOT.war"
-			],
-	"arcs":[
-				"\/user\/maplecloudy\/com\/webserver\/jetty\/7.6.21\/jetty-distribution-7.6.21.v20160908.zip"
-			]
+  "proxyPort": 7098,
+  "project": "119",
+  "domain": "www",
+  "resourceManagerAddress": "kkyl02.bj.maplecloudy.com:8032",
+  "run.shell": "sh jetty.sh",
+  "conf.files": [
+    {
+      "<Xmx>": 1024,
+      "<Xms>": 1024,
+      "fileName": "jetty_start.ini"
+    },
+    {
+      "<port>": 8080,
+      "fileName": "jetty.xml"
+    },
+    {
+      "<war>": "rs-0.0.1-SNAPSHOT.war",
+      "fileName": "jetty.sh"
+    }
+  ],
+  "nginxIp": "47.93.240.226",
+  "arcs": [
+    "/user/maplecloudy/com/webserver/jetty/7.6.21/jetty-distribution-7.6.21.v20160908.zip"
+  ],
+  "appId": [
+    451
+  ],
+  "port": 0,
+  "appConf": "27",
+  "nginxDomain": "maplecloudy.com",
+  "user": "gxiang",
+  "isDistribution": False,
+  "memory": 1024,
+  "defaultFS": "hdfs://kkyl02.bj.maplecloudy.com:8020",
+  "type": "JETTY",
+  "cpu": 1,
+  "files": [
+    "/user/zyi/maple/gxiang/rs-dist-0.0.1-SNAPSHOT-bin/lib/rs-0.0.1-SNAPSHOT.war"
+  ]
 }
