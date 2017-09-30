@@ -4,12 +4,14 @@ import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.maplecloudy.distribute.engine.app.engineapp.EngineAppTask;
+
 public class TaskPool {
-  private static  ExecutorService cachedThreadPool = Executors.newCachedThreadPool();
+ private static  ExecutorService cachedThreadPool = Executors.newCachedThreadPool();
   
-  public static HashMap<String,AppTask> taskMap = new HashMap<String,AppTask>();
+  public static HashMap<String,EngineAppTask> taskMap = new HashMap<String,EngineAppTask>();
   
-  public static void addTask(AppTask runable)
+  public static void addTask(EngineAppTask runable)
   {
     if(taskMap.get(runable.getName()) != null)
     {

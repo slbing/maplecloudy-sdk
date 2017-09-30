@@ -1,125 +1,147 @@
-
 package com.maplecloudy.distribute.engine;
 
+
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.nio.ByteBuffer;
 import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.yarn.api.ApplicationConstants;
-import org.apache.hadoop.yarn.api.records.ApplicationId;
-import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
-import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
-import org.apache.hadoop.yarn.api.records.LocalResource;
-import org.apache.hadoop.yarn.api.records.LocalResourceType;
-import org.apache.hadoop.yarn.api.records.LocalResourceVisibility;
-import org.apache.hadoop.yarn.api.records.Priority;
-import org.apache.hadoop.yarn.client.api.YarnClient;
-import org.apache.hadoop.yarn.client.api.YarnClientApplication;
-import org.apache.hadoop.yarn.util.ConverterUtils;
-import org.apache.hadoop.yarn.util.Records;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterResponse;
+import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
+import org.apache.hadoop.yarn.api.records.NMToken;
+import org.apache.hadoop.yarn.client.api.NMTokenCache;
+import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.hadoop.yarn.exceptions.YarnException;
 
-import com.maplecloudy.distribute.engine.app.elasticsearch.appmaster.ApplicationMaster;
-import com.maplecloudy.distribute.engine.utils.PropertiesUtils;
-import com.maplecloudy.distribute.engine.utils.YarnCompat;
-import com.maplecloudy.distribute.engine.utils.YarnUtils;
+import com.maplecloudy.distribute.engine.app.elasticsearch.ElatisticSearchPara;
 
-public class ClusterEngine {
-
-    private static final Log log = LogFactory.getLog(ClusterEngine.class);
-
-    private final YarnClient client;
-    private String para;
-
-    public ClusterEngine(YarnClient client, String para) {
-        this.client = client;
-        this.para =para;
-    }
-
-    public ApplicationId run() {
-        client.start();
-
-        YarnClientApplication app = client.createApplication();
-        ApplicationSubmissionContext am = setupAM(app);
-        ApplicationId appId = client.submitApp(am);
-        return am.getApplicationId();
-    }
-
-    private ApplicationSubmissionContext setupAM(YarnClientApplication clientApp) {
-        ApplicationSubmissionContext appContext = clientApp.getApplicationSubmissionContext();
-        // already happens inside Hadoop but to be consistent
-        appContext.setApplicationId(clientApp.getNewApplicationResponse().getApplicationId());
-        appContext.setApplicationName(para);
-        appContext.setAMContainerSpec(createContainerContext());
-        appContext.setResource(YarnCompat.resource(client.getConfiguration(), clientCfg.amMem(), clientCfg.amVCores()));
-        appContext.setPriority(Priority.newInstance(clientCfg.amPriority()));
-        appContext.setQueue(clientCfg.amQueue());
-        appContext.setApplicationType(clientCfg.appType());
-        appContext.setMaxAppAttempts(1);
-        appContext.setKeepContainersAcrossApplicationAttempts(true);
-        YarnCompat.setApplicationTags(appContext, clientCfg.appTags());
-
-        return appContext;
-    }
-
-    private ContainerLaunchContext createContainerContext() {
-        ContainerLaunchContext amContainer = Records.newRecord(ContainerLaunchContext.class);
-
-        amContainer.setLocalResources(setupEsYarnJar());
-        amContainer.setEnvironment(setupEnv());
-        amContainer.setCommands(setupCmd());
-
-        return amContainer;
-    }
-
-    private Map<String, LocalResource> setupEsYarnJar() {
-        Map<String, LocalResource> resources = new LinkedHashMap<String, LocalResource>();
-        LocalResource esYarnJar = Records.newRecord(LocalResource.class);
-        Path p = new Path(clientCfg.jarHdfsPath());
-        FileStatus fsStat;
-        try {
-            fsStat = FileSystem.get(client.getConfiguration()).getFileStatus(p);
-        } catch (IOException ex) {
-            throw new IllegalArgumentException(
-                    String.format("Cannot find jar [%s]; make sure the artifacts have been properly provisioned and the correct permissions are in place.", clientCfg.jarHdfsPath()), ex);
-        }
-        // use the normalized path as otherwise YARN chokes down the line
-        esYarnJar.setResource(ConverterUtils.getYarnUrlFromPath(fsStat.getPath()));
-        esYarnJar.setSize(fsStat.getLen());
-        esYarnJar.setTimestamp(fsStat.getModificationTime());
-        esYarnJar.setType(LocalResourceType.FILE);
-        esYarnJar.setVisibility(LocalResourceVisibility.PUBLIC);
-
-        resources.put(clientCfg.jarName(), esYarnJar);
-        return resources;
-    }
-
-    private Map<String, String> setupEnv() {
-        Configuration cfg = client.getConfiguration();
-
-        Map<String, String> env = YarnUtils.setupEnv(cfg);
-        YarnUtils.addToEnv(env, EsYarnConstants.CFG_PROPS, PropertiesUtils.propsToBase64(clientCfg.asProperties()));
-        YarnUtils.addToEnv(env, clientCfg.envVars());
-
-        return env;
-    }
-
-    private List<String> setupCmd() {
+public class ClusterEngine implements AutoCloseable {
+  
+  private static final Log log = LogFactory.getLog(ClusterEngine.class);
+  
+  private ApplicationAttemptId appId;
+  private final Map<String,String> env;
+  private AppMasterRpc rpc;
+  private final Configuration cfg;
+  private EsCluster cluster;
+  private NMTokenCache nmTokenCache;
+  private ByteBuffer allTokens;
+  private UserGroupInformation appSubmitterUgi;
+  private RegisterApplicationMasterResponse amResponse;
+  
+  private final ElatisticSearchPara para;
+  
+  ClusterEngine(Map<String,String> env) {
+    this.env = env;
+    cfg = new YarnConfiguration();
+//    if (env.containsKey(FS_URI)) {
+//      cfg.set(FileSystem.FS_DEFAULT_NAME_KEY, env.get(FS_URI));
+//    }
+    para = ElatisticSearchPara.getFromCfg(cfg);
+  }
+  
+  void run() throws IOException, YarnException {
+    log.info("Starting ApplicationMaster...");
+    
+    if (nmTokenCache == null) {
       
-        List<String> cmds = new ArrayList<String>();
-//        cmds.add("sleep 600 \n");
-        // don't use -jar since it overrides the classpath
-        cmds.add(YarnCompat.$$(ApplicationConstants.Environment.JAVA_HOME) + "/bin/java "
-        +ApplicationMaster.class.getName()
-        +" 1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/" + ApplicationConstants.STDOUT
-        +" 2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/" + ApplicationConstants.STDERR);
-        return cmds;
+      nmTokenCache = new NMTokenCache();
     }
+    // Note: Credentials, Token, UserGroupInformation, DataOutputBuffer class
+    // are marked as LimitedPrivate
+    // Credentials credentials = UserGroupInformation.getCurrentUser()
+    // .getCredentials();
+    // DataOutputBuffer dob = new DataOutputBuffer();
+    // credentials.writeTokenStorageToStream(dob);
+    // // Now remove the AM->RM token so that containers cannot access it.
+    // Iterator<Token<?>> iter = credentials.getAllTokens().iterator();
+    //
+    // System.out.println("Executing with tokens:");
+    // while (iter.hasNext()) {
+    // Token<?> token = iter.next();
+    // System.out.println(token);
+    // if (token.getKind().equals(AMRMTokenIdentifier.KIND_NAME)) {
+    // iter.remove();
+    // }
+    // }
+    // allTokens = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
+    //
+    // // Create appSubmitterUgi and add original tokens to it
+    // String appSubmitterUserName = System
+    // .getenv(ApplicationConstants.Environment.USER.name());
+    // appSubmitterUgi = UserGroupInformation
+    // .createRemoteUser(appSubmitterUserName);
+    // appSubmitterUgi.addCredentials(credentials);
+    // System.out.println("appSubmitterUgi-----------"
+    // + appSubmitterUgi.toString());
+    
+    if (rpc == null) {
+      rpc = new AppMasterRpc(cfg, nmTokenCache);
+      rpc.start();
+    }
+    
+    // register AM
+//    appId = YarnUtils.getApplicationAttemptId(env);
+//    Assert.notNull(appId, "ApplicationAttemptId cannot be found in env %s"
+//        + env);
+    amResponse = rpc.registerAM();
+    
+    updateTokens();
+    
+    cluster = new EsCluster(rpc, para, env);
+    try {
+      cluster.start();
+    } finally {
+      try {
+        close();
+      } catch (Exception e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    }
+  }
+  
+  private void updateTokens() {
+    for (NMToken nmToken : amResponse.getNMTokensFromPreviousAttempts()) {
+      nmTokenCache.setToken(nmToken.getNodeId().toString(), nmToken.getToken());
+    }
+  }
+  
+  public void close() throws Exception {
+    boolean hasFailed = (cluster == null || cluster.hasFailed());
+    
+    try {
+      if (cluster != null) {
+        cluster.close();
+        cluster = null;
+      }
+      
+    } finally {
+      if (amResponse != null) {
+        updateTokens();
+      }
+      if (hasFailed) {
+        rpc.failAM();
+      } else {
+        rpc.finishAM();
+      }
+    }
+  }
+  
+  public static void main(String[] args) throws Exception {
+ 
+    ClusterEngine am = new ClusterEngine(System.getenv());
+    try {
+      am.run();
+    } catch (Exception e) {
+      e.printStackTrace();
+    } finally {
+      
+      am.close();
+    }
+  }
 }
