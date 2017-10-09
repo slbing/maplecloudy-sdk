@@ -17,7 +17,7 @@ import org.apache.hadoop.yarn.exceptions.YarnException;
 
 import com.maplecloudy.distribute.engine.utils.YarnCompat;
 
-class NodeMasterRpc implements AutoCloseable {
+public class NodeMasterRpc implements AutoCloseable {
   
   private final Configuration cfg;
   private final NMTokenCache tokenCache;

@@ -16,7 +16,6 @@ import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 
-
 import static org.apache.hadoop.yarn.conf.YarnConfiguration.*;
 
 public abstract class YarnUtils {
@@ -41,23 +40,40 @@ public abstract class YarnUtils {
         return cfg.getLong(RM_AM_EXPIRY_INTERVAL_MS, DEFAULT_RM_AM_EXPIRY_INTERVAL_MS);
     }
 
-    public static Map<String, String> setupEnv(Configuration cfg) {
-        Map<String, String> env = new LinkedHashMap<String, String>(); // System.getenv()
-        // add Hadoop Classpath
-        for (String c : cfg.getStrings(YarnConfiguration.YARN_APPLICATION_CLASSPATH, YarnCompat.DEFAULT_PLATFORM_APPLICATION_CLASSPATH())) {
-            addToEnv(env, Environment.CLASSPATH.name(), c.trim());
-        }
-        // add es-hadoop jar / current folder jars
-        addToEnv(env, Environment.CLASSPATH.name(), "./*");
-
-//        //
-//        // some es-yarn constants
-//        //elasticsearch-5.3.0.zip/elasticsearch-5.3.0/bin/elasticsearch 
-//        addToEnv(env, EsYarnConstants.FS_URI, cfg.get(FileSystem.FS_DEFAULT_NAME_KEY, FileSystem.DEFAULT_FS));
-
-        return env;
+    
+    public static Map<String,String>  setupAppMasterEnv(Configuration conf) {
+      Map<String, String> appMasterEnv = new LinkedHashMap<String, String>(); 
+      
+      StringBuilder classPathEnv = new StringBuilder(Environment.CLASSPATH.$$())
+          .append(ApplicationConstants.CLASS_PATH_SEPARATOR).append("./*");
+      for (String c : conf.getStrings(
+          YarnConfiguration.YARN_APPLICATION_CLASSPATH,
+          YarnConfiguration.DEFAULT_YARN_CROSS_PLATFORM_APPLICATION_CLASSPATH)) {
+        classPathEnv.append(ApplicationConstants.CLASS_PATH_SEPARATOR);
+        classPathEnv.append(c.trim());
+      }
+      appMasterEnv.put(Environment.CLASSPATH.name(), classPathEnv.toString());
+      
+      return appMasterEnv;
     }
+    
+    public static Map<String, String> setupEnv(Configuration cfg) {
+      Map<String, String> env = new LinkedHashMap<String, String>(); // System.getenv()
+      // add Hadoop Classpath
+      for (String c : cfg.getStrings(YarnConfiguration.YARN_APPLICATION_CLASSPATH, YarnCompat.DEFAULT_PLATFORM_APPLICATION_CLASSPATH())) {
+          addToEnv(env, Environment.CLASSPATH.name(), c.trim());
+      }
+      // add es-hadoop jar / current folder jars
+      addToEnv(env, Environment.CLASSPATH.name(), "./*");
 
+      //
+      // some es-yarn constants
+      //elasticsearch-5.3.0.zip/elasticsearch-5.3.0/bin/elasticsearch 
+//      addToEnv(env, EsYarnConstants.FS_URI, cfg.get(FileSystem.FS_DEFAULT_NAME_KEY, FileSystem.DEFAULT_FS));
+
+      return env;
+  }
+    
     public static void addToEnv(Map<String, String> env, String key, String value) {
         String val = env.get(key);
         if (val == null) {

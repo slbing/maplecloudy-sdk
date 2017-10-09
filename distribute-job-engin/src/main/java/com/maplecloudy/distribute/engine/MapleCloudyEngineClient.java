@@ -15,7 +15,6 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
-import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
@@ -33,6 +32,7 @@ import org.apache.hadoop.yarn.util.Records;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.maplecloudy.distribute.engine.utils.Config;
+import com.maplecloudy.distribute.engine.utils.YarnUtils;
 import com.maplecloudy.yarn.rpc.ClientRpc;
 
 public class MapleCloudyEngineClient extends Configured implements Tool {
@@ -219,8 +219,8 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
       amContainer.setLocalResources(hmlr);
       
       // Setup CLASSPATH for ApplicationMaster
-      Map<String,String> appMasterEnv = new HashMap<String,String>();
-      setupAppMasterEnv(appMasterEnv);
+      
+      Map<String,String> appMasterEnv = YarnUtils.setupAppMasterEnv(this.getConf());
       System.out.println("--------------------------");
       System.out.println(appMasterEnv.toString());
       System.out.println("--------------------------");
@@ -281,19 +281,7 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
     
   }
   
-  private void setupAppMasterEnv(Map<String,String> appMasterEnv) {
-    
-    StringBuilder classPathEnv = new StringBuilder(Environment.CLASSPATH.$$())
-        .append(ApplicationConstants.CLASS_PATH_SEPARATOR).append("./*");
-    for (String c : conf.getStrings(
-        YarnConfiguration.YARN_APPLICATION_CLASSPATH,
-        YarnConfiguration.DEFAULT_YARN_CROSS_PLATFORM_APPLICATION_CLASSPATH)) {
-      classPathEnv.append(ApplicationConstants.CLASS_PATH_SEPARATOR);
-      classPathEnv.append(c.trim());
-    }
-    appMasterEnv.put(Environment.CLASSPATH.name(), classPathEnv.toString());
-    
-  }
+  
   
   public static void main(final String[] args) throws Exception {
     String user = "maplecloudy";

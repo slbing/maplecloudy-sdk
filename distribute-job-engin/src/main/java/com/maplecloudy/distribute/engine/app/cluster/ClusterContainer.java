@@ -1,4 +1,5 @@
-package com.maplecloudy.distribute.engine.app.elasticsearch.appmaster;
+package com.maplecloudy.distribute.engine.app.cluster;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -33,27 +34,25 @@ import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 
-import com.maplecloudy.distribute.engine.app.elasticsearch.ElasticsearchInstallInfo;
-import com.maplecloudy.distribute.engine.app.elasticsearch.ElatisticSearchPara;
-import com.maplecloudy.distribute.engine.utils.Config;
 import com.maplecloudy.distribute.engine.utils.StringUtils;
 import com.maplecloudy.distribute.engine.utils.YarnCompat;
-import com.maplecloudy.distribute.engine.utils.YarnUtils;
-
+import com.maplecloudy.yarn.rpc.AppMasterRpc;
+import com.maplecloudy.yarn.rpc.NodeMasterRpc;
 
 /**
  * logical cluster managing the global lifecycle for its multiple containers.
  */
-class EsCluster implements AutoCloseable {
+public class ClusterContainer implements AutoCloseable {
   
-  private static final Log log = LogFactory.getLog(EsCluster.class);
+  private static final Log log = LogFactory.getLog(ClusterContainer.class);
   
   private final AppMasterRpc amRpc;
   private final NodeMasterRpc nmRpc;
   private final Configuration cfg;
-  private final ElatisticSearchPara para;
-  private final Map<String,String> masterEnv;
+  private final JSONObject para;
   
   private volatile boolean running = false;
   private volatile boolean clusterHasFailed = false;
@@ -61,16 +60,15 @@ class EsCluster implements AutoCloseable {
   private final Set<ContainerId> allocatedContainers = new LinkedHashSet<ContainerId>();
   private final Set<ContainerId> completedContainers = new LinkedHashSet<ContainerId>();
   
-  public EsCluster(final AppMasterRpc rpc, ElatisticSearchPara para,
-      Map<String,String> masterEnv) {
+  public ClusterContainer(final AppMasterRpc rpc, JSONObject para) {
     this.amRpc = rpc;
     this.cfg = rpc.getConfiguration();
     this.nmRpc = new NodeMasterRpc(cfg, rpc.getNMToCache());
     this.para = para;
-    this.masterEnv = masterEnv;
+    
   }
   
-  public void start() {
+  public void start() throws JSONException {
     running = true;
     nmRpc.start();
     
@@ -88,14 +86,14 @@ class EsCluster implements AutoCloseable {
     attemptKeytabLogin();
     
     log.info(String.format("Allocating Elasticsearch cluster with %d nodes",
-        para.containers));
+        para));
     
     // register requests
-    Resource capability = YarnCompat.resource(cfg, para.memory,
-        para.cpu);
+    Resource capability = YarnCompat.resource(cfg, para.getInt("memory"),
+        para.getInt("cpu"));
     Priority prio = Priority.newInstance(-1);
     
-    for (int i = 0; i < para.containers; i++) {
+    for (int i = 0; i < para.getInt("containers"); i++) {
       // TODO: Add allocation (host/rack rules) - and disable location
       // constraints
       ContainerRequest req = new ContainerRequest(capability, null, null, prio);
@@ -120,8 +118,7 @@ class EsCluster implements AutoCloseable {
         }
         
         if (currentlyAllocated.size() > 0) {
-          int needed = para.containers
-              - allocatedContainers.size();
+          int needed = para.getInt("containers") - allocatedContainers.size();
           if (needed > 0) {
             log.info(String.format("%s containers allocated, %s remaining",
                 allocatedContainers.size(), needed));
@@ -172,19 +169,17 @@ class EsCluster implements AutoCloseable {
           }
         }
         
-        if (completedContainers.size() == para.containers) {
+        if (completedContainers.size() == -para.getInt("containers")) {
           running = false;
         }
         
         if (running) {
-            Thread.sleep(heartBeatRate);
+          Thread.sleep(heartBeatRate);
         }
       } while (running);
-    }catch(Exception e)
-    {
+    } catch (Exception e) {
       e.printStackTrace();
-    }
-    finally {
+    } finally {
       log.info("Cluster has completed running...");
       try {
         Thread.sleep(TimeUnit.SECONDS.toMillis(15));
@@ -201,35 +196,36 @@ class EsCluster implements AutoCloseable {
   }
   
   private void attemptKeytabLogin() {
-//    if (UserGroupInformation.isSecurityEnabled()) {
-//      try {
-//        String localhost = InetAddress.getLocalHost().getCanonicalHostName();
-//        String keytabFilename = appConfig.kerberosKeytab();
-//        if (keytabFilename == null || keytabFilename.length() == 0) {
-//          throw new EsYarnAmException(
-//              "Security is enabled, but we could not find a configured keytab; Bailing out...");
-//        }
-//        String configuredPrincipal = appConfig.kerberosPrincipal();
-//        String principal = SecurityUtil.getServerPrincipal(configuredPrincipal,
-//            localhost);
-//        UserGroupInformation.loginUserFromKeytab(principal, keytabFilename);
-//      } catch (UnknownHostException e) {
-//        throw new EsYarnAmException(
-//            "Could not read localhost information for server principal construction; Bailing out...",
-//            e);
-//      } catch (IOException e) {
-//        throw new EsYarnAmException("Could not log in.", e);
-//      }
-//    }
+    // if (UserGroupInformation.isSecurityEnabled()) {
+    // try {
+    // String localhost = InetAddress.getLocalHost().getCanonicalHostName();
+    // String keytabFilename = appConfig.kerberosKeytab();
+    // if (keytabFilename == null || keytabFilename.length() == 0) {
+    // throw new EsYarnAmException(
+    // "Security is enabled, but we could not find a configured keytab; Bailing out...");
+    // }
+    // String configuredPrincipal = appConfig.kerberosPrincipal();
+    // String principal = SecurityUtil.getServerPrincipal(configuredPrincipal,
+    // localhost);
+    // UserGroupInformation.loginUserFromKeytab(principal, keytabFilename);
+    // } catch (UnknownHostException e) {
+    // throw new EsYarnAmException(
+    // "Could not read localhost information for server principal construction; Bailing out...",
+    // e);
+    // } catch (IOException e) {
+    // throw new EsYarnAmException("Could not log in.", e);
+    // }
+    // }
   }
   
-  private void launchContainer(Container container) throws YarnException, IOException {
+  private void launchContainer(Container container) throws YarnException,
+      IOException, JSONException {
     ContainerLaunchContext ctx = Records
         .newRecord(ContainerLaunchContext.class);
     
-    ctx.setEnvironment(setupEnv(para));
-    ctx.setLocalResources(setupEsZipResource());
-    ctx.setCommands(setupEsScript());
+    // ctx.setEnvironment(setupEnv(para));
+    ctx.setLocalResources(setupResource());
+    ctx.setCommands(setupScript());
     
     log.info("About to launch container for command: " + ctx.getCommands());
     
@@ -239,84 +235,96 @@ class EsCluster implements AutoCloseable {
     log.info("Started container " + container);
   }
   
-  private Map<String,String> setupEnv(ElatisticSearchPara appConfig) {
-    // standard Hadoop env setup
-    Map<String,String> env = YarnUtils.setupEnv(cfg);
-  
-    
-  
-     YarnUtils.addToEnv(env, "JAVA_HOME", para.getJavaHome());
-    System.out.println("ENV:"+env.toString());
-    return env;
-  }
-  
-  private Map<String,LocalResource> setupEsZipResource() {
+  private Map<String,LocalResource> setupResource() throws  JSONException, IOException {
     // elasticsearch.zip
     Map<String,LocalResource> resources = new LinkedHashMap<String,LocalResource>();
     
     LocalResource esZip = Records.newRecord(LocalResource.class);
-    String esZipHdfsPath = ElasticsearchInstallInfo.getPack();
-//    String appSubmitterUserName = System
-//        .getenv(ApplicationConstants.Environment.USER.name());
-//    Path homePath = new Path("/user", appSubmitterUserName);
-    
-//    Path p = new Path(homePath, esZipHdfsPath);
-    Path p = new Path(esZipHdfsPath);
-    FileStatus fsStat;
-    try {
-      fsStat = FileSystem.get(cfg).getFileStatus(p);
-    } catch (IOException ex) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Cannot find Elasticsearch zip at [%s]; make sure the artifacts have been properly provisioned and the correct permissions are in place.",
-              esZipHdfsPath), ex);
+    FileSystem fs = FileSystem.get(cfg);
+    String path = "";
+    if (para.has("files")) {
+      for (int i = 0; i < para.getJSONArray("files").length(); i++) {
+        
+        path = para.getJSONArray("files").getString(i);
+        LocalResource tlr = Records.newRecord(LocalResource.class);
+        FileStatus jarf = fs.getFileStatus(new Path(path));
+        tlr.setResource(ConverterUtils.getYarnUrlFromPath(jarf.getPath()));
+        tlr.setSize(jarf.getLen());
+        tlr.setTimestamp(jarf.getModificationTime());
+        tlr.setType(LocalResourceType.FILE);
+        tlr.setVisibility(LocalResourceVisibility.PUBLIC);
+        resources.put(jarf.getPath().getName(), tlr);
+        
+      }
     }
-    // use the normalized path as otherwise YARN chokes down the line
-    esZip.setResource(ConverterUtils.getYarnUrlFromPath(fsStat.getPath()));
-    esZip.setSize(fsStat.getLen());
-    esZip.setTimestamp(fsStat.getModificationTime());
-    esZip.setType(LocalResourceType.ARCHIVE);
-    esZip.setVisibility(LocalResourceVisibility.PUBLIC);
-    
-    resources.put(p.getName(), esZip);
-    
-    // add ext arc ,for example jdk1.8 tar
-    String[] extArcs = para.extArcs();
-    if (extArcs != null) {
-      for (String extArc : extArcs) {
-        LocalResource extLr = Records.newRecord(LocalResource.class);
-        Path pe = new Path(extArc);
-        FileStatus fsState;
-        try {
-          fsState = FileSystem.get(cfg).getFileStatus(pe);
-        } catch (IOException ex) {
-          throw new IllegalArgumentException(
-              String.format(
-                  "Cannot find jar [%s]; make sure the artifacts have been properly provisioned and the correct permissions are in place.",
-                  pe), ex);
+    if (para.has("arcs")) {
+      for (int i = 0; i < para.getJSONArray("arcs").length(); i++) {
+        
+        path = para.getJSONArray("arcs").getString(i);
+        if (fs.exists(new Path(path))) {
+          LocalResource tlr = Records.newRecord(LocalResource.class);
+          FileStatus jarf = fs.getFileStatus(new Path(path));
+          tlr.setResource(ConverterUtils.getYarnUrlFromPath(jarf.getPath()));
+          tlr.setSize(jarf.getLen());
+          tlr.setTimestamp(jarf.getModificationTime());
+          tlr.setType(LocalResourceType.ARCHIVE);
+          tlr.setVisibility(LocalResourceVisibility.PUBLIC);
+          
+          resources.put(jarf.getPath().getName(), tlr);
         }
-        // use the normalized path as otherwise YARN chokes down the line
-        extLr.setResource(ConverterUtils.getYarnUrlFromPath(fsState.getPath()));
-        extLr.setSize(fsState.getLen());
-        extLr.setTimestamp(fsState.getModificationTime());
-        extLr.setType(LocalResourceType.ARCHIVE);
-        extLr.setVisibility(LocalResourceVisibility.PUBLIC);
-        resources.put(fsState.getPath().getName(), extLr);
+      }
+    }
+    if (para.has("dirs")) {
+      for (int i = 0; i < para.getJSONArray("dirs").length(); i++) {
+        
+        path = para.getJSONArray("dirs").getString(i);
+        if (fs.exists(new Path(path))) {
+          Path pdir = new Path(path);
+          if (fs.isDirectory(pdir)) {
+            FileStatus[] fss = fs.listStatus(pdir);
+            for (FileStatus jfile : fss) {
+              LocalResource tlr = Records.newRecord(LocalResource.class);
+              
+              tlr.setResource(ConverterUtils.getYarnUrlFromPath(jfile.getPath()));
+              tlr.setSize(jfile.getLen());
+              tlr.setTimestamp(jfile.getModificationTime());
+              tlr.setType(LocalResourceType.FILE);
+              tlr.setVisibility(LocalResourceVisibility.PRIVATE);
+              resources.put(jfile.getPath().getName(), tlr);
+            }
+          }
+        }
+      }
+      
+    }
+    // generate confs and upload
+    
+    for (int i = 0; i < para.getJSONArray("conf.files").length(); i++) {
+      
+      JSONObject f = (JSONObject) para.getJSONArray("conf.files").get(i);
+      path = f.getString("fileName");
+      if (fs.exists(new Path(path))) {
+        LocalResource tlr = Records.newRecord(LocalResource.class);
+        FileStatus jarf = fs.getFileStatus(new Path(path));
+        tlr.setResource(ConverterUtils.getYarnUrlFromPath(jarf.getPath()));
+        tlr.setSize(jarf.getLen());
+        tlr.setTimestamp(jarf.getModificationTime());
+        tlr.setType(LocalResourceType.FILE);
+        tlr.setVisibility(LocalResourceVisibility.PRIVATE);
+        
+        resources.put(jarf.getPath().getName(), tlr);
       }
     }
     
     return resources;
   }
   
-  private List<String> setupEsScript() {
+  private List<String> setupScript() throws JSONException {
     List<String> cmds = new ArrayList<String>();
     // don't use -jar since it overrides the classpath
-//    cmds.add("sleep 5000 \n");
+    // cmds.add("sleep 5000 \n");
     cmds.add("ulimit -a \n");
-    cmds.add(YarnCompat.$$(ApplicationConstants.Environment.SHELL));
-    // make sure to include the ES.ZIP archive name used in the local resource
-    // setup above (since it's the folder where it got unpacked)
-    cmds.add(ElasticsearchInstallInfo.getInstance().pack + "/" + ElasticsearchInstallInfo.getInstance().shell);
+    cmds.add(para.getString("run.shell"));
     cmds.add("1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/"
         + ApplicationConstants.STDOUT);
     cmds.add("2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/"

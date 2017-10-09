@@ -67,6 +67,7 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
 
   public boolean damon = true;
   public boolean nginx = true;
+  public JSONObject json;
   
   public AppTaskBaseline(JSONObject json) {
     
@@ -90,7 +91,7 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
         this.damon = false;
       if(json.has("nginx") && !json.getBoolean("nginx"))
         this.nginx = false;
-      
+      this.json = json;
       exportJson(json);
       
     } catch (JSONException e) {
@@ -289,6 +290,7 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
     
     conf.set("yarn.application.classpath",
         "$HADOOP_CLIENT_CONF_DIR,$HADOOP_CONF_DIR,$HADOOP_COMMON_HOME/*,$HADOOP_COMMON_HOME/lib/*,$HADOOP_HDFS_HOME/*,$HADOOP_HDFS_HOME/lib/*,$HADOOP_YARN_HOME/*,$HADOOP_YARN_HOME/lib/*");
+    conf.set("app.para", this.json.toString());
   }
   
   public void exportJson(JSONObject json) throws IOException {

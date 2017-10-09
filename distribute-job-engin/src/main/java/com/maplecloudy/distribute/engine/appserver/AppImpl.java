@@ -7,6 +7,7 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 import com.google.common.collect.Lists;
+import com.maplecloudy.distribute.engine.app.engineapp.ClusterEngineAppTask;
 import com.maplecloudy.distribute.engine.app.engineapp.EngineAppTask;
 import com.maplecloudy.distribute.engine.apptask.AppTaskBaseline;
 import com.maplecloudy.distribute.engine.apptask.TaskPool;
@@ -20,13 +21,18 @@ public class AppImpl implements IApp {
   @Override
   public int startEngineApp(String para) throws JSONException {
     
-    EngineAppTask task;
+    AppTaskBaseline task;
     JSONObject json = new JSONObject(para);
     JSONArray jarr = json.getJSONArray("appId");
     for (int i = 0; i < jarr.length(); i++) {
       
       json.put("appId", jarr.getInt(i));
-      task = new EngineAppTask(json);
+      if(json.getBoolean("isCluster"))
+      {
+        task = new ClusterEngineAppTask(json);
+      }
+      else
+        task = new EngineAppTask(json);
       TaskPool.addTask(task);
     }
     
@@ -53,7 +59,8 @@ public class AppImpl implements IApp {
     try {
       AppTaskBaseline task = TaskPool.taskMap.get(appName);
       if (task == null) {
-        new EngineAppTask(json).checkTaskApp();
+        
+          new EngineAppTask(json).checkTaskApp();
       }
       return task.getAppStatus();
     } catch (Exception e) {
@@ -80,7 +87,7 @@ public class AppImpl implements IApp {
     }
     System.out.println("getAppTaskInfo:" + appName);
     
-    EngineAppTask task = TaskPool.taskMap.get(appName);
+    AppTaskBaseline task = TaskPool.taskMap.get(appName);
     if (task != null) {
       return task.runInfo;
     } else {
@@ -108,7 +115,7 @@ public class AppImpl implements IApp {
         System.out.println("stopAppTask:" + appName);
         
         try {
-          EngineAppTask task = TaskPool.taskMap.get(appName);
+          AppTaskBaseline task = TaskPool.taskMap.get(appName);
           if (task == null) {
             task = new EngineAppTask(json);
             TaskPool.taskMap.put(appName, task);

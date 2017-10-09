@@ -44,15 +44,13 @@ import com.maplecloudy.distribute.engine.nginx.Nginx;
 import com.maplecloudy.distribute.engine.nginx.NginxGatewayPara;
 import com.maplecloudy.distribute.engine.utils.Config;
 import com.maplecloudy.distribute.engine.utils.YarnCompat;
+import com.maplecloudy.distribute.engine.utils.YarnUtils;
 import com.maplecloudy.yarn.rpc.ClientRpc;
 
 public class ClusterEngineAppTask extends AppTaskBaseline {
   
-  JSONObject json;
-  
   public ClusterEngineAppTask(JSONObject json) {
     super(json);
-    this.json = json;
     
   }
   
@@ -69,8 +67,7 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
       
       if (!this.checkEnv()) return;
       
-      
-      runAPP();
+      appid = runAPP();
       
       if (appid != null) {
         this.appids.add(appid);
@@ -83,27 +80,28 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
       e.printStackTrace();
     }
   }
- 
-  public ApplicationId runAPP()
-  {
+  
+  public ApplicationId runAPP() throws Exception {
+    
     // Create yarnClient
     YarnClient yarnClient = ClientRpc.getYarnClient(this.getConf());
     
     // Create application via yarnClient
     
     YarnClientApplication app = yarnClient.createApplication();
-
     
     // Set up the container launch context for the application master
     ContainerLaunchContext amContainer = Records
         .newRecord(ContainerLaunchContext.class);
-    this.getConf().set("app.para", this.json.toString());
+    
     List<String> cmds = Lists.newArrayList();
-  // don't use -jar since it overrides the classpath
-  cmds.add(YarnCompat.$$(ApplicationConstants.Environment.JAVA_HOME) + "/bin/java "
-  +ClusterEngine.class.getName()
-  +" 1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/" + ApplicationConstants.STDOUT
-  +" 2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/" + ApplicationConstants.STDERR);
+    // don't use -jar since it overrides the classpath
+    cmds.add(YarnCompat.$$(ApplicationConstants.Environment.JAVA_HOME)
+        + "/bin/java " + ClusterEngine.class.getName() + " 1>"
+        + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/"
+        + ApplicationConstants.STDOUT + " 2>"
+        + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/"
+        + ApplicationConstants.STDERR);
     
     amContainer.setCommands(cmds);
     // Setup jar for ApplicationMaster
@@ -122,61 +120,12 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
     elr.setVisibility(LocalResourceVisibility.PUBLIC);
     hmlr.put(enginejar.getPath().getName(), elr);
     
-    // add jar
-    if (jar != null) {
-      LocalResource tlr = Records.newRecord(LocalResource.class);
-      FileStatus jarf = fs.getFileStatus(new Path(jar));
-      tlr.setResource(ConverterUtils.getYarnUrlFromPath(jarf.getPath()));
-      tlr.setSize(jarf.getLen());
-      tlr.setTimestamp(jarf.getModificationTime());
-      tlr.setType(LocalResourceType.FILE);
-      tlr.setVisibility(LocalResourceVisibility.PUBLIC);
-      hmlr.put(jarf.getPath().getName(), tlr);
-    }
-    
-    // add war
-    if (war != null) {
-      LocalResource tlr = Records.newRecord(LocalResource.class);
-      FileStatus jarf = fs.getFileStatus(new Path(war));
-      tlr.setResource(ConverterUtils.getYarnUrlFromPath(jarf.getPath()));
-      tlr.setSize(jarf.getLen());
-      tlr.setTimestamp(jarf.getModificationTime());
-      tlr.setType(LocalResourceType.FILE);
-      tlr.setVisibility(LocalResourceVisibility.PUBLIC);
-      hmlr.put(jarf.getPath().getName(), tlr);
-    }
-    
-    if (jars != null) {
-      Path pjars = new Path(jars);
-      if (fs.isDirectory(pjars)) {
-        FileStatus[] fss = fs.listStatus(pjars);
-        for (FileStatus jfile : fss) {
-          LocalResource tlr = Records.newRecord(LocalResource.class);
-          
-          tlr.setResource(ConverterUtils.getYarnUrlFromPath(jfile.getPath()));
-          tlr.setSize(jfile.getLen());
-          tlr.setTimestamp(jfile.getModificationTime());
-          tlr.setType(LocalResourceType.FILE);
-          tlr.setVisibility(LocalResourceVisibility.PUBLIC);
-          hmlr.put(jfile.getPath().getName(), tlr);
-        }
-      }
-    }
-    // add war
-    // LocalResource wlr = Records.newRecord(LocalResource.class);
-    // FileStatus wfs = fs.getFileStatus(warpath);
-    // wlr.setResource(ConverterUtils.getYarnUrlFromPath(wfs.getPath()));
-    // wlr.setSize(wfs.getLen());
-    // wlr.setTimestamp(wfs.getModificationTime());
-    // wlr.setType(LocalResourceType.FILE);
-    // wlr.setVisibility(LocalResourceVisibility.PUBLIC);
-    // hmlr.put("tomcat/apache-tomcat-8.5.9/webapps/", wlr);
-    
     amContainer.setLocalResources(hmlr);
     
     // Setup CLASSPATH for ApplicationMaster
-    Map<String,String> appMasterEnv = new HashMap<String,String>();
-    setupAppMasterEnv(appMasterEnv);
+    
+    Map<String,String> appMasterEnv = YarnUtils.setupAppMasterEnv(this
+        .getConf());
     System.out.println("--------------------------");
     System.out.println(appMasterEnv.toString());
     System.out.println("--------------------------");
@@ -192,11 +141,7 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
     final ApplicationSubmissionContext appContext = app
         .getApplicationSubmissionContext();
     appContext.setApplicationType(type);
-    String name = "engine:launcher:" + mainClass;
-    if (jar != null) name += ":" + jar;
-    if (jars != null) name += ":" + jars;
-    if (war != null) name += ":" + war;
-    if (margs != null) margs += ":" + margs;
+    String name = "engine:launcher:" + type;
     appContext.setApplicationName(name); // application name
     appContext.setAMContainerSpec(amContainer);
     appContext.setResource(capability);
@@ -213,16 +158,12 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
     yarnClient.submitApplication(appContext);
     yarnClient.close();
     
-  } catch (YarnException e) {
-    // TODO Auto-generated catch block
-    e.printStackTrace();
-  } catch (IOException e) {
-    // TODO Auto-generated catch block
-    e.printStackTrace();
+    return appId;
+    
   }
-  }
-  public void updateNginx(ApplicationId appid)
-      throws YarnException, IOException, InterruptedException, JSONException {
+  
+  public void updateNginx(ApplicationId appid) throws YarnException,
+      IOException, InterruptedException, JSONException {
     
     if (!this.nginx) return;
     
@@ -241,8 +182,7 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
             + ", and finishedwith with status:"
             + report.getYarnApplicationState());
         updateNginx = false;
-      } else if (report
-          .getYarnApplicationState() == YarnApplicationState.RUNNING) {
+      } else if (report.getYarnApplicationState() == YarnApplicationState.RUNNING) {
         
         runInfo.add("App have run with appid:" + report.getApplicationId()
             + ", now status" + report.getYarnApplicationState()
@@ -343,8 +283,8 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
     
   }
   
-  public String processConfigFile(JSONObject json)
-      throws IOException, JSONException {
+  public String processConfigFile(JSONObject json) throws IOException,
+      JSONException {
     
     String fileName = json.getString("fileName");
     String filePath = this.user + "/" + this.project + "/" + this.appConf + "/"
@@ -353,11 +293,10 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
     File cf = new File(filePath);
     new File(cf.getParent()).mkdirs();
     PrintWriter printWriter = new PrintWriter(filePath);
-    BufferedReader bufReader = new BufferedReader(
-        new InputStreamReader(new FileInputStream("engine-apps/" + fileName)));
+    BufferedReader bufReader = new BufferedReader(new InputStreamReader(
+        new FileInputStream("engine-apps/" + fileName)));
     // new InputStreamReader(this.getClass().getResourceAsStream(fileName)));
-    for (String temp = null; (temp = bufReader
-        .readLine()) != null; temp = null) {
+    for (String temp = null; (temp = bufReader.readLine()) != null; temp = null) {
       
       temp = replacePara(temp, json);
       
@@ -384,8 +323,8 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
       public Boolean run() {
         try {
           FileSystem fs = FileSystem.get(conf);
-          fs.copyFromLocalFile(false, true, new Path(filePath),
-              new Path(filePath));
+          fs.copyFromLocalFile(false, true, new Path(filePath), new Path(
+              filePath));
         } catch (IllegalArgumentException | IOException e) {
           e.printStackTrace();
           runInfo.add("intall :" + filePath + " error with:" + e.getMessage());
@@ -399,8 +338,8 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
     return true;
   }
   
-  public String replacePara(String str, JSONObject json)
-      throws JSONException, IOException {
+  public String replacePara(String str, JSONObject json) throws JSONException,
+      IOException {
     
     Iterator it = json.keys();
     String key = "";

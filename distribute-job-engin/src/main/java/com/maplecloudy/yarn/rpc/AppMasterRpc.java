@@ -14,7 +14,7 @@ import org.apache.hadoop.yarn.exceptions.YarnException;
 import com.maplecloudy.distribute.engine.utils.YarnCompat;
 
 
-class AppMasterRpc implements AutoCloseable {
+public class AppMasterRpc implements AutoCloseable {
 
     private final YarnConfiguration cfg;
     private AMRMClient<ContainerRequest> client;
