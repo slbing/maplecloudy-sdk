@@ -41,7 +41,7 @@ public abstract class YarnUtils {
     }
 
     
-    public static Map<String,String>  setupAppMasterEnv(Configuration conf) {
+    public static Map<String,String>  setupAppMasterEnv(Configuration conf,String para) {
       Map<String, String> appMasterEnv = new LinkedHashMap<String, String>(); 
       
       StringBuilder classPathEnv = new StringBuilder(Environment.CLASSPATH.$$())
@@ -54,6 +54,7 @@ public abstract class YarnUtils {
       }
       appMasterEnv.put(Environment.CLASSPATH.name(), classPathEnv.toString());
       
+      appMasterEnv.put("app.para", para);
       return appMasterEnv;
     }
     

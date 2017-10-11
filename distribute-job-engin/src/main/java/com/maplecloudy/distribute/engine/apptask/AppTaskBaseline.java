@@ -290,7 +290,7 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
     
     conf.set("yarn.application.classpath",
         "$HADOOP_CLIENT_CONF_DIR,$HADOOP_CONF_DIR,$HADOOP_COMMON_HOME/*,$HADOOP_COMMON_HOME/lib/*,$HADOOP_HDFS_HOME/*,$HADOOP_HDFS_HOME/lib/*,$HADOOP_YARN_HOME/*,$HADOOP_YARN_HOME/lib/*");
-    conf.set("app.para", this.json.toString());
+//    conf.set("app.para", this.json.toString());
   }
   
   public void exportJson(JSONObject json) throws IOException {

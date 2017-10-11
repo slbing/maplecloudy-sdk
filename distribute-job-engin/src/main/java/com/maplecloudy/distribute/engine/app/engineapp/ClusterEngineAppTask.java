@@ -39,6 +39,7 @@ import org.codehaus.jettison.json.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.maplecloudy.distribute.engine.ClusterEngine;
+import com.maplecloudy.distribute.engine.MapleCloudyEngineShellClient;
 import com.maplecloudy.distribute.engine.apptask.AppTaskBaseline;
 import com.maplecloudy.distribute.engine.nginx.Nginx;
 import com.maplecloudy.distribute.engine.nginx.NginxGatewayPara;
@@ -67,7 +68,21 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
       
       if (!this.checkEnv()) return;
       
-      appid = runAPP();
+      UserGroupInformation ugi = UserGroupInformation.createProxyUser(this.user,
+          UserGroupInformation.getLoginUser());
+      appid = ugi.doAs(new PrivilegedAction<ApplicationId>() {
+        @Override
+        public ApplicationId run() {
+          try {
+            ApplicationId appid = runAPP();
+            return appid;
+          } catch (Exception e) {
+            e.printStackTrace();
+            runInfo.add("run jetty error with:" + e.getMessage());
+            return null;
+          }
+        }
+      });
       
       if (appid != null) {
         this.appids.add(appid);
@@ -82,9 +97,14 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
   }
   
   public ApplicationId runAPP() throws Exception {
+ 
     
     // Create yarnClient
-    YarnClient yarnClient = ClientRpc.getYarnClient(this.getConf());
+    // YarnClient yarnClient = ClientRpc.getYarnClient(this.getConf());
+    YarnClient yarnClient = YarnClient.createYarnClient();
+    
+    yarnClient.init(this.getConf());
+    yarnClient.start();
     
     // Create application via yarnClient
     
@@ -122,10 +142,12 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
     
     amContainer.setLocalResources(hmlr);
     
+   
+    
     // Setup CLASSPATH for ApplicationMaster
     
-    Map<String,String> appMasterEnv = YarnUtils.setupAppMasterEnv(this
-        .getConf());
+    Map<String,String> appMasterEnv = YarnUtils
+        .setupAppMasterEnv(this.getConf(), this.json.toString());
     System.out.println("--------------------------");
     System.out.println(appMasterEnv.toString());
     System.out.println("--------------------------");
@@ -162,8 +184,8 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
     
   }
   
-  public void updateNginx(ApplicationId appid) throws YarnException,
-      IOException, InterruptedException, JSONException {
+  public void updateNginx(ApplicationId appid)
+      throws YarnException, IOException, InterruptedException, JSONException {
     
     if (!this.nginx) return;
     
@@ -182,7 +204,8 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
             + ", and finishedwith with status:"
             + report.getYarnApplicationState());
         updateNginx = false;
-      } else if (report.getYarnApplicationState() == YarnApplicationState.RUNNING) {
+      } else if (report
+          .getYarnApplicationState() == YarnApplicationState.RUNNING) {
         
         runInfo.add("App have run with appid:" + report.getApplicationId()
             + ", now status" + report.getYarnApplicationState()
@@ -283,8 +306,8 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
     
   }
   
-  public String processConfigFile(JSONObject json) throws IOException,
-      JSONException {
+  public String processConfigFile(JSONObject json)
+      throws IOException, JSONException {
     
     String fileName = json.getString("fileName");
     String filePath = this.user + "/" + this.project + "/" + this.appConf + "/"
@@ -293,10 +316,11 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
     File cf = new File(filePath);
     new File(cf.getParent()).mkdirs();
     PrintWriter printWriter = new PrintWriter(filePath);
-    BufferedReader bufReader = new BufferedReader(new InputStreamReader(
-        new FileInputStream("engine-apps/" + fileName)));
+    BufferedReader bufReader = new BufferedReader(
+        new InputStreamReader(new FileInputStream("engine-apps/" + fileName)));
     // new InputStreamReader(this.getClass().getResourceAsStream(fileName)));
-    for (String temp = null; (temp = bufReader.readLine()) != null; temp = null) {
+    for (String temp = null; (temp = bufReader
+        .readLine()) != null; temp = null) {
       
       temp = replacePara(temp, json);
       
@@ -323,8 +347,8 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
       public Boolean run() {
         try {
           FileSystem fs = FileSystem.get(conf);
-          fs.copyFromLocalFile(false, true, new Path(filePath), new Path(
-              filePath));
+          fs.copyFromLocalFile(false, true, new Path(filePath),
+              new Path(filePath));
         } catch (IllegalArgumentException | IOException e) {
           e.printStackTrace();
           runInfo.add("intall :" + filePath + " error with:" + e.getMessage());
@@ -338,8 +362,8 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
     return true;
   }
   
-  public String replacePara(String str, JSONObject json) throws JSONException,
-      IOException {
+  public String replacePara(String str, JSONObject json)
+      throws JSONException, IOException {
     
     Iterator it = json.keys();
     String key = "";
@@ -361,4 +385,25 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
     return this.user + "/" + this.project + "/" + this.appConf + "/"
         + this.appId + "/" + fileName;
   }
+  
+  private static void usage() {
+    String message = "Usage: MapleCloudyEngineClient <cmd> \n" + "\nOptions:\n"
+        + "  " + "  -jar  <string>  : jar add to classpath\n"
+        + "  -jars     <string>   : dir with all to add classpath\n"
+        + "  -p<key=value>   : properties\n"
+        + "  -sc<string>   : shell script to can be run\n"
+        + "  -args<string>   : args to main class\n"
+        + "  -war<string>   : war to start web server\n"
+        + "  -arc<string>   : tar package to this cmd\n"
+        + "  -m<string>   : memory set for this app,default 256M\n"
+        + "  -cpu<string>   : CPU Virtual Cores set for this app, defaule 1\n"
+        + "  -damon   : after run the main class, then wait for kill the application\n"
+        + "  -type <string>   : the application type ,default is MAPLECLOUDY-APP\n"
+        + "  -f <string>   : list of files to be used by this appliation\n"
+        + " -dir <string>  : list of dir";
+    
+    System.err.println(message);
+    System.exit(1);
+  }
+  
 }

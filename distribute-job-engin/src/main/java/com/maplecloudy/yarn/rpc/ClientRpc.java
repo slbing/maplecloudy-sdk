@@ -28,7 +28,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 
 import com.google.common.collect.Maps;
 
-public class ClientRpc implements AutoCloseable {
+public class ClientRpc {
   
 
   private static final EnumSet<YarnApplicationState> ALIVE = EnumSet.range(

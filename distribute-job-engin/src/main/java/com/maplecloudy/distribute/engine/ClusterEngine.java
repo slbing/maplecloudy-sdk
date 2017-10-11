@@ -2,6 +2,7 @@ package com.maplecloudy.distribute.engine;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -34,9 +35,9 @@ public class ClusterEngine {
   
   private final JSONObject para;
   
-  public ClusterEngine() throws JSONException {
+  public ClusterEngine(Map<String,String> env) throws JSONException {
     cfg = new YarnConfiguration();
-    para = new JSONObject(cfg.get("app.para"));
+    para = new JSONObject(env.get("app.para"));
   }
   
   void run() throws IOException, YarnException, JSONException {
@@ -129,7 +130,7 @@ public class ClusterEngine {
   
   public static void main(String[] args) throws Exception {
     
-    ClusterEngine am = new ClusterEngine();
+    ClusterEngine am = new ClusterEngine(System.getenv());
     try {
       am.run();
     } catch (Exception e) {

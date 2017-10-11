@@ -152,11 +152,15 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
         dirs.add(args[i]);
       }
     }
-    // Create yarnClient
+    // // Create yarnClient
+    //
+    // YarnClient yarnClient = ClientRpc.getYarnClient(this.getConf());
+    // // Create application via yarnClient
     
-    YarnClient yarnClient = ClientRpc.getYarnClient(this.getConf());
-    // Create application via yarnClient
+    YarnClient yarnClient = YarnClient.createYarnClient();
     
+    yarnClient.init(this.getConf());
+    yarnClient.start();
     YarnClientApplication app = yarnClient.createApplication();
     
     // Set up the container launch context for the application master
@@ -175,7 +179,7 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
         + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stderr";
     
     System.out.println("command:" + cmd.toString());
-    ;
+    
     cmds.add(cmd);
     amContainer.setCommands(cmds);
     // Setup jar for ApplicationMaster
@@ -296,7 +300,7 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
     // wlr.setSize(wfs.getLen());
     // wlr.setTimestamp(wfs.getModificationTime());
     // wlr.setType(LocalResourceType.FILE);
-    // wlr.setVisibility(LocalResourceVisibility.PUBLIC); 
+    // wlr.setVisibility(LocalResourceVisibility.PUBLIC);
     // hmlr.put("tomcat/apache-tomcat-8.5.9/webapps/", wlr);
     
     amContainer.setLocalResources(hmlr);

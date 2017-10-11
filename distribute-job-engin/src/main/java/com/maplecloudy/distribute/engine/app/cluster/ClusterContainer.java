@@ -2,6 +2,7 @@ package com.maplecloudy.distribute.engine.app.cluster;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -20,6 +21,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.protocolrecords.AllocateResponse;
+import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerExitStatus;
 import org.apache.hadoop.yarn.api.records.ContainerId;
@@ -34,6 +36,7 @@ import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
+import org.apache.xerces.util.SynchronizedSymbolTable;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -74,125 +77,275 @@ public class ClusterContainer implements AutoCloseable {
     
     UserGroupInformation.setConfiguration(cfg);
     // UserGroupInformation.
+    
+    UserGroupInformation ugi;
     try {
-      System.out.println("getCurrentUser-----------"
-          + UserGroupInformation.getCurrentUser());
-      System.out.println("getLoginUser-----------"
-          + UserGroupInformation.getLoginUser());
-    } catch (IOException e1) {
+      ugi = UserGroupInformation.createProxyUser("gxiang",
+          UserGroupInformation.getLoginUser());
+      ugi.doAs(new PrivilegedAction<ApplicationId>() {
+        
+        @Override
+        public ApplicationId run() {
+          try {
+            System.out.println("getCurrentUser-----------"
+                + UserGroupInformation.getCurrentUser());
+            System.out.println("getLoginUser-----------"
+                + UserGroupInformation.getLoginUser());
+          } catch (IOException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+          }
+          
+          attemptKeytabLogin();
+          
+          try {
+            log.info(String.format("Allocating  cluster with %d nodes",
+                para.getInt("containers")));
+            
+            // register requests
+            Resource capability = YarnCompat.resource(cfg,
+                para.getInt("memory"), para.getInt("cpu"));
+            Priority prio = Priority.newInstance(-1);
+            
+            for (int i = 0; i < para.getInt("containers"); i++) {
+              // TODO: Add allocation (host/rack rules) - and disable location
+              // constraints
+              ContainerRequest req = new ContainerRequest(capability, null,
+                  null, prio);
+              amRpc.addContainerRequest(req);
+            }
+            
+            // update status every 5 sec
+            final long heartBeatRate = TimeUnit.SECONDS.toMillis(5);
+            
+            // start the allocation loop
+            // when a new container is allocated, launch it right away
+            
+            int responseId = 0;
+            
+            try {
+              do {
+                AllocateResponse alloc = amRpc.allocate(responseId++);
+                List<Container> currentlyAllocated = alloc
+                    .getAllocatedContainers();
+                for (Container container : currentlyAllocated) {
+                  launchContainer(container);
+                  allocatedContainers.add(container.getId());
+                }
+                
+                if (currentlyAllocated.size() > 0) {
+                  int needed = para.getInt("containers")
+                      - allocatedContainers.size();
+                  if (needed > 0) {
+                    log.info(
+                        String.format("%s containers allocated, %s remaining",
+                            allocatedContainers.size(), needed));
+                  } else {
+                    log.info(String.format("Fully allocated %s containers",
+                        allocatedContainers.size()));
+                  }
+                }
+                
+                List<ContainerStatus> completed = alloc
+                    .getCompletedContainersStatuses();
+                for (ContainerStatus status : completed) {
+                  if (!completedContainers.contains(status.getContainerId())) {
+                    ContainerId containerId = status.getContainerId();
+                    completedContainers.add(containerId);
+                    
+                    boolean containerSuccesful = false;
+                    
+                    switch (status.getExitStatus()) {
+                      case ContainerExitStatus.SUCCESS:
+                        log.info(String.format(
+                            "Container %s finished succesfully...",
+                            containerId));
+                        containerSuccesful = true;
+                        break;
+                      case ContainerExitStatus.ABORTED:
+                        log.warn(String.format("Container %s aborted...",
+                            containerId));
+                        break;
+                      case ContainerExitStatus.DISKS_FAILED:
+                        log.warn(String.format(
+                            "Container %s ran out of disk...", containerId));
+                        break;
+                      case ContainerExitStatus.PREEMPTED:
+                        log.warn(String.format("Container %s preempted...",
+                            containerId));
+                        break;
+                      
+                      default:
+                        log.warn(String.format(
+                            "Container %s exited with an invalid/unknown exit code...",
+                            containerId));
+                    }
+                    
+                    if (!containerSuccesful) {
+                      log.warn("Cluster has not completed succesfully...");
+                      clusterHasFailed = true;
+                      running = false;
+                    }
+                  }
+                }
+                
+                if (completedContainers.size() == -para.getInt("containers")) {
+                  running = false;
+                }
+                
+                if (running) {
+                  Thread.sleep(heartBeatRate);
+                }
+              } while (running);
+            } catch (Exception e) {
+              e.printStackTrace();
+            } finally {
+              log.info("Cluster has completed running...");
+              try {
+                Thread.sleep(TimeUnit.SECONDS.toMillis(15));
+              } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+              }
+              try {
+                close();
+              } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+              }
+            }
+          } catch (JSONException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+          }
+          return null;
+        }
+      });
+      
+    } catch (IOException e2) {
       // TODO Auto-generated catch block
-      e1.printStackTrace();
-    }
-    attemptKeytabLogin();
-    
-    log.info(String.format("Allocating Elasticsearch cluster with %d nodes",
-        para));
-    
-    // register requests
-    Resource capability = YarnCompat.resource(cfg, para.getInt("memory"),
-        para.getInt("cpu"));
-    Priority prio = Priority.newInstance(-1);
-    
-    for (int i = 0; i < para.getInt("containers"); i++) {
-      // TODO: Add allocation (host/rack rules) - and disable location
-      // constraints
-      ContainerRequest req = new ContainerRequest(capability, null, null, prio);
-      amRpc.addContainerRequest(req);
+      e2.printStackTrace();
     }
     
-    // update status every 5 sec
-    final long heartBeatRate = TimeUnit.SECONDS.toMillis(5);
-    
-    // start the allocation loop
-    // when a new container is allocated, launch it right away
-    
-    int responseId = 0;
-    
-    try {
-      do {
-        AllocateResponse alloc = amRpc.allocate(responseId++);
-        List<Container> currentlyAllocated = alloc.getAllocatedContainers();
-        for (Container container : currentlyAllocated) {
-          launchContainer(container);
-          allocatedContainers.add(container.getId());
-        }
-        
-        if (currentlyAllocated.size() > 0) {
-          int needed = para.getInt("containers") - allocatedContainers.size();
-          if (needed > 0) {
-            log.info(String.format("%s containers allocated, %s remaining",
-                allocatedContainers.size(), needed));
-          } else {
-            log.info(String.format("Fully allocated %s containers",
-                allocatedContainers.size()));
-          }
-        }
-        
-        List<ContainerStatus> completed = alloc
-            .getCompletedContainersStatuses();
-        for (ContainerStatus status : completed) {
-          if (!completedContainers.contains(status.getContainerId())) {
-            ContainerId containerId = status.getContainerId();
-            completedContainers.add(containerId);
-            
-            boolean containerSuccesful = false;
-            
-            switch (status.getExitStatus()) {
-              case ContainerExitStatus.SUCCESS:
-                log.info(String.format("Container %s finished succesfully...",
-                    containerId));
-                containerSuccesful = true;
-                break;
-              case ContainerExitStatus.ABORTED:
-                log.warn(String.format("Container %s aborted...", containerId));
-                break;
-              case ContainerExitStatus.DISKS_FAILED:
-                log.warn(String.format("Container %s ran out of disk...",
-                    containerId));
-                break;
-              case ContainerExitStatus.PREEMPTED:
-                log.warn(String
-                    .format("Container %s preempted...", containerId));
-                break;
-              
-              default:
-                log.warn(String.format(
-                    "Container %s exited with an invalid/unknown exit code...",
-                    containerId));
-            }
-            
-            if (!containerSuccesful) {
-              log.warn("Cluster has not completed succesfully...");
-              clusterHasFailed = true;
-              running = false;
-            }
-          }
-        }
-        
-        if (completedContainers.size() == -para.getInt("containers")) {
-          running = false;
-        }
-        
-        if (running) {
-          Thread.sleep(heartBeatRate);
-        }
-      } while (running);
-    } catch (Exception e) {
-      e.printStackTrace();
-    } finally {
-      log.info("Cluster has completed running...");
-      try {
-        Thread.sleep(TimeUnit.SECONDS.toMillis(15));
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-      try {
-        close();
-      } catch (Exception e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-      }
-    }
+    // try {
+    // System.out.println("getCurrentUser-----------"
+    // + UserGroupInformation.getCurrentUser());
+    // System.out.println("getLoginUser-----------"
+    // + UserGroupInformation.getLoginUser());
+    // } catch (IOException e1) {
+    // // TODO Auto-generated catch block
+    // e1.printStackTrace();
+    // }
+    // attemptKeytabLogin();
+    //
+    // log.info(String.format("Allocating cluster with %d nodes",
+    // para.getInt("containers")));
+    //
+    // // register requests
+    // Resource capability = YarnCompat.resource(cfg, para.getInt("memory"),
+    // para.getInt("cpu"));
+    // Priority prio = Priority.newInstance(-1);
+    //
+    // for (int i = 0; i < para.getInt("containers"); i++) {
+    // // TODO: Add allocation (host/rack rules) - and disable location
+    // // constraints
+    // ContainerRequest req = new ContainerRequest(capability, null, null,
+    // prio);
+    // amRpc.addContainerRequest(req);
+    // }
+    //
+    // // update status every 5 sec
+    // final long heartBeatRate = TimeUnit.SECONDS.toMillis(5);
+    //
+    // // start the allocation loop
+    // // when a new container is allocated, launch it right away
+    //
+    // int responseId = 0;
+    //
+    // try {
+    // do {
+    // AllocateResponse alloc = amRpc.allocate(responseId++);
+    // List<Container> currentlyAllocated = alloc.getAllocatedContainers();
+    // for (Container container : currentlyAllocated) {
+    // launchContainer(container);
+    // allocatedContainers.add(container.getId());
+    // }
+    //
+    // if (currentlyAllocated.size() > 0) {
+    // int needed = para.getInt("containers") - allocatedContainers.size();
+    // if (needed > 0) {
+    // log.info(String.format("%s containers allocated, %s remaining",
+    // allocatedContainers.size(), needed));
+    // } else {
+    // log.info(String.format("Fully allocated %s containers",
+    // allocatedContainers.size()));
+    // }
+    // }
+    //
+    // List<ContainerStatus> completed = alloc
+    // .getCompletedContainersStatuses();
+    // for (ContainerStatus status : completed) {
+    // if (!completedContainers.contains(status.getContainerId())) {
+    // ContainerId containerId = status.getContainerId();
+    // completedContainers.add(containerId);
+    //
+    // boolean containerSuccesful = false;
+    //
+    // switch (status.getExitStatus()) {
+    // case ContainerExitStatus.SUCCESS:
+    // log.info(String.format("Container %s finished succesfully...",
+    // containerId));
+    // containerSuccesful = true;
+    // break;
+    // case ContainerExitStatus.ABORTED:
+    // log.warn(String.format("Container %s aborted...", containerId));
+    // break;
+    // case ContainerExitStatus.DISKS_FAILED:
+    // log.warn(String.format("Container %s ran out of disk...",
+    // containerId));
+    // break;
+    // case ContainerExitStatus.PREEMPTED:
+    // log.warn(String
+    // .format("Container %s preempted...", containerId));
+    // break;
+    //
+    // default:
+    // log.warn(String.format(
+    // "Container %s exited with an invalid/unknown exit code...",
+    // containerId));
+    // }
+    //
+    // if (!containerSuccesful) {
+    // log.warn("Cluster has not completed succesfully...");
+    // clusterHasFailed = true;
+    // running = false;
+    // }
+    // }
+    // }
+    //
+    // if (completedContainers.size() == -para.getInt("containers")) {
+    // running = false;
+    // }
+    //
+    // if (running) {
+    // Thread.sleep(heartBeatRate);
+    // }
+    // } while (running);
+    // } catch (Exception e) {
+    // e.printStackTrace();
+    // } finally {
+    // log.info("Cluster has completed running...");
+    // try {
+    // Thread.sleep(TimeUnit.SECONDS.toMillis(15));
+    // } catch (InterruptedException e) {
+    // throw new RuntimeException(e);
+    // }
+    // try {
+    // close();
+    // } catch (Exception e) {
+    // // TODO Auto-generated catch block
+    // e.printStackTrace();
+    // }
+    // }
   }
   
   private void attemptKeytabLogin() {
@@ -202,7 +355,8 @@ public class ClusterContainer implements AutoCloseable {
     // String keytabFilename = appConfig.kerberosKeytab();
     // if (keytabFilename == null || keytabFilename.length() == 0) {
     // throw new EsYarnAmException(
-    // "Security is enabled, but we could not find a configured keytab; Bailing out...");
+    // "Security is enabled, but we could not find a configured keytab; Bailing
+    // out...");
     // }
     // String configuredPrincipal = appConfig.kerberosPrincipal();
     // String principal = SecurityUtil.getServerPrincipal(configuredPrincipal,
@@ -210,7 +364,8 @@ public class ClusterContainer implements AutoCloseable {
     // UserGroupInformation.loginUserFromKeytab(principal, keytabFilename);
     // } catch (UnknownHostException e) {
     // throw new EsYarnAmException(
-    // "Could not read localhost information for server principal construction; Bailing out...",
+    // "Could not read localhost information for server principal construction;
+    // Bailing out...",
     // e);
     // } catch (IOException e) {
     // throw new EsYarnAmException("Could not log in.", e);
@@ -218,8 +373,8 @@ public class ClusterContainer implements AutoCloseable {
     // }
   }
   
-  private void launchContainer(Container container) throws YarnException,
-      IOException, JSONException {
+  private void launchContainer(Container container)
+      throws YarnException, IOException, JSONException {
     ContainerLaunchContext ctx = Records
         .newRecord(ContainerLaunchContext.class);
     
@@ -230,18 +385,21 @@ public class ClusterContainer implements AutoCloseable {
     log.info("About to launch container for command: " + ctx.getCommands());
     
     // setup container
-    Map<String,ByteBuffer> startContainer = nmRpc
-        .startContainer(container, ctx);
+    Map<String,ByteBuffer> startContainer = nmRpc.startContainer(container,
+        ctx);
     log.info("Started container " + container);
   }
   
-  private Map<String,LocalResource> setupResource() throws  JSONException, IOException {
+  private Map<String,LocalResource> setupResource()
+      throws JSONException, IOException {
     // elasticsearch.zip
     Map<String,LocalResource> resources = new LinkedHashMap<String,LocalResource>();
     
     LocalResource esZip = Records.newRecord(LocalResource.class);
     FileSystem fs = FileSystem.get(cfg);
     String path = "";
+    
+    System.out.println("resource para:" + para.toString());
     if (para.has("files")) {
       for (int i = 0; i < para.getJSONArray("files").length(); i++) {
         
@@ -285,11 +443,12 @@ public class ClusterContainer implements AutoCloseable {
             for (FileStatus jfile : fss) {
               LocalResource tlr = Records.newRecord(LocalResource.class);
               
-              tlr.setResource(ConverterUtils.getYarnUrlFromPath(jfile.getPath()));
+              tlr.setResource(
+                  ConverterUtils.getYarnUrlFromPath(jfile.getPath()));
               tlr.setSize(jfile.getLen());
               tlr.setTimestamp(jfile.getModificationTime());
               tlr.setType(LocalResourceType.FILE);
-              tlr.setVisibility(LocalResourceVisibility.PRIVATE);
+              tlr.setVisibility(LocalResourceVisibility.PUBLIC);
               resources.put(jfile.getPath().getName(), tlr);
             }
           }
@@ -303,26 +462,31 @@ public class ClusterContainer implements AutoCloseable {
       
       JSONObject f = (JSONObject) para.getJSONArray("conf.files").get(i);
       path = f.getString("fileName");
-      if (fs.exists(new Path(path))) {
-        LocalResource tlr = Records.newRecord(LocalResource.class);
-        FileStatus jarf = fs.getFileStatus(new Path(path));
-        tlr.setResource(ConverterUtils.getYarnUrlFromPath(jarf.getPath()));
-        tlr.setSize(jarf.getLen());
-        tlr.setTimestamp(jarf.getModificationTime());
-        tlr.setType(LocalResourceType.FILE);
-        tlr.setVisibility(LocalResourceVisibility.PRIVATE);
-        
-        resources.put(jarf.getPath().getName(), tlr);
-      }
+      path = converRemotePath(path);
+      System.out.println("path:" + path);
+      // if (fs.exists(new Path(path))) {
+      System.out.println("path exists");
+      LocalResource tlr = Records.newRecord(LocalResource.class);
+      FileStatus jarf = fs.getFileStatus(new Path(path));
+      tlr.setResource(ConverterUtils.getYarnUrlFromPath(jarf.getPath()));
+      tlr.setSize(jarf.getLen());
+      tlr.setTimestamp(jarf.getModificationTime());
+      tlr.setType(LocalResourceType.FILE);
+      tlr.setVisibility(LocalResourceVisibility.PUBLIC);
+      
+      resources.put(jarf.getPath().getName(), tlr);
+      // }
     }
     
+    System.out.println(
+        "resources:" + StringUtils.concatenate(resources.values(), "--"));
     return resources;
   }
   
   private List<String> setupScript() throws JSONException {
     List<String> cmds = new ArrayList<String>();
     // don't use -jar since it overrides the classpath
-    // cmds.add("sleep 5000 \n");
+//    cmds.add("sleep 5000 \n");
     cmds.add("ulimit -a \n");
     cmds.add(para.getString("run.shell"));
     cmds.add("1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/"
@@ -340,5 +504,10 @@ public class ClusterContainer implements AutoCloseable {
   public void close() throws Exception {
     running = false;
     nmRpc.close();
+  }
+  
+  public String converRemotePath(String fileName) throws JSONException {
+    return para.get("user") + "/" + para.get("project") + "/"
+        + para.get("appConf") + "/" + para.get("appId") + "/" + fileName;
   }
 }

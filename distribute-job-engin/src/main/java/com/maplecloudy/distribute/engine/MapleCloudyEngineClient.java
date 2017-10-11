@@ -220,7 +220,7 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
       
       // Setup CLASSPATH for ApplicationMaster
       
-      Map<String,String> appMasterEnv = YarnUtils.setupAppMasterEnv(this.getConf());
+      Map<String,String> appMasterEnv = YarnUtils.setupAppMasterEnv(this.getConf(),"");
       System.out.println("--------------------------");
       System.out.println(appMasterEnv.toString());
       System.out.println("--------------------------");

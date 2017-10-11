@@ -184,8 +184,10 @@ public class AppImpl implements IApp {
     json.put("arcs", arcs);
     
     System.out.println(json);
+   
+
+    String a = "{'user':'gxiang','project':'13','appId':['203'],'appConf':'13','memory':1024,'cpu':1,'containers':1,'ammemory':64,'amcpu':1,'priority':-1,'domain':'elasticsearch','nginxIp':'60.205.171.123','nginxDomain':'maplecloudy.com','port':0,'proxyPort':55552,'defaultFS':'hdfs://wx02.maplecloudy.com:8020','resourceManagerAddress':'wx01.maplecloudy.com:8032','isDistribution':false,'isCluster':true,'run.shell':'sh elasticsearch.sh','type':'ELASTICSEARCH','conf.files':[{'fileName':'elasticsearch.yml','<network.host>':'network.host: 0.0.0.0','<path.data>':'path.data: /tmp/elasticsearch/data','<path.logs>':'path.logs: /tmp/elasticsearch/logs'},{'fileName':'jvm.options','<Xms>':'-Xms2g','<Xmx>':'-Xmx2g'},{'fileName':'elasticsearch.sh'}],'files':[],'arcs':['/user/maplecloudy/com/elasticsearch/elasticsearch/5.3.0/elasticsearch-5.3.0.zip','/user/maplecloudy/com/java/jdk/8u121/jdk-8u121-linux-x64.tar.gz']}";
     
-    String a = "{'proxyPort': 0, 'project': '119', 'domain': '', 'resourceManagerAddress': 'hadoop02.aliyun.bj.maplecloudy.com:8032', 'run.shell': 'sh build.sh -fs demo.zip/home/maple/.maple/user/zyi/build/gxiang/rs/rs-dist/target/rs-dist-0.0.1-SNAPSHOT-bin /user/zyi/maple/gxiang zyi', 'conf.files': [{'fileName': 'build.sh'}], 'nginxIp': '', 'arcs': ['/user/zyi/demo.zip', '/user/maplecloudy/apache-maven-3.3.9.zip', '/user/maplecloudy/settings.xml'], 'appId': [974], 'port': 0, 'appConf': '9999', 'nginx': False, 'nginxDomain': '', 'user': 'zyi', 'isDistribution': False, 'memory': 1024, 'damon': True, 'defaultFS': 'hdfs://hadoop02.aliyun.bj.maplecloudy.com:8020', 'type': 'BUILD', 'cpu': 1, 'files': []}";
     server.startEngineApp(a);
 //    Thread.sleep(10000);
 //    List<AppStatus> la = server.getAppStatus(json.toString());
@@ -193,7 +195,7 @@ public class AppImpl implements IApp {
 //    List<String> ls = server.getAppTaskInfo(json.toString());
     
 //    Thread.sleep(20000);
-//    server.stopAppTask(json.toString());
+//    server.stopAppTask(a);
 
   }
   
