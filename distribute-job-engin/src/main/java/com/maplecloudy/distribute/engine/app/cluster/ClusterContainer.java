@@ -177,8 +177,8 @@ public class ClusterContainer implements AutoCloseable {
                       
                       default:
                         log.warn(String.format(
-                            "Container %s exited with an invalid/unknown exit code...",
-                            containerId));
+                            "Container %s exited with an invalid/unknown exit code %d",
+                            containerId, status.getExitStatus()));
                     }
                     
                     if (!containerSuccesful) {
@@ -486,7 +486,7 @@ public class ClusterContainer implements AutoCloseable {
   private List<String> setupScript() throws JSONException {
     List<String> cmds = new ArrayList<String>();
     // don't use -jar since it overrides the classpath
-//    cmds.add("sleep 5000 \n");
+    // cmds.add("sleep 5000 \n");
     cmds.add("ulimit -a \n");
     cmds.add(para.getString("run.shell"));
     cmds.add("1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/"
