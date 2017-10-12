@@ -14,7 +14,7 @@
 #
 # Use a descriptive name for your cluster:
 #
-#cluster.name: my-application
+cluster.name: <cluster.name>
 #
 # ------------------------------------ Node ------------------------------------
 #
@@ -30,11 +30,13 @@
 #
 # Path to directory where to store the data (separate multiple locations by comma):
 #
-path.data: /tmp/elasticsearch/data
+#path.data: /path/to/data
+path.data: <path.data>
 #
 # Path to log files:
 #
-path.logs: /tmp/elasticsearch/logs
+#path.logs: /path/to/logs
+path.logs: <path.logs>
 #
 # ----------------------------------- Memory -----------------------------------
 #
@@ -52,7 +54,7 @@ path.logs: /tmp/elasticsearch/logs
 #
 # Set the bind address to a specific IP (IPv4 or IPv6):
 #
-network.host: 0.0.0.0
+network.host: <network.host>
 #
 # Set a custom port for HTTP:
 #
@@ -86,5 +88,3 @@ network.host: 0.0.0.0
 # Require explicit names when deleting indices:
 #
 #action.destructive_requires_name: true
-#
-bootstrap.system_call_filter: false

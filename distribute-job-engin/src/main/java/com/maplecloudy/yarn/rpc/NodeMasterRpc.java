@@ -1,4 +1,4 @@
-package com.maplecloudy.distribute.engine.app.elasticsearch.appmaster;
+package com.maplecloudy.yarn.rpc;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -17,7 +17,7 @@ import org.apache.hadoop.yarn.exceptions.YarnException;
 
 import com.maplecloudy.distribute.engine.utils.YarnCompat;
 
-class NodeMasterRpc implements AutoCloseable {
+public class NodeMasterRpc {
   
   private final Configuration cfg;
   private final NMTokenCache tokenCache;

@@ -7,9 +7,10 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
 import com.google.common.collect.Lists;
+import com.maplecloudy.distribute.engine.app.engineapp.ClusterEngineAppTask;
 import com.maplecloudy.distribute.engine.app.engineapp.EngineAppTask;
 import com.maplecloudy.distribute.engine.apptask.AppTaskBaseline;
-import com.maplecloudy.distribute.engine.apptask.TaskPool2;
+import com.maplecloudy.distribute.engine.apptask.TaskPool;
 
 public class AppImpl implements IApp {
   
@@ -20,14 +21,19 @@ public class AppImpl implements IApp {
   @Override
   public int startEngineApp(String para) throws JSONException {
     
-    EngineAppTask task;
+    AppTaskBaseline task;
     JSONObject json = new JSONObject(para);
     JSONArray jarr = json.getJSONArray("appId");
     for (int i = 0; i < jarr.length(); i++) {
       
       json.put("appId", jarr.getInt(i));
-      task = new EngineAppTask(json);
-      TaskPool2.addTask(task);
+      if(json.getBoolean("isCluster"))
+      {
+        task = new ClusterEngineAppTask(json);
+      }
+      else
+        task = new EngineAppTask(json);
+      TaskPool.addTask(task);
     }
     
     return 0;
@@ -51,9 +57,10 @@ public class AppImpl implements IApp {
     System.out.println("getAppStatus:" + appName);
     
     try {
-      AppTaskBaseline task = TaskPool2.taskMap.get(appName);
+      AppTaskBaseline task = TaskPool.taskMap.get(appName);
       if (task == null) {
-        new EngineAppTask(json).checkTaskApp();
+        
+          new EngineAppTask(json).checkTaskApp();
       }
       return task.getAppStatus();
     } catch (Exception e) {
@@ -80,7 +87,7 @@ public class AppImpl implements IApp {
     }
     System.out.println("getAppTaskInfo:" + appName);
     
-    EngineAppTask task = TaskPool2.taskMap.get(appName);
+    AppTaskBaseline task = TaskPool.taskMap.get(appName);
     if (task != null) {
       return task.runInfo;
     } else {
@@ -108,10 +115,10 @@ public class AppImpl implements IApp {
         System.out.println("stopAppTask:" + appName);
         
         try {
-          EngineAppTask task = TaskPool2.taskMap.get(appName);
+          AppTaskBaseline task = TaskPool.taskMap.get(appName);
           if (task == null) {
             task = new EngineAppTask(json);
-            TaskPool2.taskMap.put(appName, task);
+            TaskPool.taskMap.put(appName, task);
           }
           if (ret == 0) ret = task.stopApp();
         } catch (Exception e) {
@@ -177,8 +184,10 @@ public class AppImpl implements IApp {
     json.put("arcs", arcs);
     
     System.out.println(json);
+   
+
+    String a = "{'user':'gxiang','project':'13','appId':['203'],'appConf':'13','memory':2560,'cpu':1,'containers':1,'ammemory':64,'amcpu':1,'priority':-1,'domain':'elasticsearch','nginxIp':'60.205.171.123','nginxDomain':'maplecloudy.com','port':0,'proxyPort':55552,'defaultFS':'hdfs://wx02.maplecloudy.com:8020','resourceManagerAddress':'wx01.maplecloudy.com:8032','isDistribution':false,'isCluster':true,'run.shell':'sh elasticsearch.sh','type':'ELASTICSEARCH','conf.files':[{'fileName':'elasticsearch.yml','<network.host>':'0.0.0.0','<path.data>':'/tmp/elasticsearch/mycluster/data','<path.logs>':'/tmp/elasticsearch/mycluster/logs','<cluster.name>':'mycluster'},{'fileName':'jvm.options','<Xms>':'-Xms2048m','<Xmx>':'-Xmx2048m'},{'fileName':'elasticsearch.sh'}],'files':[],'arcs':['/user/maplecloudy/com/elasticsearch/elasticsearch/5.3.0/elasticsearch-5.3.0.zip','/user/maplecloudy/com/java/jdk/8u121/jdk-8u121-linux-x64.tar.gz']}";
     
-    String a = "{'proxyPort': 0, 'project': '119', 'domain': '', 'resourceManagerAddress': 'hadoop02.aliyun.bj.maplecloudy.com:8032', 'run.shell': 'sh build.sh -fs demo.zip/home/maple/.maple/user/zyi/build/gxiang/rs/rs-dist/target/rs-dist-0.0.1-SNAPSHOT-bin /user/zyi/maple/gxiang zyi', 'conf.files': [{'fileName': 'build.sh'}], 'nginxIp': '', 'arcs': ['/user/zyi/demo.zip', '/user/maplecloudy/apache-maven-3.3.9.zip', '/user/maplecloudy/settings.xml'], 'appId': [974], 'port': 0, 'appConf': '9999', 'nginx': False, 'nginxDomain': '', 'user': 'zyi', 'isDistribution': False, 'memory': 1024, 'damon': True, 'defaultFS': 'hdfs://hadoop02.aliyun.bj.maplecloudy.com:8020', 'type': 'BUILD', 'cpu': 1, 'files': []}";
     server.startEngineApp(a);
 //    Thread.sleep(10000);
 //    List<AppStatus> la = server.getAppStatus(json.toString());
@@ -186,7 +195,7 @@ public class AppImpl implements IApp {
 //    List<String> ls = server.getAppTaskInfo(json.toString());
     
 //    Thread.sleep(20000);
-//    server.stopAppTask(json.toString());
+//    server.stopAppTask(a);
 
   }
   

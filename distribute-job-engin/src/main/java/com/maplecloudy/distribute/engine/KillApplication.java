@@ -5,6 +5,8 @@ import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 
+import com.maplecloudy.yarn.rpc.ClientRpc;
+
 public class KillApplication {
 
 	Configuration conf = new YarnConfiguration();
@@ -19,12 +21,9 @@ public class KillApplication {
 		ApplicationId appid = ApplicationId.newInstance(Long.parseLong(ids[1]), Integer.parseInt(ids[2])); 
 		// Create yarnClient
 		YarnConfiguration conf = new YarnConfiguration();
-		YarnClient yarnClient = YarnClient.createYarnClient();
-		
-		yarnClient.init(conf);
-		yarnClient.start();
+		YarnClient yarnClient = ClientRpc.getYarnClient(conf);
 		yarnClient.killApplication(appid);
-		yarnClient.close();
+		
 		
 	}
 }

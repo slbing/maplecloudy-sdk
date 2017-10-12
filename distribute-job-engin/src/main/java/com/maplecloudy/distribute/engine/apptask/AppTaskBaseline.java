@@ -31,6 +31,7 @@ import com.google.gson.JsonIOException;
 import com.maplecloudy.distribute.engine.app.engine.EngineInstallInfo;
 import com.maplecloudy.distribute.engine.appserver.AppStatus;
 import com.maplecloudy.distribute.engine.utils.EngineUtils;
+import com.maplecloudy.yarn.rpc.ClientRpc;
 
 public abstract class AppTaskBaseline extends Configured implements Runnable {
   
@@ -66,6 +67,7 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
 
   public boolean damon = true;
   public boolean nginx = true;
+  public JSONObject json;
   
   public AppTaskBaseline(JSONObject json) {
     
@@ -89,7 +91,7 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
         this.damon = false;
       if(json.has("nginx") && !json.getBoolean("nginx"))
         this.nginx = false;
-      
+      this.json = json;
       exportJson(json);
       
     } catch (JSONException e) {
@@ -209,10 +211,7 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
   
   public ApplicationId checkTaskApp() throws YarnException, IOException {
     ApplicationId bret = null;
-    YarnClient yarnClient = YarnClient.createYarnClient();
-    Configuration conf = new YarnConfiguration(this.getConf());
-    yarnClient.init(conf);
-    yarnClient.start();
+    YarnClient yarnClient = ClientRpc.getYarnClient(getConf());
     List<ApplicationReport> reports = yarnClient
         .getApplications(Collections.singleton(this.getAppType()));
     for (ApplicationReport report : reports) {
@@ -291,6 +290,7 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
     
     conf.set("yarn.application.classpath",
         "$HADOOP_CLIENT_CONF_DIR,$HADOOP_CONF_DIR,$HADOOP_COMMON_HOME/*,$HADOOP_COMMON_HOME/lib/*,$HADOOP_HDFS_HOME/*,$HADOOP_HDFS_HOME/lib/*,$HADOOP_YARN_HOME/*,$HADOOP_YARN_HOME/lib/*");
+//    conf.set("app.para", this.json.toString());
   }
   
   public void exportJson(JSONObject json) throws IOException {

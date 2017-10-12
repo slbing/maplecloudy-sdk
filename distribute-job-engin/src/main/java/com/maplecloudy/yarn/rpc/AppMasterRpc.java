@@ -1,4 +1,4 @@
-package com.maplecloudy.distribute.engine.app.elasticsearch.appmaster;
+package com.maplecloudy.yarn.rpc;
 import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
@@ -14,7 +14,7 @@ import org.apache.hadoop.yarn.exceptions.YarnException;
 import com.maplecloudy.distribute.engine.utils.YarnCompat;
 
 
-class AppMasterRpc implements AutoCloseable {
+public class AppMasterRpc {
 
     private final YarnConfiguration cfg;
     private AMRMClient<ContainerRequest> client;

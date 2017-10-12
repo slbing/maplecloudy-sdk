@@ -1,5 +1,4 @@
-package com.maplecloudy.distribute.engine.app.elasticsearch.appmaster;
-
+package com.maplecloudy.distribute.engine;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -8,7 +7,6 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterResponse;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
@@ -16,35 +14,33 @@ import org.apache.hadoop.yarn.api.records.NMToken;
 import org.apache.hadoop.yarn.client.api.NMTokenCache;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 
-import com.maplecloudy.distribute.engine.app.elasticsearch.ElatisticSearchPara;
+import com.maplecloudy.distribute.engine.app.cluster.ClusterContainer;
+import com.maplecloudy.yarn.rpc.AppMasterRpc;
 
-public class ApplicationMaster implements AutoCloseable {
+public class ClusterEngine {
   
-  private static final Log log = LogFactory.getLog(ApplicationMaster.class);
+  private static final Log log = LogFactory.getLog(ClusterEngine.class);
   
   private ApplicationAttemptId appId;
-  private final Map<String,String> env;
   private AppMasterRpc rpc;
   private final Configuration cfg;
-  private EsCluster cluster;
+  private ClusterContainer cluster;
   private NMTokenCache nmTokenCache;
   private ByteBuffer allTokens;
   private UserGroupInformation appSubmitterUgi;
   private RegisterApplicationMasterResponse amResponse;
   
-  private final ElatisticSearchPara para;
+  private final JSONObject para;
   
-  ApplicationMaster(Map<String,String> env) {
-    this.env = env;
+  public ClusterEngine(Map<String,String> env) throws JSONException {
     cfg = new YarnConfiguration();
-//    if (env.containsKey(FS_URI)) {
-//      cfg.set(FileSystem.FS_DEFAULT_NAME_KEY, env.get(FS_URI));
-//    }
-    para = ElatisticSearchPara.getFromCfg(cfg);
+    para = new JSONObject(env.get("app.para"));
   }
   
-  void run() throws IOException, YarnException {
+  void run() throws IOException, YarnException, JSONException {
     log.info("Starting ApplicationMaster...");
     
     if (nmTokenCache == null) {
@@ -85,15 +81,15 @@ public class ApplicationMaster implements AutoCloseable {
     }
     
     // register AM
-//    appId = YarnUtils.getApplicationAttemptId(env);
-//    Assert.notNull(appId, "ApplicationAttemptId cannot be found in env %s"
-//        + env);
+    // appId = YarnUtils.getApplicationAttemptId(env);
+    // Assert.notNull(appId, "ApplicationAttemptId cannot be found in env %s"
+    // + env);
     amResponse = rpc.registerAM();
     
     updateTokens();
-    
-    cluster = new EsCluster(rpc, para, env);
     try {
+      cluster = new ClusterContainer(rpc, para);
+      
       cluster.start();
     } finally {
       try {
@@ -133,8 +129,8 @@ public class ApplicationMaster implements AutoCloseable {
   }
   
   public static void main(String[] args) throws Exception {
- 
-    ApplicationMaster am = new ApplicationMaster(System.getenv());
+    
+    ClusterEngine am = new ClusterEngine(System.getenv());
     try {
       am.run();
     } catch (Exception e) {
