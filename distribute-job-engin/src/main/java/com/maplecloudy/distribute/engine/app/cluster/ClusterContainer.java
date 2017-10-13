@@ -80,7 +80,7 @@ public class ClusterContainer implements AutoCloseable {
     
     UserGroupInformation ugi;
     try {
-      ugi = UserGroupInformation.createProxyUser("gxiang",
+      ugi = UserGroupInformation.createProxyUser(para.getString("user"),
           UserGroupInformation.getLoginUser());
       ugi.doAs(new PrivilegedAction<ApplicationId>() {
         

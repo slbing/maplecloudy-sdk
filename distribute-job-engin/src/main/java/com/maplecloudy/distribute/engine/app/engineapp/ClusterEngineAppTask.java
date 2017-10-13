@@ -155,8 +155,8 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
     
     // Set up resource type requirements for ApplicationMaster
     Resource capability = Records.newRecord(Resource.class);
-    capability.setMemory(memory);
-    capability.setVirtualCores(cpu);
+    capability.setMemory(this.json.getInt("ammemory"));
+    capability.setVirtualCores(this.json.getInt("amcpu"));
     System.out.println("login user:" + UserGroupInformation.getLoginUser());
     
     // Finally, set-up ApplicationSubmissionContext for the application
