@@ -167,9 +167,13 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
     appContext.setApplicationName(name); // application name
     appContext.setAMContainerSpec(amContainer);
     appContext.setResource(capability);
-    appContext.setQueue("default"); // queue
+    if (this.json.has("queue")) {
+    	String queue =(this.json.getString("queue") == null || this.json.getString("queue") == "") ? "default" : this.json.getString("queue");
+        appContext.setQueue(queue);
+	} else {
+        appContext.setQueue("default");	
+	}
     appContext.setMaxAppAttempts(1);
-    
     // Submit application
     ApplicationId appId = appContext.getApplicationId();
     System.out.println("Submitting application " + appId);
