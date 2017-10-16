@@ -35,7 +35,6 @@ import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.mortbay.log.Log;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -61,22 +60,29 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
     try {
       runInfo.clear();
       this.runInfo.add("Start Task!");
+      System.out.println(1);
       ApplicationId appid = this.checkTaskApp();
+      System.out.println(2);
       if (appid != null) {
+          System.out.println(3);
         updateNginx(appid);
+        System.out.println(4);
         return;
       }
-      Log.info("checkEnv begine");
-      if (!this.checkEnv()) return;
       
-      Log.info("checkEnv done");
+      if (!this.checkEnv()) return;
+      System.out.println(5);
+
       UserGroupInformation ugi = UserGroupInformation.createProxyUser(this.user,
           UserGroupInformation.getLoginUser());
+      System.out.println(6);
       appid = ugi.doAs(new PrivilegedAction<ApplicationId>() {
         @Override
         public ApplicationId run() {
           try {
+              System.out.println(7);
             ApplicationId appid = runAPP();
+            System.out.println(8);
             return appid;
           } catch (Exception e) {
             e.printStackTrace();
@@ -85,11 +91,14 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
           }
         }
       });
-      
+      System.out.println(9);
       if (appid != null) {
+          System.out.println(9);
         this.appids.add(appid);
+        System.out.println(10);
         
         updateNginx(appid);
+        System.out.println(11);
       }
       // checkInfo.add("yarn app have submit");
       
@@ -271,7 +280,6 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
         }
       }
     }
-    Log.info("files:"+bret);
     if (json.has("arcs")) {
       for (int i = 0; i < json.getJSONArray("arcs").length(); i++) {
         
@@ -284,7 +292,6 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
         }
       }
     }
-    Log.info("arcs:"+bret);
     if (json.has("dirs")) {
       for (int i = 0; i < json.getJSONArray("dirs").length(); i++) {
         
@@ -297,7 +304,6 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
         }
       }
     }
-    Log.info("dirs:"+bret);
     // generate confs and upload
     String fileName = "";
     for (int i = 0; i < json.getJSONArray("conf.files").length(); i++) {
@@ -309,8 +315,7 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
       boolean b = uploadFile(converRemotePath(fileName));
       if (!b) bret = bret;
     }
-
-    Log.info("conf.files:"+bret);
+    
     // send update ngix
     return bret;
     
