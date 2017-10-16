@@ -35,6 +35,7 @@ import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.mortbay.log.Log;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -65,9 +66,10 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
         updateNginx(appid);
         return;
       }
-      
+      Log.info("checkEnv begine");
       if (!this.checkEnv()) return;
       
+      Log.info("checkEnv done");
       UserGroupInformation ugi = UserGroupInformation.createProxyUser(this.user,
           UserGroupInformation.getLoginUser());
       appid = ugi.doAs(new PrivilegedAction<ApplicationId>() {
@@ -265,6 +267,7 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
         }
       }
     }
+    Log.info("files:"+bret);
     if (json.has("arcs")) {
       for (int i = 0; i < json.getJSONArray("arcs").length(); i++) {
         
@@ -277,6 +280,7 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
         }
       }
     }
+    Log.info("arcs:"+bret);
     if (json.has("dirs")) {
       for (int i = 0; i < json.getJSONArray("dirs").length(); i++) {
         
@@ -289,6 +293,7 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
         }
       }
     }
+    Log.info("dirs:"+bret);
     // generate confs and upload
     String fileName = "";
     for (int i = 0; i < json.getJSONArray("conf.files").length(); i++) {
@@ -300,7 +305,8 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
       boolean b = uploadFile(converRemotePath(fileName));
       if (!b) bret = bret;
     }
-    
+
+    Log.info("conf.files:"+bret);
     // send update ngix
     return bret;
     
