@@ -211,41 +211,28 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
   
   public ApplicationId checkTaskApp() throws YarnException, IOException {
     ApplicationId bret = null;
-    System.out.println(21);
 //    YarnClient yarnClient = ClientRpc.getYarnClient(getConf());
     YarnClient yarnClient = YarnClient.createYarnClient();
-    System.out.println(211);  
     Configuration conf = new YarnConfiguration(this.getConf());
-    System.out.println(212);
     yarnClient.init(conf);
-    System.out.println(213);
     yarnClient.start();
-    System.out.println(22);
     List<ApplicationReport> reports = yarnClient
         .getApplications(Collections.singleton(this.getAppType()));
-    System.out.println(23);
     for (ApplicationReport report : reports) {
-        System.out.println(24);
       if (report.getName().equals(this.getName())) {
-    	    System.out.println(25);
         runInfo.add("App has run with appid:" + report.getApplicationId());
-        System.out.println(26);
         if (report.getYarnApplicationState() == YarnApplicationState.FAILED
             || report.getYarnApplicationState() == YarnApplicationState.FINISHED
             || report
                 .getYarnApplicationState() == YarnApplicationState.KILLED) {
-            System.out.println(27);
           runInfo.add("App have run with appid:" + report.getApplicationId()
               + ", and not runing with status:"
               + report.getYarnApplicationState());
         } else {
-            System.out.println(28);
           this.appids.add(report.getApplicationId());
           bret = report.getApplicationId();
         }
-        System.out.println(29);
       }
-      System.out.println(30);
     }
     yarnClient.close();
     return bret;

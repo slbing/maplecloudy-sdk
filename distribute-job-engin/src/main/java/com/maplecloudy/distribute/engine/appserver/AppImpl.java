@@ -31,7 +31,6 @@ public class AppImpl implements IApp {
       if(json.getBoolean("isCluster"))
       {
         task = new ClusterEngineAppTask(json);
-        System.out.println(11);
       }
       else
         task = new EngineAppTask(json);

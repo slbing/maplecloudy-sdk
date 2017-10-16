@@ -60,29 +60,21 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
     try {
       runInfo.clear();
       this.runInfo.add("Start Task!");
-      System.out.println(1);
       ApplicationId appid = this.checkTaskApp();
-      System.out.println(2);
       if (appid != null) {
-          System.out.println(3);
         updateNginx(appid);
-        System.out.println(4);
         return;
       }
       
       if (!this.checkEnv()) return;
-      System.out.println(5);
 
       UserGroupInformation ugi = UserGroupInformation.createProxyUser(this.user,
           UserGroupInformation.getLoginUser());
-      System.out.println(6);
       appid = ugi.doAs(new PrivilegedAction<ApplicationId>() {
         @Override
         public ApplicationId run() {
           try {
-              System.out.println(7);
             ApplicationId appid = runAPP();
-            System.out.println(8);
             return appid;
           } catch (Exception e) {
             e.printStackTrace();
@@ -91,14 +83,9 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
           }
         }
       });
-      System.out.println(9);
       if (appid != null) {
-          System.out.println(9);
         this.appids.add(appid);
-        System.out.println(10);
-        
         updateNginx(appid);
-        System.out.println(11);
       }
       // checkInfo.add("yarn app have submit");
       
