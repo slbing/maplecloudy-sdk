@@ -212,7 +212,14 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
   public ApplicationId checkTaskApp() throws YarnException, IOException {
     ApplicationId bret = null;
     System.out.println(21);
-    YarnClient yarnClient = ClientRpc.getYarnClient(getConf());
+//    YarnClient yarnClient = ClientRpc.getYarnClient(getConf());
+    YarnClient yarnClient = YarnClient.createYarnClient();
+    System.out.println(211);  
+    Configuration conf = new YarnConfiguration(this.getConf());
+    System.out.println(212);
+    yarnClient.init(conf);
+    System.out.println(213);
+    yarnClient.start();
     System.out.println(22);
     List<ApplicationReport> reports = yarnClient
         .getApplications(Collections.singleton(this.getAppType()));
