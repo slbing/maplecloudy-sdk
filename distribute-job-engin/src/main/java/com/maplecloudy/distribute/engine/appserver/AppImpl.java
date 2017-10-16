@@ -24,6 +24,7 @@ public class AppImpl implements IApp {
     AppTaskBaseline task;
     JSONObject json = new JSONObject(para);
     JSONArray jarr = json.getJSONArray("appId");
+    System.out.println("json received:" + para);
     for (int i = 0; i < jarr.length(); i++) {
       
       json.put("appId", jarr.getInt(i));
