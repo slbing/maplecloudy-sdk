@@ -161,7 +161,8 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
     final ApplicationSubmissionContext appContext = app
         .getApplicationSubmissionContext();
     appContext.setApplicationType(type);
-    String name = "engine:launcher:" + type;
+//    String name = "engine:launcher:" + type;
+    String name = getName();
     appContext.setApplicationName(name); // application name
     appContext.setAMContainerSpec(amContainer);
     appContext.setResource(capability);
