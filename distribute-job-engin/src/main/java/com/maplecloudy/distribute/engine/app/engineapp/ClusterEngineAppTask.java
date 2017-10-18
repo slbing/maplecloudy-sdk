@@ -62,7 +62,7 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
       this.runInfo.add("Start Task!");
       ApplicationId appid = this.checkTaskApp();
       if (appid != null) {
-        updateNginx(appid);
+//        updateNginx(appid);
         return;
       }
       
@@ -85,7 +85,8 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
       });
       if (appid != null) {
         this.appids.add(appid);
-        updateNginx(appid);
+//        updateNginx(appid);
+        
       }
       // checkInfo.add("yarn app have submit");
       
