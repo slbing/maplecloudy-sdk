@@ -28,7 +28,7 @@ public class AppImpl implements IApp {
     for (int i = 0; i < jarr.length(); i++) {
       
       json.put("appId", jarr.getInt(i));
-      if(json.getBoolean("isCluster"))
+      if(json.has("isCluster") && json.getBoolean("isCluster"))
       {
         task = new ClusterEngineAppTask(json);
       }
