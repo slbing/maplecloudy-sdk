@@ -26,6 +26,7 @@ import com.maplecloudy.avro.mapreduce.AvroJob;
 import com.maplecloudy.avro.mapreduce.MultithreadedBlockMapper;
 import com.maplecloudy.avro.mapreduce.MultithreadedBlockMapper.BlockMapper;
 import com.maplecloudy.avro.mapreduce.input.AvroPairInputFormat;
+import com.maplecloudy.oozie.main.OozieMain;
 import com.maplecloudy.spider.crawl.CrawlDatum;
 import com.maplecloudy.spider.metadata.Spider;
 import com.maplecloudy.spider.protocol.Content;
@@ -37,7 +38,7 @@ import com.maplecloudy.spider.util.LogUtil;
 import com.maplecloudy.spider.util.SpiderConfiguration;
 
 /** The fetcher. Most of the work is done by plugins. */
-public class FetcherSmart extends Configured implements Tool {
+public class FetcherSmart extends OozieMain implements Tool {
 
 	public static final Log			LOG								= LogFactory
 																										.getLog(FetcherSmart.class);
@@ -216,8 +217,8 @@ public class FetcherSmart extends Configured implements Tool {
 		job.setOutputFormatClass(FetcherOutputFormat.class);
 		// MultipleOutputs.addNamedOutput(job, CrawlDatum.FETCH_DIR_NAME,
 		// AvroMapOutputFormat.class,String.class, CrawlDatum.class);
-		
-		job.waitForCompletion(true);
+		this.runJob(job);
+//		job.waitForCompletion(true);
 		if (LOG.isInfoEnabled()) {
 			LOG.info("FetcherSmart: done");
 		}

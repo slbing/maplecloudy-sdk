@@ -46,6 +46,7 @@ import com.maplecloudy.avro.mapreduce.AvroJob;
 import com.maplecloudy.avro.mapreduce.input.AvroPairInputFormat;
 import com.maplecloudy.avro.mapreduce.output.AvroMapOutputFormat;
 import com.maplecloudy.avro.mapreduce.output.AvroPairOutputFormat;
+import com.maplecloudy.oozie.main.OozieMain;
 import com.maplecloudy.spider.metadata.Spider;
 import com.maplecloudy.spider.util.LockUtil;
 import com.maplecloudy.spider.util.SpiderConfiguration;
@@ -56,7 +57,7 @@ import com.maplecloudy.spider.util.SpiderConfiguration;
  * a segment. We can chose separately how to count the URLS i.e. by domain or
  * host to limit the entries.
  **/
-public class GeneratorSmart extends Configured implements Tool {
+public class GeneratorSmart extends OozieMain implements Tool {
 
 	public static final Log			LOG														= LogFactory
 																																.getLog(GeneratorSmart.class);
@@ -413,7 +414,7 @@ public class GeneratorSmart extends Configured implements Tool {
 		LOG.info("Generator: segment: " + segment + " with " + numLists
 				+ " Fetchers");
 
-		Job job = AvroJob.getAvroJob(getConf());
+		AvroJob job = AvroJob.getAvroJob(getConf());
 		job.setJobName("generate: partition " + segment);
 		job.getConfiguration().setInt("partition.url.seed", new Random().nextInt());
 
@@ -432,7 +433,8 @@ public class GeneratorSmart extends Configured implements Tool {
 		job.setOutputKeyClass(String.class);
 		job.setOutputValueClass(CrawlDatum.class);
 
-		job.waitForCompletion(true);
+//		job.waitForCompletion(true);
+		this.runJob(job);
 		return segment;
 	}
 

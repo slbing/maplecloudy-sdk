@@ -26,6 +26,7 @@ import com.maplecloudy.avro.mapreduce.AvroJob;
 import com.maplecloudy.avro.mapreduce.MultithreadedBlockMapper;
 import com.maplecloudy.avro.mapreduce.MultithreadedBlockMapper.BlockMapper;
 import com.maplecloudy.avro.mapreduce.input.AvroPairInputFormat;
+import com.maplecloudy.oozie.main.OozieMain;
 import com.maplecloudy.spider.crawl.CrawlDatum;
 import com.maplecloudy.spider.metadata.Spider;
 import com.maplecloudy.spider.parse.Outlink;
@@ -39,7 +40,7 @@ import com.maplecloudy.spider.protocol.ProtocolStatus;
 import com.maplecloudy.spider.util.LogUtil;
 import com.maplecloudy.spider.util.SpiderConfiguration;
 
-public class FetcherWithParse extends Configured implements Tool {
+public class FetcherWithParse extends OozieMain implements Tool {
   
   public static final Log LOG = LogFactory.getLog(FetcherWithParse.class);
   
@@ -252,7 +253,7 @@ public class FetcherWithParse extends Configured implements Tool {
     job.setMapOutputKeyClass(String.class);
     job.setMapOutputValueClass(UnionData.class);
     job.setOutputFormatClass(FetcherOutputFormat.class);
-    boolean ret = job.waitForCompletion(true);
+    boolean ret = this.runJob(job);
     if (LOG.isInfoEnabled()) {
       LOG.info("FetcherSmart: done");
     }

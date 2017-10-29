@@ -39,6 +39,7 @@ import org.apache.hadoop.util.ToolRunner;
 import com.maplecloudy.avro.mapreduce.AvroJob;
 import com.maplecloudy.avro.mapreduce.input.AvroPairInputFormat;
 import com.maplecloudy.avro.mapreduce.output.AvroMapOutputFormat;
+import com.maplecloudy.oozie.main.OozieMain;
 import com.maplecloudy.spider.util.HadoopFSUtil;
 import com.maplecloudy.spider.util.LockUtil;
 import com.maplecloudy.spider.util.SpiderConfiguration;
@@ -47,7 +48,7 @@ import com.maplecloudy.spider.util.SpiderConfiguration;
  * This class takes the output of the fetcher and updates the crawldb
  * accordingly.
  */
-public class CrawlDb extends Configured implements Tool {
+public class CrawlDb extends OozieMain implements Tool {
 	public static final Log LOG = LogFactory.getLog(CrawlDb.class);
 
 	public static final String CRAWLDB_ADDITIONS_ALLOWED = "db.update.additions.allowed";
@@ -81,7 +82,7 @@ public class CrawlDb extends Configured implements Tool {
 			LOG.info("CrawlDb update: additions allowed: " + additionsAllowed);
 		}
 		
-		Job job = CrawlDb.createJob(getConf(), crawlDb);
+		AvroJob job = CrawlDb.createJob(getConf(), crawlDb);
 		job.getConfiguration().setBoolean(CRAWLDB_ADDITIONS_ALLOWED, additionsAllowed);
 		for (int i = 0; i < segments.length; i++) {
 			Path fetch = new Path(segments[i], CrawlDatum.FETCH_DIR_NAME);
@@ -102,7 +103,8 @@ public class CrawlDb extends Configured implements Tool {
 			LOG.info("CrawlDb update: Merging segment data into db.");
 		}
 		try {
-			job.waitForCompletion(true);
+//			job.waitForCompletion(true);
+		  this.runJob(job);
 		} catch (IOException e) {
 			LockUtil.removeLockFile(fs, lock);
 			Path outPath = FileOutputFormat.getOutputPath(job);
@@ -129,12 +131,12 @@ public class CrawlDb extends Configured implements Tool {
 		}
 	}
 
-	public static Job createJob(Configuration config, Path crawlDb)
+	public static AvroJob createJob(Configuration config, Path crawlDb)
 			throws IOException {
 		Path newCrawlDb = new Path(crawlDb, Integer.toString(new Random()
 				.nextInt(Integer.MAX_VALUE)));
 
-		Job job = AvroJob.getAvroJob(config);
+		AvroJob job = AvroJob.getAvroJob(config);
 		job.setJobName("crawldb " + crawlDb);
 
 		Path current = new Path(crawlDb, CURRENT_NAME);

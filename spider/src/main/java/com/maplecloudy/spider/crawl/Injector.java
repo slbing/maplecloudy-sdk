@@ -10,12 +10,10 @@ import java.util.Random;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
-import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -28,6 +26,7 @@ import com.maplecloudy.avro.mapreduce.AvroJob;
 import com.maplecloudy.avro.mapreduce.input.AvroPairInputFormat;
 import com.maplecloudy.avro.mapreduce.output.AvroMapOutputFormat;
 import com.maplecloudy.avro.mapreduce.output.AvroPairOutputFormat;
+import com.maplecloudy.oozie.main.OozieMain;
 import com.maplecloudy.spider.net.BasicURLNormalizer;
 import com.maplecloudy.spider.util.SpiderConfiguration;
 
@@ -43,7 +42,7 @@ import com.maplecloudy.spider.util.SpiderConfiguration;
  * e.g. http://www.nutch.org/ \t nutch.score=10 \t nutch.fetchInterval=2592000
  * \t userType=open_source
  **/
-public class Injector extends Configured implements Tool {
+public class Injector extends OozieMain implements Tool {
 	public static final Log	LOG	= LogFactory.getLog(Injector.class);
 
 	/** Normalize and filter injected urls. */
@@ -168,7 +167,7 @@ public class Injector extends Configured implements Tool {
 		if (LOG.isInfoEnabled()) {
 			LOG.info("Injector: Converting injected urls to crawl db entries.");
 		}
-		Job sortJob = AvroJob.getAvroJob(getConf());
+		AvroJob sortJob = AvroJob.getAvroJob(getConf());
 		sortJob.setJobName("inject " + urlDir);
 		FileInputFormat.addInputPath(sortJob, urlDir);
 		sortJob.setMapperClass(InjectMapper.class);
@@ -177,12 +176,12 @@ public class Injector extends Configured implements Tool {
 		sortJob.setOutputValueClass(CrawlDatum.class);
 		sortJob.setOutputFormatClass(AvroPairOutputFormat.class);
 
-		if (sortJob.waitForCompletion(true)) {
+		if (this.runJob(sortJob)) {
 			// merge with existing crawl db
 			if (LOG.isInfoEnabled()) {
 				LOG.info("Injector: Merging injected urls into crawl db.");
 			}
-			Job job = AvroJob.getAvroJob(getConf());
+			AvroJob job = AvroJob.getAvroJob(getConf());
 			job.setJobName("crawldb " + crawlDb);
 
 			Path current = new Path(crawlDb, CrawlDb.CURRENT_NAME);
@@ -199,8 +198,11 @@ public class Injector extends Configured implements Tool {
 			job.setOutputFormatClass(AvroMapOutputFormat.class);
 			job.setOutputKeyClass(String.class);
 			job.setOutputValueClass(CrawlDatum.class);
-			job.waitForCompletion(true);
-			
+//			job.waitForCompletion(true);
+			if (runJob(job)) {
+	    } else {
+	      LOG.info("job faild, please look in for detail.");
+	    }
 			CrawlDb.install(job, crawlDb);
 
 			// clean up
