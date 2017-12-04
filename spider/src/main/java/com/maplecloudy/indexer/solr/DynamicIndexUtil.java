@@ -1,6 +1,7 @@
 package com.maplecloudy.indexer.solr;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.text.DateFormat;
@@ -8,19 +9,20 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.avro.AvroTypeException;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.solr.common.SolrInputDocument;
 
 import com.google.common.collect.Maps;
 import com.maplecloudy.share.json.DateFormatStr;
-import com.maplecloudy.share.json.JsonParse;
 
 public class DynamicIndexUtil extends IndexerBase {
 	private static Map<String, DateFormat> dfsCache = Maps.newHashMap();
-	
+
 	public static String getDefaultDinmicKey(Object obj) {
 		String re = "";
 		if (obj instanceof Integer) {
@@ -44,21 +46,36 @@ public class DynamicIndexUtil extends IndexerBase {
 	}
 
 	public static <T> SolrInputDocument genDynamicDoc(T t)
-			throws IllegalArgumentException, IllegalAccessException,
-			ParseException {
+			throws IllegalArgumentException, IllegalAccessException, ParseException {
 		SolrInputDocument doc = new SolrInputDocument();
 		addFiledToDoc(doc, t);
 
 		return doc;
 	}
 
+	private static Map<String, Field> getFields(Class<?> recordClass, boolean excludeJava) {
+
+		Map<String, Field> fields = new LinkedHashMap<String, Field>();
+		Class<?> c = recordClass;
+		do {
+			if (excludeJava && c.getPackage() != null && c.getPackage().getName().startsWith("java."))
+				break; // skip java built-in classes
+			for (Field field : c.getDeclaredFields())
+				if ((field.getModifiers() & (Modifier.TRANSIENT | Modifier.STATIC)) == 0)
+					if (fields.put(field.getName(), field) != null)
+						throw new AvroTypeException(c + " contains two fields named: " + field);
+			c = c.getSuperclass();
+		} while (c != null);
+
+		return fields;
+	}
+
 	@SuppressWarnings("rawtypes")
 	private static void addFiledToDoc(SolrInputDocument doc, Object t)
-			throws IllegalArgumentException, IllegalAccessException,
-			ParseException {
+			throws IllegalArgumentException, IllegalAccessException, ParseException {
 		if (t == null)
 			return;
-		Map<String, Field> fields = JsonParse.getFields(t.getClass());
+		Map<String, Field> fields = getFields(t.getClass(), true);
 		for (Entry<String, Field> entry : fields.entrySet()) {
 			Type type = entry.getValue().getGenericType();
 			if (type instanceof ParameterizedType) {
@@ -66,13 +83,10 @@ public class DynamicIndexUtil extends IndexerBase {
 				Class raw = (Class) ptype.getRawType();
 				if (Collection.class.isAssignableFrom(raw)) { // array
 
-					DynamicIndex di = entry.getValue().getAnnotation(
-							DynamicIndex.class);
+					DynamicIndex di = entry.getValue().getAnnotation(DynamicIndex.class);
 					if (di != null) {
-						String name = di.value().replace("*",
-								entry.getValue().getName());
-						Collection<?> cl = (Collection<?>) entry.getValue()
-								.get(t);
+						String name = di.value().replace("*", entry.getValue().getName());
+						Collection<?> cl = (Collection<?>) entry.getValue().get(t);
 						if (null != cl) {
 							for (Object o : cl) {
 								IndexerBase.addSolrField(doc, name, o);
@@ -80,18 +94,13 @@ public class DynamicIndexUtil extends IndexerBase {
 						}
 					}
 				} else if (Map.class.isAssignableFrom(raw)) { // map
-					DynamicIndex di = entry.getValue().getAnnotation(
-							DynamicIndex.class);
+					DynamicIndex di = entry.getValue().getAnnotation(DynamicIndex.class);
 					if (di != null) {
 						Map<?, ?> cl = (Map<?, ?>) entry.getValue().get(t);
 						if (null != cl) {
 							for (Entry<?, ?> obj : cl.entrySet()) {
-								String name = di.value().replace(
-										"*",
-										entry.getValue().getName() + "_"
-												+ obj.getKey());
-								IndexerBase.addSolrField(doc, name,
-										obj.getValue());
+								String name = di.value().replace("*", entry.getValue().getName() + "_" + obj.getKey());
+								IndexerBase.addSolrField(doc, name, obj.getValue());
 							}
 						}
 					}
@@ -101,12 +110,9 @@ public class DynamicIndexUtil extends IndexerBase {
 				}
 			} else if (type instanceof Class) {
 				Class<?> c = (Class<?>) type;
-				if (c.isPrimitive()
-						|| // primitives
-						c == Void.class || c == Boolean.class
-						|| c == Integer.class || c == Long.class
-						|| c == Float.class || c == Double.class
-						|| c == Byte.class || c == Short.class
+				if (c.isPrimitive() || // primitives
+						c == Void.class || c == Boolean.class || c == Integer.class || c == Long.class
+						|| c == Float.class || c == Double.class || c == Byte.class || c == Short.class
 						|| c == Character.class || c == String.class) {
 					addDoc(doc, entry.getValue(), t);
 				} else {
@@ -133,29 +139,25 @@ public class DynamicIndexUtil extends IndexerBase {
 			}
 		}
 		if (di != null) {
-		  String name = di.value().replace("*", field.getName());
-		  if("caller_appid_s".equals(name))
-		  {
-			  System.out.println("ddd");
-		  }
+			String name = di.value().replace("*", field.getName());
+			if ("caller_appid_s".equals(name)) {
+				System.out.println("ddd");
+			}
 			if (sdf != null) {
 				try {
 					// Object value = field.get(t);
 					if (value instanceof String) {// String format date
-						IndexerBase.addSolrField(doc, name,
-								sdf.parse(field.get(t).toString()));
+						IndexerBase.addSolrField(doc, name, sdf.parse(field.get(t).toString()));
 					} else {// support long format date
-						IndexerBase.addSolrField(doc, name, new Date(
-								(Long) value));
+						IndexerBase.addSolrField(doc, name, new Date((Long) value));
 					}
 				} catch (ParseException e) {
 					logger.info("already catch exception.... " + ExceptionUtils.getFullStackTrace(e));
-					
+
 				}
 			} else
 				IndexerBase.addSolrField(doc, name, field.get(t));
 		}
 	}
-	
-	 
+
 }

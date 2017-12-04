@@ -51,13 +51,13 @@ public class HDFSAvroFile implements HDFSWriter {
   }
   
   @Override
-  public void open(String filePath) throws IOException {
+  public void open(String filePath) throws IOException, ClassNotFoundException {
     open(filePath, null, CompressionType.NONE);
   }
   
   @Override
   public void open(String filePath, CompressionCodec codeC,
-      CompressionType compType) throws IOException {
+      CompressionType compType) throws IOException, ClassNotFoundException {
     open(filePath, codeC, compType, null);
   }
   
@@ -79,13 +79,13 @@ public class HDFSAvroFile implements HDFSWriter {
   }
   
   @Override
-  public void open(String filePath, Map<String,String> head) throws IOException {
+  public void open(String filePath, Map<String,String> head) throws IOException, ClassNotFoundException {
     open(filePath, null, CompressionType.NONE, head);
   }
   
   @Override
   public void open(String filePath, CompressionCodec codec,
-      CompressionType cType, Map<String,String> head) throws IOException {
+      CompressionType cType, Map<String,String> head) throws IOException, ClassNotFoundException {
     Configuration conf = new Configuration();
     Path dstPath = new Path(filePath);
     FileSystem hdfs = dstPath.getFileSystem(conf);
@@ -97,10 +97,8 @@ public class HDFSAvroFile implements HDFSWriter {
             + "is not of type LocalFileSystem: " + hdfs.getClass().getName());
       }
     }
-    String sn = head.get("s.n");
-    String sv = head.get("s.v");
     serializer = LogSchemaSource.getInstance(mContext)
-        .getAvroSerializer(sn, sv);
+        .getAvroSerializer(mContext.getString("hdfs.avro.class"));
     
     writer = new DataFileWriter<Pair>(new ReflectDatumWriter<Pair>());
     writer.setCodec(CodecFactory
