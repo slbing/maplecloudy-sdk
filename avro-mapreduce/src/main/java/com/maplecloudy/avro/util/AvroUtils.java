@@ -43,14 +43,22 @@ import com.maplecloudy.avro.reflect.ReflectDataEx;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
 public class AvroUtils {
-	static DataOutputBuffer out = new DataOutputBuffer();
-	static DataInputBuffer in = new DataInputBuffer();
+	
+	  static ThreadLocal<DataOutputBuffer> out = new ThreadLocal<DataOutputBuffer>() {
+         protected synchronized DataOutputBuffer initialValue() {
+             return new DataOutputBuffer();
+         }
+     };
 
-	// static ByteArrayOutputStream arrout = new ByteArrayOutputStream();
+     static ThreadLocal<DataInputBuffer> in = new ThreadLocal<DataInputBuffer>() {
+         protected synchronized DataInputBuffer initialValue() {
+             return new DataInputBuffer();
+         }
+     };
 
 	public static <V> V clone(V v) throws IOException {
-		out.reset();
-		BinaryEncoder encoder = EncoderFactory.get().directBinaryEncoder(out, null);
+		out.get().reset();
+		BinaryEncoder encoder = EncoderFactory.get().directBinaryEncoder(out.get(), null);
 		Schema schema;
 		if (GenericContainer.class.isAssignableFrom(v.getClass()))
 			schema = ((GenericContainer) v).getSchema();
@@ -60,15 +68,15 @@ public class AvroUtils {
 		GenericDatumWriter<V> writer = new ReflectDatumWriter<V>(schema);
 		GenericDatumReader<V> reader = new ReflectDatumReader<V>(schema);
 		writer.write(v, encoder);
-		in.reset(out.getData(), out.getLength());
-		BinaryDecoder decoder = DecoderFactory.get().directBinaryDecoder(in, null);
+		in.get().reset(out.get().getData(), out.get().getLength());
+		BinaryDecoder decoder = DecoderFactory.get().directBinaryDecoder(in.get(), null);
 		return reader.read(null, decoder);
 
 	}
 
 	public static <V> DataOutputBuffer serialize(V v) throws IOException {
-		out.reset();
-		BinaryEncoder encoder = EncoderFactory.get().directBinaryEncoder(out, null);
+		out.get().reset();
+		BinaryEncoder encoder = EncoderFactory.get().directBinaryEncoder(out.get(), null);
 		Schema schema;
 		if (GenericContainer.class.isAssignableFrom(v.getClass()))
 			schema = ((GenericContainer) v).getSchema();
@@ -82,7 +90,7 @@ public class AvroUtils {
 
 		GenericDatumWriter<V> writer = new ReflectDatumWriter<V>(schema);
 		writer.write(v, encoder);
-		return out;
+		return out.get();
 	}
 
 	static Map<Class<?>, Schema> schemas = Maps.newHashMap();
@@ -123,7 +131,7 @@ public class AvroUtils {
 			if (v == null)
 				return null;
 			// ByteArrayOutputStream out = new ByteArrayOutputStream();
-			out.reset();
+			out.get().reset();
 			Schema schema;
 			if (GenericContainer.class.isAssignableFrom(v.getClass()))
 				schema = ((GenericContainer) v).getSchema();
@@ -134,11 +142,11 @@ public class AvroUtils {
 			}
 			JsonEncoder encoder;
 
-			encoder = EncoderFactory.get().jsonEncoder(schema, out);
+			encoder = EncoderFactory.get().jsonEncoder(schema, out.get());
 			// TODO Auto-generated catch block
 
 			if (!singleLine) {
-				JsonGenerator g = new JsonFactory().createJsonGenerator(out, JsonEncoding.UTF8);
+				JsonGenerator g = new JsonFactory().createJsonGenerator(out.get(), JsonEncoding.UTF8);
 				g.useDefaultPrettyPrinter();
 				encoder.configure(g);
 			}
@@ -146,7 +154,7 @@ public class AvroUtils {
 
 			writer.write(v, encoder);
 			encoder.flush();
-			return new String(out.getData(), 0, out.getLength(), "utf-8");
+			return new String(out.get().getData(), 0, out.get().getLength(), "utf-8");
 		} catch (IOException e) {
 			e.printStackTrace();
 			return null;
@@ -154,8 +162,8 @@ public class AvroUtils {
 	}
 
 	public static <V> JsonNode toJson(V v) throws IOException {
-		out.reset();
-		BinaryEncoder encoder = EncoderFactory.get().directBinaryEncoder(out, null);
+		out.get().reset();
+		BinaryEncoder encoder = EncoderFactory.get().directBinaryEncoder(out.get(), null);
 		Schema schema;
 		if (GenericContainer.class.isAssignableFrom(v.getClass()))
 			schema = ((GenericContainer) v).getSchema();
@@ -164,8 +172,8 @@ public class AvroUtils {
 
 		GenericDatumWriter<V> writer = new ReflectDatumWriter<V>(schema);
 		writer.write(v, encoder);
-		in.reset(out.getData(), out.getLength());
-		BinaryDecoder decoder = DecoderFactory.get().directBinaryDecoder(in, null);
+		in.get().reset(out.get().getData(), out.get().getLength());
+		BinaryDecoder decoder = DecoderFactory.get().directBinaryDecoder(in.get(), null);
 
 		return Json.read(decoder);
 	}
