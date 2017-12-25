@@ -23,6 +23,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.maplecloudy.distribute.engine.utils.FsUtils;
 
 public class MapleCloudyShellEngine {
   private static final Log LOG = LogFactory
@@ -30,7 +31,8 @@ public class MapleCloudyShellEngine {
   
   public static void main(String[] args) throws Exception {
     //
-    System.out.println(StringUtils.join(args,"\n"));
+    
+    System.out.println(StringUtils.join(args, "\n"));
     
     final String cmd = args[0];
     boolean damon = false;
@@ -123,7 +125,8 @@ public class MapleCloudyShellEngine {
   @VisibleForTesting
   class RMCallbackHandler implements AMRMClientAsync.CallbackHandler {
     
-    public void onContainersCompleted(List<ContainerStatus> completedContainers) {
+    public void onContainersCompleted(
+        List<ContainerStatus> completedContainers) {
       
     }
     
@@ -151,9 +154,13 @@ public class MapleCloudyShellEngine {
   }
   
   public void runCmd(String cmd) {
+    
     try {
       Map<String,String> env = System.getenv();
       ArrayList<String> envList = new ArrayList<String>();
+      String postCmd = cmd;
+      String[] cmds = cmd.split(" ");
+      cmd = cmds[0] + " " + cmds[1];
       
       for (Map.Entry<String,String> entry : env.entrySet()) {
         String key = entry.getKey();
@@ -162,11 +169,11 @@ public class MapleCloudyShellEngine {
       }
       String[] envAM = new String[envList.size()];
       
+      LOG.info("cmd ------ " + cmd);
       Process amProc = Runtime.getRuntime().exec(cmd, envList.toArray(envAM));
       
-      final BufferedReader errReader = new BufferedReader(
-          new InputStreamReader(amProc.getErrorStream(),
-              Charset.forName("UTF-8")));
+      final BufferedReader errReader = new BufferedReader(new InputStreamReader(
+          amProc.getErrorStream(), Charset.forName("UTF-8")));
       final BufferedReader inReader = new BufferedReader(new InputStreamReader(
           amProc.getInputStream(), Charset.forName("UTF-8")));
       
@@ -223,14 +230,52 @@ public class MapleCloudyShellEngine {
         inReader.close();
       } catch (InterruptedException ie) {
         LOG.info(
-            "ShellExecutor: Interrupted while reading the error/out stream", ie);
+            "ShellExecutor: Interrupted while reading the error/out stream",
+            ie);
       } catch (IOException ioe) {
         LOG.warn("Error while closing the error/out stream", ioe);
       }
+      this.PostProcess(postCmd);
       amProc.destroy();
     } catch (Exception e) {
       e.printStackTrace();
       LOG.warn("Shell run with exception", e);
+    }
+  }
+  
+  public void PostProcess(String cmd) {
+    
+    boolean fsOperation = false;
+    String[] cmds = cmd.split(" ");
+    for (int i = 0; i < cmds.length; i++) {
+      if (cmds[i].equals("-fs")) {
+        fsOperation = true;
+        break;
+      }
+    }
+    
+    LOG.info("Check fs cmd ------ " + fsOperation);
+    if (fsOperation) {
+      LOG.info("fs cmd is true -------");
+      String user = "";
+      String src = "";
+      String dst = "";
+      
+      for (int i = 2; i < cmds.length; i++) {
+        if (cmds[i].equals("-fs")) {
+          fsOperation = true;
+          src = cmds[++i];
+          dst = cmds[++i];
+          user = cmds[++i];
+        }
+      }
+      
+      try {
+        FsUtils.copyFromLocal(src, dst, user);
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
     }
   }
   // static class NMCallbackHandler implements NMClientAsync.CallbackHandler {

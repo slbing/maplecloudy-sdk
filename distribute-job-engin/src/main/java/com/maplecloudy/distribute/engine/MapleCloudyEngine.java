@@ -1,25 +1,27 @@
 package com.maplecloudy.distribute.engine;
 
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadInfo;
-import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
+import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.net.NetUtils;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.util.ToolRunner;
 import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterResponse;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerStatus;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.api.records.NodeReport;
 import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync;
-import org.apache.hadoop.yarn.client.api.async.NMClientAsync;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
+import org.apache.hadoop.yarn.webapp.WebApp;
+import org.apache.hadoop.yarn.webapp.WebApps;
 
 import com.google.common.annotations.VisibleForTesting;
 
@@ -27,7 +29,12 @@ public class MapleCloudyEngine {
   private static final Log LOG = LogFactory.getLog(MapleCloudyEngine.class);
   
   public static void main(String[] args) throws Exception {
-    //
+//    //
+//    args = "org.apache.flume.node.Application true agent --f flume.conf --name agent -Dflume.monitoring.type=http -Dflume.monitoring.port=34545"
+//        .split(" ");
+//    
+    List<String> filtered_args = systemPropertyFilter(args);
+    args = filtered_args.toArray(new String[filtered_args.size()]);
     
     final String mainClass = args[0];
     final boolean damon = Boolean.valueOf(args[1]);
@@ -35,12 +42,11 @@ public class MapleCloudyEngine {
     if (args.length > 2) {
       for (int i = 2; i < args.length; i++) {
         arg[i - 2] = args[i];
+        
       }
     }
-    
     MapleCloudyEngine mce = new MapleCloudyEngine();
     mce.run(mainClass, arg, damon);
-    
   }
   
   public MapleCloudyEngine() {
@@ -90,6 +96,14 @@ public class MapleCloudyEngine {
       // appSubmitterUgi = UserGroupInformation
       // .createRemoteUser(appSubmitterUserName);
       // appSubmitterUgi.addCredentials(credentials);
+      // WebApp wa = WebApps.$for(myApp).at(address, port).
+      // * with(configuration).
+      // * start(new WebApp() {
+      // * &#064;Override public void setup() {
+      // * route("/foo/action", FooController.class);
+      // * route("/foo/:id", FooController.class, "show");
+      // * }
+      // * });</pre>
       
       AMRMClientAsync.CallbackHandler allocListener = new RMCallbackHandler();
       amRMClient = AMRMClientAsync.createAMRMClientAsync(1000, allocListener);
@@ -100,6 +114,8 @@ public class MapleCloudyEngine {
       RegisterApplicationMasterResponse response = amRMClient
           .registerApplicationMaster(appMasterHostname, appMasterRpcPort,
               appMasterTrackingUrl);
+      
+      systemPropertyFilter(args);
       
       System.out.println("Classpath         :");
       System.out.println("------------------------");
@@ -151,10 +167,36 @@ public class MapleCloudyEngine {
     }
   }
   
+  private static List<String> systemPropertyFilter(String[] args) {
+    
+    System.out.println("Before filter         :");
+    for (String arg : args) {
+      System.out.println("                    " + arg);
+    }
+    
+    List<String> strList = new ArrayList<String>();
+    
+    for (String arg : args) {
+      
+      if (arg.startsWith("-D")) {
+        setSystemProperty(arg);
+      } else strList.add(arg);
+    }
+    return strList;
+  }
+  
+  private static void setSystemProperty(String arg) {
+    String pair[] = arg.split("=");
+    String key = pair[0].substring(2, pair[0].length());
+    String value = pair[1];
+    System.setProperty(key, value);
+  }
+  
   @VisibleForTesting
   class RMCallbackHandler implements AMRMClientAsync.CallbackHandler {
     
-    public void onContainersCompleted(List<ContainerStatus> completedContainers) {
+    public void onContainersCompleted(
+        List<ContainerStatus> completedContainers) {
       
     }
     
@@ -172,7 +214,7 @@ public class MapleCloudyEngine {
     @Override
     public void onError(Throwable e) {
       LOG.error("Error in RMCallbackHandler: ", e);
-      bRun =false;
+      bRun = false;
     }
     
     @Override

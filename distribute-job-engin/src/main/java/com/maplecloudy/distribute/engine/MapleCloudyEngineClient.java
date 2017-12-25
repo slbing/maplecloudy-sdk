@@ -1,6 +1,7 @@
 package com.maplecloudy.distribute.engine;
 
 import java.io.IOException;
+import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,10 +11,10 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
-import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
@@ -30,6 +31,9 @@ import org.apache.hadoop.yarn.util.Records;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.maplecloudy.distribute.engine.utils.Config;
+import com.maplecloudy.distribute.engine.utils.YarnUtils;
+import com.maplecloudy.yarn.rpc.ClientRpc;
 
 public class MapleCloudyEngineClient extends Configured implements Tool {
   
@@ -47,7 +51,8 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
         + "  -m<string>   : memory set for this app,default 256M\n"
         + "  -cpu<string>   : CPU Virtual Cores set for this app, defaule 1\n"
         + "  -damon   : after run the main class, then wait for kill the application\n"
-        + "  -type <string>   : the application type ,default is MAPLECLOUDY-APP\n";
+        + "  -type <string>   : the application type ,default is MAPLECLOUDY-APP\n"
+        + "  -user <string>   : the user submit the app,defaule is maplecloudy\n";
     
     System.err.println(message);
     System.exit(1);
@@ -119,15 +124,12 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
         }
       }
       // Create yarnClient
-      YarnConfiguration conf = new YarnConfiguration();
-      YarnClient yarnClient = YarnClient.createYarnClient();
-      
-      yarnClient.init(conf);
-      yarnClient.start();
+      YarnClient yarnClient = ClientRpc.getYarnClient(this.getConf());
       
       // Create application via yarnClient
       
       YarnClientApplication app = yarnClient.createApplication();
+
       
       // Set up the container launch context for the application master
       ContainerLaunchContext amContainer = Records
@@ -156,15 +158,13 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
       
       // add engine
       LocalResource elr = Records.newRecord(LocalResource.class);
-      
-      FileStatus enginejar = fs.getFileStatus(new Path(
-          "distribute-job-engin-0.3.0-SNAPSHOT.jar"));
+      FileStatus enginejar = fs.getFileStatus(new Path(Config.getEngieJar()));
       elr.setResource(ConverterUtils.getYarnUrlFromPath(enginejar.getPath()));
       elr.setSize(enginejar.getLen());
       elr.setTimestamp(enginejar.getModificationTime());
       elr.setType(LocalResourceType.FILE);
       elr.setVisibility(LocalResourceVisibility.PUBLIC);
-      hmlr.put("distribute-job-engin-0.3.0-SNAPSHOT.jar", elr);
+      hmlr.put(enginejar.getPath().getName(), elr);
       
       // add jar
       if (jar != null) {
@@ -191,7 +191,7 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
       }
       
       if (jars != null) {
-        Path pjars = new Path(jar);
+        Path pjars = new Path(jars);
         if (fs.isDirectory(pjars)) {
           FileStatus[] fss = fs.listStatus(pjars);
           for (FileStatus jfile : fss) {
@@ -219,8 +219,8 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
       amContainer.setLocalResources(hmlr);
       
       // Setup CLASSPATH for ApplicationMaster
-      Map<String,String> appMasterEnv = new HashMap<String,String>();
-      setupAppMasterEnv(appMasterEnv);
+      
+      Map<String,String> appMasterEnv = YarnUtils.setupAppMasterEnv(this.getConf(),"");
       System.out.println("--------------------------");
       System.out.println(appMasterEnv.toString());
       System.out.println("--------------------------");
@@ -230,9 +230,10 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
       Resource capability = Records.newRecord(Resource.class);
       capability.setMemory(memory);
       capability.setVirtualCores(cpu);
+      System.out.println("login user:" + UserGroupInformation.getLoginUser());
       
       // Finally, set-up ApplicationSubmissionContext for the application
-      ApplicationSubmissionContext appContext = app
+      final ApplicationSubmissionContext appContext = app
           .getApplicationSubmissionContext();
       appContext.setApplicationType(type);
       String name = "engine:launcher:" + mainClass;
@@ -255,6 +256,7 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
       
       yarnClient.submitApplication(appContext);
       yarnClient.close();
+      
     } catch (YarnException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
@@ -279,28 +281,36 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
     
   }
   
-  private void setupAppMasterEnv(Map<String,String> appMasterEnv) {
-    
-    StringBuilder classPathEnv = new StringBuilder(Environment.CLASSPATH.$$())
-        .append(ApplicationConstants.CLASS_PATH_SEPARATOR).append("./*");
-    for (String c : conf.getStrings(
-        YarnConfiguration.YARN_APPLICATION_CLASSPATH,
-        YarnConfiguration.DEFAULT_YARN_CROSS_PLATFORM_APPLICATION_CLASSPATH)) {
-      classPathEnv.append(ApplicationConstants.CLASS_PATH_SEPARATOR);
-      classPathEnv.append(c.trim());
+  
+  
+  public static void main(final String[] args) throws Exception {
+    String user = "maplecloudy";
+    for (int i = 0; i < args.length; i++) {
+      if (args[i].equals("-user")) {
+        i++;
+        if (i >= args.length) {
+          usage();
+        }
+        user = args[i];
+      }
     }
-    appMasterEnv.put(Environment.CLASSPATH.name(), classPathEnv.toString());
-    
+    System.out.println("login in user:" + UserGroupInformation.getLoginUser());
+    UserGroupInformation ugi = UserGroupInformation.createProxyUser(user,
+        UserGroupInformation.getLoginUser());
+    ugi.doAs(new PrivilegedAction<Void>() {
+      @Override
+      public Void run() {
+        try {
+          ToolRunner.run(new MapleCloudyEngineClient(), args);
+        } catch (Exception e) {
+          e.printStackTrace();
+          System.exit(-1);
+        }
+        return null;
+      }
+      
+    });
+    System.exit(0);
   }
   
-  public static void main(String[] args) throws Exception {
-    int status = -1;
-    try {
-      status = ToolRunner.run(new MapleCloudyEngineClient(), args);
-    } catch (Exception ex) {
-      System.err.println("Abnormal execution:" + ex.getMessage());
-      ex.printStackTrace(System.err);
-    }
-    System.exit(status);
-  }
 }
