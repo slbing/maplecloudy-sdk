@@ -12,7 +12,6 @@ import com.maplecloudy.bi.ReportConstants;
 import com.maplecloudy.bi.ReportFrequence;
 import com.maplecloudy.bi.util.BucketPath;
 import com.maplecloudy.bi.util.ReportConstantsUtils;
-import com.maplecloudy.source.Source;
 
 public class IntermediateSource implements Source {
 //  public final static String INTERMEDIATE_KEY_OUTPUT = "/quickly-report/intermediate-key/";

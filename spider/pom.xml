@@ -18,7 +18,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.maplecloudy.maple</groupId>
-			<artifactId>avro-mapreduce</artifactId>
+			<artifactId>report-core</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>

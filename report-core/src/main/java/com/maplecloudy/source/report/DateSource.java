@@ -1,4 +1,4 @@
-package com.maplecloudy.source;
+package com.maplecloudy.source.report;
 
 import java.util.Date;
 import java.util.List;
