@@ -23,27 +23,26 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
-import org.apache.hadoop.util.ToolRunner;
 
 import com.maplecloudy.avro.io.UnionData;
 import com.maplecloudy.avro.mapreduce.AvroJob;
 import com.maplecloudy.avro.mapreduce.input.AvroPairInputFormat;
+import com.maplecloudy.oozie.main.OozieMain;
+import com.maplecloudy.oozie.main.OozieToolRunner;
 import com.maplecloudy.spider.metadata.Spider;
 import com.maplecloudy.spider.protocol.Content;
 import com.maplecloudy.spider.util.SpiderConfiguration;
 
 /* Parse content in a segment. */
-public class ParseSegment extends Configured implements Tool {
+public class ParseSegment extends OozieMain implements Tool{
   public static final Log LOG = LogFactory.getLog(ParseSegment.class);
   
   public ParseSegment() {
@@ -51,7 +50,7 @@ public class ParseSegment extends Configured implements Tool {
   }
   
   public ParseSegment(Configuration conf) {
-    super(conf);
+    this.setConf(conf);
   }
   
   public void configure(JobConf job) {
@@ -85,7 +84,7 @@ public class ParseSegment extends Configured implements Tool {
       LOG.info("Parse: segment: " + segment);
     }
     
-    Job job = AvroJob.getAvroJob(getConf());
+    AvroJob job = AvroJob.getAvroJob(getConf());
     job.setJobName("parse " + segment);
     
     FileInputFormat.addInputPath(job, new Path(segment, Content.DIR_NAME));
@@ -99,14 +98,14 @@ public class ParseSegment extends Configured implements Tool {
     job.setOutputKeyClass(String.class);
     job.setOutputValueClass(UnionData.class);
     
-    job.waitForCompletion(true);
+    this.runJob(job);
     if (LOG.isInfoEnabled()) {
       LOG.info("Parse: done");
     }
   }
   
   public static void main(String[] args) throws Exception {
-    int res = ToolRunner.run(SpiderConfiguration.create(), new ParseSegment(),
+    int res = OozieToolRunner.run(SpiderConfiguration.create(), new ParseSegment(),
         args);
     System.exit(res);
   }
