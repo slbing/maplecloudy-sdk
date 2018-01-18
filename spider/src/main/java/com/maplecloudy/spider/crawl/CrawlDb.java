@@ -40,6 +40,7 @@ import com.maplecloudy.avro.mapreduce.AvroJob;
 import com.maplecloudy.avro.mapreduce.input.AvroPairInputFormat;
 import com.maplecloudy.avro.mapreduce.output.AvroMapOutputFormat;
 import com.maplecloudy.oozie.main.OozieMain;
+import com.maplecloudy.oozie.main.OozieToolRunner;
 import com.maplecloudy.spider.util.HadoopFSUtil;
 import com.maplecloudy.spider.util.LockUtil;
 import com.maplecloudy.spider.util.SpiderConfiguration;
@@ -174,7 +175,7 @@ public class CrawlDb extends OozieMain implements Tool {
 	}
 
 	public static void main(String[] args) throws Exception {
-		int res = ToolRunner.run(SpiderConfiguration.create(), new CrawlDb(),
+		int res = OozieToolRunner.run(SpiderConfiguration.create(), new CrawlDb(),
 				args);
 		System.exit(res);
 	}
