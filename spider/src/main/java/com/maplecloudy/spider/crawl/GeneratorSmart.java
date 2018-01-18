@@ -273,6 +273,7 @@ public class GeneratorSmart extends OozieMain implements Tool {
 			LOG.info("Generator: starting");
 
 			AvroJob job = AvroJob.getAvroJob(getConf());
+			job.setJobName("GeneratorSmart" + dbDir +"|" + segments);
 			if (numLists == -1) { // for politeness make
 				numLists = job.getNumReduceTasks(); // a partition per fetch
 													// task
