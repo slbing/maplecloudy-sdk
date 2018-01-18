@@ -46,7 +46,6 @@ public class ParseSegment extends OozieMain implements Tool{
   public static final Log LOG = LogFactory.getLog(ParseSegment.class);
   
   public ParseSegment() {
-    this(null);
   }
   
   public ParseSegment(Configuration conf) {
