@@ -99,8 +99,7 @@ public class GeneratorSmart extends OozieMain implements Tool {
 				return;
 			if (crawlDatum.getStatus() == CrawlDatum.STATUS_DB_GONE)
 				return;
-			if (key.toString().matches("http://www.qidian.com/BookReader/\\d+,0.aspx"))
-				return;
+
 			if (crawlDatum.getMetaData().get(Spider.GENERATE_TIME_KEY) != null) {
 				String oldgen = crawlDatum.getMetaData().get(Spider.GENERATE_TIME_KEY).toString();
 
