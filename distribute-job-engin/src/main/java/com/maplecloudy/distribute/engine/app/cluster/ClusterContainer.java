@@ -89,6 +89,8 @@ public class ClusterContainer implements AutoCloseable {
           try {
             System.out.println("getCurrentUser-----------"
                 + UserGroupInformation.getCurrentUser());
+            System.out.println("getLoginUser-----------"
+                + UserGroupInformation.getLoginUser());
           } catch (IOException e1) {
             // TODO Auto-generated catch block
             e1.printStackTrace();
