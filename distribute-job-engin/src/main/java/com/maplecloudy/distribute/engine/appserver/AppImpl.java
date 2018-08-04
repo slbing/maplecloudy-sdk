@@ -61,7 +61,7 @@ public class AppImpl implements IApp {
       AppTaskBaseline task = TaskPool.taskMap.get(appName);
       if (task == null) {
         
-          new EngineAppTask(json).checkTaskApp();
+          task = new EngineAppTask(json);
       }
       return task.getAppStatus();
     } catch (Exception e) {
