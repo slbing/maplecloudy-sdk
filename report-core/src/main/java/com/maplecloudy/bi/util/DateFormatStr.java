@@ -1,4 +1,4 @@
-package com.maplecloudy.share.json;
+package com.maplecloudy.bi.util;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

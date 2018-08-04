@@ -20,13 +20,13 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Tool;
-import org.apache.hadoop.util.ToolRunner;
 
 import com.maplecloudy.avro.mapreduce.AvroJob;
 import com.maplecloudy.avro.mapreduce.input.AvroPairInputFormat;
 import com.maplecloudy.avro.mapreduce.output.AvroMapOutputFormat;
 import com.maplecloudy.avro.mapreduce.output.AvroPairOutputFormat;
 import com.maplecloudy.oozie.main.OozieMain;
+import com.maplecloudy.oozie.main.OozieToolRunner;
 import com.maplecloudy.spider.net.BasicURLNormalizer;
 import com.maplecloudy.spider.util.SpiderConfiguration;
 
@@ -43,25 +43,23 @@ import com.maplecloudy.spider.util.SpiderConfiguration;
  * \t userType=open_source
  **/
 public class Injector extends OozieMain implements Tool {
-	public static final Log	LOG	= LogFactory.getLog(Injector.class);
+
+	public static final Log LOG = LogFactory.getLog(Injector.class);
 
 	/** Normalize and filter injected urls. */
-	public static class InjectMapper extends
-			Mapper<WritableComparable, Text, String, CrawlDatum> {
+	public static class InjectMapper extends Mapper<WritableComparable, Text, String, CrawlDatum> {
 
-		private int									interval;
-		private float								scoreInjected;
-		private Configuration				jobConf;
-		private long								curTime;
+		private int interval;
+		private float scoreInjected;
+		private Configuration jobConf;
+		private long curTime;
 
 		@Override
-		protected void setup(Context context) throws IOException,
-				InterruptedException {
+		protected void setup(Context context) throws IOException, InterruptedException {
 			jobConf = context.getConfiguration();
 			interval = jobConf.getInt("db.fetch.interval.default", 2592000);
 			scoreInjected = jobConf.getFloat("db.score.injected", 1.0f);
-			curTime = jobConf.getLong("injector.current.time",
-					System.currentTimeMillis());
+			curTime = jobConf.getLong("injector.current.time", System.currentTimeMillis());
 		}
 
 		@Override
@@ -97,8 +95,7 @@ public class Injector extends OozieMain implements Tool {
 					url = null;
 				}
 				if (url != null) { // if it passes
-					CrawlDatum datum = new CrawlDatum(CrawlDatum.STATUS_INJECTED,
-							customInterval);
+					CrawlDatum datum = new CrawlDatum(CrawlDatum.STATUS_INJECTED, customInterval);
 					datum.setFetchTime(curTime);
 					if (customScore != -1)
 						datum.setScore(customScore);
@@ -115,18 +112,17 @@ public class Injector extends OozieMain implements Tool {
 	}
 
 	/** Combine multiple new entries for a url. */
-	public static class InjectReducer extends
-			Reducer<String, CrawlDatum, String, CrawlDatum> {
+	public static class InjectReducer extends Reducer<String, CrawlDatum, String, CrawlDatum> {
 
-		private CrawlDatum	old				= new CrawlDatum();
-		private CrawlDatum	injected	= new CrawlDatum();
+		private CrawlDatum old = new CrawlDatum();
+		private CrawlDatum injected = new CrawlDatum();
 
 		@Override
 		protected void reduce(String key, Iterable<CrawlDatum> values, Context context)
 				throws IOException, InterruptedException {
 			boolean oldSet = false;
 			for (CrawlDatum cur : values) {
-				
+
 				if (cur.getStatus() == CrawlDatum.STATUS_INJECTED) {
 					injected.set(cur);
 					injected.setStatus(CrawlDatum.STATUS_DB_UNFETCHED);
@@ -151,7 +147,8 @@ public class Injector extends OozieMain implements Tool {
 		setConf(conf);
 	}
 
-	public void inject(Path crawlDb, Path urlDir) throws IOException, IllegalStateException, InterruptedException, ClassNotFoundException {
+	public int inject(Path crawlDb, Path urlDir)
+			throws IOException, ClassNotFoundException, IllegalStateException, InterruptedException {
 
 		if (LOG.isInfoEnabled()) {
 			LOG.info("Injector: starting");
@@ -159,8 +156,7 @@ public class Injector extends OozieMain implements Tool {
 			LOG.info("Injector: urlDir: " + urlDir);
 		}
 
-		Path tempDir = new Path(getConf().get("mapred.temp.dir", ".")
-				+ "/inject-temp-"
+		Path tempDir = new Path(getConf().get("mapred.temp.dir", ".") + "/inject-temp-"
 				+ Integer.toString(new Random().nextInt(Integer.MAX_VALUE)));
 
 		// map text input file to a <url,CrawlDatum> file
@@ -175,8 +171,7 @@ public class Injector extends OozieMain implements Tool {
 		sortJob.setOutputKeyClass(String.class);
 		sortJob.setOutputValueClass(CrawlDatum.class);
 		sortJob.setOutputFormatClass(AvroPairOutputFormat.class);
-
-		if (this.runJob(sortJob)) {
+		if (runJob(sortJob)) {
 			// merge with existing crawl db
 			if (LOG.isInfoEnabled()) {
 				LOG.info("Injector: Merging injected urls into crawl db.");
@@ -192,31 +187,30 @@ public class Injector extends OozieMain implements Tool {
 			job.setInputFormatClass(AvroPairInputFormat.class);
 			job.setReducerClass(InjectReducer.class);
 			job.setMapperClass(CrawlDbFilter.class);
-			Path newCrawlDb = new Path(crawlDb, Integer.toString(new Random()
-			.nextInt(Integer.MAX_VALUE)));
+			Path newCrawlDb = new Path(crawlDb, Integer.toString(new Random().nextInt(Integer.MAX_VALUE)));
 			FileOutputFormat.setOutputPath(job, newCrawlDb);
 			job.setOutputFormatClass(AvroMapOutputFormat.class);
 			job.setOutputKeyClass(String.class);
 			job.setOutputValueClass(CrawlDatum.class);
-//			job.waitForCompletion(true);
 			if (runJob(job)) {
-	    } else {
-	      LOG.info("job faild, please look in for detail.");
-	    }
-			CrawlDb.install(job, crawlDb);
-
-			// clean up
-			FileSystem fs = FileSystem.get(getConf());
-			fs.delete(tempDir, true);
-			if (LOG.isInfoEnabled()) {
-				LOG.info("Injector: done");
+				CrawlDb.install(job, crawlDb);
+				FileSystem fs = FileSystem.get(getConf());
+				fs.delete(tempDir, true);
+				if (LOG.isInfoEnabled()) {
+					LOG.info("Injector: done");
+				}
+				return 0;
+			} else {
+				return -1;
 			}
+
+		} else {
+			return -1;
 		}
 	}
 
 	public static void main(String[] args) throws Exception {
-		int res = ToolRunner
-				.run(SpiderConfiguration.create(), new Injector(), args);
+		int res = OozieToolRunner.run(SpiderConfiguration.create(), new Injector(), args);
 		System.exit(res);
 	}
 

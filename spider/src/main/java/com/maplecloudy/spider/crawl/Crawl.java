@@ -1,35 +1,34 @@
 package com.maplecloudy.spider.crawl;
 
+import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.util.StringUtils;
+import org.apache.hadoop.util.Tool;
 
-import com.maplecloudy.avro.io.MapAvroFile;
+import com.maplecloudy.oozie.main.OozieMain;
+import com.maplecloudy.oozie.main.OozieToolRunner;
 import com.maplecloudy.spider.fetcher.FetcherSmart;
 import com.maplecloudy.spider.parse.ParseSegment;
 import com.maplecloudy.spider.util.SpiderConfiguration;
 import com.maplecloudy.spider.util.SpiderJob;
 
-public class Crawl {
-	public static final Log			LOG		= LogFactory.getLog(Crawl.class);
+public class Crawl extends OozieMain implements Tool {
+	public static final Log LOG = LogFactory.getLog(Crawl.class);
 
-	public static Configuration	conf	= null;
 
 	public Crawl() {
-		conf = SpiderConfiguration.create();
 	}
 
-	/* Perform complete crawling and indexing given a set of root urls. */
-	public static void main(String args[]) throws Exception {
+	@Override
+	public int run(String args[]) throws IOException, ClassNotFoundException, IllegalStateException, InterruptedException {
 		// Crawl cr = new Crawl();
-		conf = SpiderConfiguration.create();
-		JobConf job = new SpiderJob(conf);
+		JobConf job = new SpiderJob(this.getConf());
 
 		Path dir = new Path("iphone");
 
@@ -38,11 +37,11 @@ public class Crawl {
 		int threads = job.getInt("fetcher.threads.fetch", 10);
 
 		FileSystem fs = FileSystem.get(job);
-		Injector injector = new Injector(conf);
-		GeneratorSmart generator = new GeneratorSmart(conf);
-		FetcherSmart fetcher = new FetcherSmart(conf);
-		CrawlDb crawlDbTool = new CrawlDb(conf);
-		ParseSegment parse = new ParseSegment(conf);
+		Injector injector = new Injector(this.getConf());
+		GeneratorSmart generator = new GeneratorSmart(this.getConf());
+		FetcherSmart fetcher = new FetcherSmart(this.getConf());
+		CrawlDb crawlDbTool = new CrawlDb(this.getConf());
+		ParseSegment parse = new ParseSegment(this.getConf());
 		crawlDb = new Path(dir + "/crawldb");
 		seg = new Path(dir + "/segments");
 		injector.inject(crawlDb, new Path(dir, "iphone.seed"));
@@ -50,8 +49,7 @@ public class Crawl {
 			while (true) {
 
 				Path[] segments = null;
-				segments = generator.generate(crawlDb, seg, 1,
-						System.currentTimeMillis(), false);
+				segments = generator.generate(crawlDb, seg, 1, System.currentTimeMillis(), false);
 				if (segments == null) {
 					LOG.info("Stopping dute no more URLs to fetch.");
 					break;
@@ -63,28 +61,25 @@ public class Crawl {
 				}
 				crawlDbTool.update(crawlDb, segments); // update
 			}
+			LOG.info("Crawl is done!\n");
+			return 0;
+			
 		} catch (Exception e) {
 			if (LOG.isFatalEnabled())
 
-				LOG.fatal("in CrawlInfo main() Exception "
-						+ StringUtils.stringifyException(e) + "\n");
-			return;
+				LOG.fatal("in CrawlInfo main() Exception " + StringUtils.stringifyException(e) + "\n");
+			return -1;
 		}
+		
+		
+	}
 
-		LOG.info("\r\nAppstore info is here:\n");
-		for (FileStatus path : fs.listStatus(seg)) {
-			for (FileStatus info : fs.listStatus(new Path(path.getPath().toString()
-					+ "/AppInfo"))) {
-				MapAvroFile.Reader reader = new MapAvroFile.Reader(fs, info.getPath()
-						.toString(), conf);
-				while (reader.hasNext()) {
+	/* Perform complete crawling and indexing given a set of root urls. */
+	public static void main(String args[]) throws Exception {
+		System.out.println(org.apache.commons.lang.StringUtils.join(args, " "));
+		int res = OozieToolRunner.run(new Configuration(), new Crawl(), args);
+		System.exit(res);
 
-					LOG.info(reader.next().value().toString());
-				}
-				reader.close();
-			}
-		}
-		LOG.info("Crawl is done!\n");
 	}
 
 }

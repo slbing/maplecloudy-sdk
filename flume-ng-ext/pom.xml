@@ -18,7 +18,7 @@
 	<parent>
 		<groupId>com.maplecloudy.maple</groupId>
 		<artifactId>maplecloudy-sdk-parent</artifactId>
-		<version>0.3.0-SNAPSHOT</version>
+		<version>0.3.0-jdk8-SNAPSHOT</version>
 	</parent>
 	<groupId>com.maplecloudy.maple</groupId>
 	<artifactId>flume-ng-ext</artifactId>
@@ -27,7 +27,7 @@
 		<dependency>
 			<groupId>org.apache.flume</groupId>
 			<artifactId>flume-ng-sdk</artifactId>
-			<version>1.5.0-cdh5.2.0</version>
+			<version>1.8.0-maple-jdk7-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
@@ -38,13 +38,13 @@
 		<dependency>
 			<groupId>org.apache.flume</groupId>
 			<artifactId>flume-ng-core</artifactId>
-			<version>1.5.0-cdh5.2.0</version>
+			<version>1.8.0-maple-jdk7-SNAPSHOT</version>
 		</dependency>
 		<!-- flume tools -->
 		<dependency>
 			<groupId>org.apache.flume</groupId>
 			<artifactId>flume-tools</artifactId>
-			<version>1.5.0-cdh5.2.0</version>
+			<version>1.8.0-maple-jdk7-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 	<build>
@@ -63,8 +63,6 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>2.3.2</version>
 				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
 					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>
@@ -72,7 +70,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
-				<version>2.2.1</version>
+				<version>3.0.1</version>
 				<executions>
 					<execution>
 						<id>attach-sources</id>

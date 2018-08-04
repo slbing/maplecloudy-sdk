@@ -12,9 +12,8 @@ import com.maplecloudy.bi.ReportConstants;
 import com.maplecloudy.bi.ReportFrequence;
 import com.maplecloudy.bi.report.algorithm.ReportAlgorithm;
 import com.maplecloudy.bi.util.BucketPath;
+import com.maplecloudy.bi.util.ConstantsUtils;
 import com.maplecloudy.bi.util.ReportConstantsUtils;
-import com.maplecloudy.share.util.ConstantsUtils;
-import com.maplecloudy.source.Source;
 @SuppressWarnings("rawtypes") 
 public class ReportSource implements Source{
 	private static ReportSource rs = new ReportSource();

@@ -7,7 +7,6 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -19,7 +18,6 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Tool;
-import org.apache.hadoop.util.ToolRunner;
 
 import com.maplecloudy.avro.io.UnionData;
 import com.maplecloudy.avro.mapreduce.AvroJob;
@@ -27,6 +25,7 @@ import com.maplecloudy.avro.mapreduce.MultithreadedBlockMapper;
 import com.maplecloudy.avro.mapreduce.MultithreadedBlockMapper.BlockMapper;
 import com.maplecloudy.avro.mapreduce.input.AvroPairInputFormat;
 import com.maplecloudy.oozie.main.OozieMain;
+import com.maplecloudy.oozie.main.OozieToolRunner;
 import com.maplecloudy.spider.crawl.CrawlDatum;
 import com.maplecloudy.spider.metadata.Spider;
 import com.maplecloudy.spider.protocol.Content;
@@ -53,6 +52,7 @@ public class FetcherSmart extends OozieMain implements Tool {
 	{
 		this.setConf(conf);
 	}
+	
 	public static class InputFormat extends
 			AvroPairInputFormat<String, CrawlDatum> {
 	  static final String NUM_INPUT_FILES = "mapreduce.input.num.files";
@@ -177,7 +177,7 @@ public class FetcherSmart extends OozieMain implements Tool {
 
 	/** Run the fetcher. */
 	public static void main(String[] args) throws Exception {
-		int res = ToolRunner.run(SpiderConfiguration.create(),
+		int res = OozieToolRunner.run(SpiderConfiguration.create(),
 				new FetcherSmart(SpiderConfiguration.create()), args);
 		System.exit(res);
 	}
@@ -217,8 +217,8 @@ public class FetcherSmart extends OozieMain implements Tool {
 		job.setOutputFormatClass(FetcherOutputFormat.class);
 		// MultipleOutputs.addNamedOutput(job, CrawlDatum.FETCH_DIR_NAME,
 		// AvroMapOutputFormat.class,String.class, CrawlDatum.class);
+
 		this.runJob(job);
-//		job.waitForCompletion(true);
 		if (LOG.isInfoEnabled()) {
 			LOG.info("FetcherSmart: done");
 		}

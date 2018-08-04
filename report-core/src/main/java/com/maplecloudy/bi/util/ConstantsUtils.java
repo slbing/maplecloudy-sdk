@@ -1,4 +1,4 @@
-package com.maplecloudy.share.util;
+package com.maplecloudy.bi.util;
 
 
 import java.io.IOException;
@@ -14,7 +14,7 @@ import org.apache.hadoop.fs.Path;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.maplecloudy.share.util.ShareConstants;
+import com.maplecloudy.bi.util.ShareConstants;
 
 public class ConstantsUtils implements ShareConstants {
   public static synchronized String generateSegmentName() {

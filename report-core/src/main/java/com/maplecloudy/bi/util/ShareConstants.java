@@ -1,4 +1,4 @@
-package com.maplecloudy.share.util;
+package com.maplecloudy.bi.util;
 
 
 import java.text.SimpleDateFormat;

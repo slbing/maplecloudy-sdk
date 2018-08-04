@@ -1,6 +1,6 @@
 package com.maplecloudy.bi;
 
-import com.maplecloudy.share.util.ShareConstants;
+import com.maplecloudy.bi.util.ShareConstants;
 
 /**
  * Constants used in data files.
