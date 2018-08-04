@@ -45,6 +45,11 @@
 			is available
 		</description>
 	</property>
+	<property>
+		<name>fetcher.parse</name>
+		<value>true</value>
+		
+	</property>
 
 	<property>
 		<name>generate.count.per.segments</name>
@@ -83,7 +88,7 @@
 	</property>
 	<property>
 		<name>union.class</name>
-		<value>com.maplecloudy.spider.crawl.CrawlDatum,com.maplecloudy.spider.protocol.Content,com.maplecloudy.spider.parse.Outlink
+		<value>com.maplecloudy.spider.crawl.CrawlDatum,com.maplecloudy.spider.protocol.Content,com.maplecloudy.spider.parse.Outlink,java.lang.String
 		</value>
 		<description></description>
 	</property>
