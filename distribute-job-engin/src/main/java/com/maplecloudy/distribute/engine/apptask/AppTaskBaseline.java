@@ -103,7 +103,7 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
     }
     
     Configuration conf = new Configuration();
-    this.setTaskConf(conf);
+//    this.setTaskConf(conf);
     this.setConf(conf);
   }
   
@@ -286,14 +286,14 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
     return type;
   }
   
-  public void setTaskConf(Configuration conf) {
-    conf.set("yarn.resourcemanager.address", this.resourceManagerAddress);
-    conf.set("fs.defaultFS", this.defaultFS);
-    
-    conf.set("yarn.application.classpath",
-        "$HADOOP_CLIENT_CONF_DIR,$HADOOP_CONF_DIR,$HADOOP_COMMON_HOME/*,$HADOOP_COMMON_HOME/lib/*,$HADOOP_HDFS_HOME/*,$HADOOP_HDFS_HOME/lib/*,$HADOOP_YARN_HOME/*,$HADOOP_YARN_HOME/lib/*");
-//    conf.set("app.para", this.json.toString());
-  }
+//  public void setTaskConf(Configuration conf) {
+//    conf.set("yarn.resourcemanager.address", this.resourceManagerAddress);
+//    conf.set("fs.defaultFS", this.defaultFS);
+//    
+//    conf.set("yarn.application.classpath",
+//        "$HADOOP_CLIENT_CONF_DIR,$HADOOP_CONF_DIR,$HADOOP_COMMON_HOME/*,$HADOOP_COMMON_HOME/lib/*,$HADOOP_HDFS_HOME/*,$HADOOP_HDFS_HOME/lib/*,$HADOOP_YARN_HOME/*,$HADOOP_YARN_HOME/lib/*");
+////    conf.set("app.para", this.json.toString());
+//  }
   
   public void exportJson(JSONObject json) throws IOException {
     String runJsonFile = this.user + "/" + this.project + "/" + this.appConf
