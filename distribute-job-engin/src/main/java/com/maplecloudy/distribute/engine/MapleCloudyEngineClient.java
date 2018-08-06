@@ -136,7 +136,7 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
           .newRecord(ContainerLaunchContext.class);
       
       List<String> cmds = Lists.newArrayList();
-      // cmds.add("sleep 600 \n");
+      cmds.add("sleep 60000 \n");
       String cmd = "$JAVA_HOME/bin/java ";
       for (String pp : pps) {
         cmd += " " + pp;
