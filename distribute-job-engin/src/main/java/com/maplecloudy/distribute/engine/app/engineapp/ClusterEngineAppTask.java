@@ -39,14 +39,12 @@ import org.codehaus.jettison.json.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.maplecloudy.distribute.engine.ClusterEngine;
-import com.maplecloudy.distribute.engine.MapleCloudyEngineShellClient;
+import com.maplecloudy.distribute.engine.app.engine.EngineInstallInfo;
 import com.maplecloudy.distribute.engine.apptask.AppTaskBaseline;
 import com.maplecloudy.distribute.engine.nginx.Nginx;
 import com.maplecloudy.distribute.engine.nginx.NginxGatewayPara;
-import com.maplecloudy.distribute.engine.utils.Config;
 import com.maplecloudy.distribute.engine.utils.YarnCompat;
 import com.maplecloudy.distribute.engine.utils.YarnUtils;
-import com.maplecloudy.yarn.rpc.ClientRpc;
 
 public class ClusterEngineAppTask extends AppTaskBaseline {
   
@@ -131,7 +129,7 @@ public class ClusterEngineAppTask extends AppTaskBaseline {
     
     // add engine
     LocalResource elr = Records.newRecord(LocalResource.class);
-    FileStatus enginejar = fs.getFileStatus(new Path(Config.getEngieJar()));
+    FileStatus enginejar = fs.getFileStatus(new Path(EngineInstallInfo.getPack()));
     elr.setResource(ConverterUtils.getYarnUrlFromPath(enginejar.getPath()));
     elr.setSize(enginejar.getLen());
     elr.setTimestamp(enginejar.getModificationTime());
