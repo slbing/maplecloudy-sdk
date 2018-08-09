@@ -232,6 +232,8 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
               + ", and not runing with status:"
               + report.getYarnApplicationState());
         } else {
+          runInfo.add("App have run with appid:" + report.getApplicationId()
+          + ", with runing status:"+report.getApplicationId());
           this.appids.add(report.getApplicationId());
           bret = report.getApplicationId();
         }

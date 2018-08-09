@@ -47,7 +47,8 @@ public class EngineAppTask extends AppTaskBaseline {
       this.runInfo.add("Start Task!");
       ApplicationId appid = this.checkTaskApp();
       if (appid != null) {
-        updateNginx(appid);
+//        updateNginx(appid);
+        this.runInfo.add("this task is now running with:"+appid);
         return;
       }
       
@@ -114,7 +115,6 @@ public class EngineAppTask extends AppTaskBaseline {
       });
       if (appid != null) {
         this.appids.add(appid);
-        
         updateNginx(appid);
       }
       // checkInfo.add("yarn app have submit");
