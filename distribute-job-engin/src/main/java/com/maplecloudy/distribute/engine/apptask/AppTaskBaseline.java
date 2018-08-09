@@ -78,8 +78,8 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
       this.memory = json.getInt("memory");
       this.cpu = json.getInt("cpu");
       this.domain = json.getString("domain");
-      this.nginxIp = json.getString("nginxIp");
-      this.nginxDomain = json.getString("nginxDomain");
+      this.nginxIp = json.optString("nginxIp");
+      this.nginxDomain = json.optString("nginxDomain");
       this.proxyPort = json.getInt("proxyPort");
       this.port = json.getInt("port");
       this.defaultFS = json.getString("defaultFS");
