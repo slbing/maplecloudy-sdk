@@ -179,6 +179,7 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
           }
           
         });
+        System.out.println("appstatus:"+as.toString());
       }
     }
     
