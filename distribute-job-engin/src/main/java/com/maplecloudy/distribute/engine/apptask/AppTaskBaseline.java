@@ -180,6 +180,8 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
           
         });
         System.out.println("appstatus:"+as.toString());
+        Gson gson = new GsonBuilder().create();
+        System.out.println("appreport:"+ gson.toJson(report));
       }
     }
     

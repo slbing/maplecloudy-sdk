@@ -7,6 +7,7 @@ public class AppStatus {
   public String appid = "";
   public String appStatus = "";
   public String diagnostics = "";
+  public String trackUrl = "";
   
   @Nullable
   public String error = null;
