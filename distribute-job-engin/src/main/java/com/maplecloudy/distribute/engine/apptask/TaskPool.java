@@ -12,8 +12,9 @@ public class TaskPool {
     if (taskMap.get(runable.getName()) != null)
       taskMap.remove(runable.getName());
     taskMap.put(runable.getName(), runable);
-    Thread task = new Thread(runable,runable.getName());
-    task.start();
+    runable.run();
+//    Thread task = new Thread(runable,runable.getName());
+//    task.start();
 //    cachedThreadPool.execute(runable);
   }
 }
