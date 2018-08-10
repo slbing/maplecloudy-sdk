@@ -21,14 +21,18 @@ public class AppImpl implements IApp {
   @Override
   public int startEngineApp(String para) throws JSONException {
     
-    AppTaskBaseline task;
+   
     JSONObject json = new JSONObject(para);
     JSONArray jarr = json.getJSONArray("appId");
-    System.out.println("json received:" + para);
+    System.out.println("start engine json received:" + para);
     for (int i = 0; i < jarr.length(); i++) {
       
-      json.put("appId", jarr.getInt(i));
-      task = new EngineAppTask(json);
+      AppTaskBaseline task;
+      JSONObject jtask = new JSONObject(para);
+      jtask.remove("appId");
+      jtask.put("appId", jarr.getInt(i));
+      System.out.println("start engine :" + jtask);
+      task = new EngineAppTask(jtask);
       TaskPool.addTask(task);
     }
     
