@@ -43,13 +43,18 @@
 		<repository>
 			<id>releases</id>
 			<name>Nexus Release Repository</name>
-			<url>http://www.maplecloudy.com:9083/repository/maven-releases/</url>
+			<url>http://mc.ali.bjol.bigdata.udsp.com:8081/repository/maven-releases/</url>
 		</repository>
 		<snapshotRepository>
 			<id>snapshots</id>
 			<name>Nexus Snapshot Repository</name>
-			<url>http://www.maplecloudy.com:9083/repository/maven-snapshots/</url>
+			<url>http://mc.ali.bjol.bigdata.udsp.com:8081/repository/maven-snapshots/</url>
 		</snapshotRepository>
+		<site>
+			<id>apache.website</id>
+			<url>${siteUrlDeployment}</url>
+			<name>Flume Site</name>
+		</site>
 	</distributionManagement>
 
 	<dependencies>
