@@ -48,6 +48,7 @@ public class EngineAppTask extends AppTaskBaseline {
       ApplicationId appid = this.checkTaskApp();
       if (appid != null) {
 //        updateNginx(appid);
+        System.out.println("this task is now running with:"+appid);
         this.runInfo.add("this task is now running with:"+appid);
         return;
       }
