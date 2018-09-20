@@ -3,5 +3,4 @@
 #-m 1024 
 #-user gxiang 
 #-damon
-sleep 600000
 <cmd>

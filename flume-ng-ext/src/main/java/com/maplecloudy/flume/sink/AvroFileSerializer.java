@@ -2,35 +2,39 @@ package com.maplecloudy.flume.sink;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
+import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.io.BinaryDecoder;
+import org.apache.avro.io.BinaryEncoder;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DecoderFactory;
+import org.apache.avro.io.EncoderFactory;
+import org.apache.avro.reflect.ReflectData;
+import org.apache.avro.reflect.ReflectDatumWriter;
+import org.apache.avro.util.ByteBufferOutputStream;
 import org.apache.flume.Event;
+import org.apache.flume.event.SimpleEvent;
 import org.apache.hadoop.io.DataInputBuffer;
 
 @SuppressWarnings({"rawtypes"})
 public class AvroFileSerializer {
   
-  // Schema keySchema = Schema.create(Schema.Type.LONG), valueSchema;
   Schema schema;// = Schema.create(Schema.Type.LONG);
   DatumReader datumReader;
-  String schemaPath;
   
-  // public AvroFileSerializer(String schemapath){
-  // schemaPath = schemapath;
-  // }
-  
-  public AvroFileSerializer(Schema valueschema) {
+  GenericDatumWriter<Event> writer;
+  public AvroFileSerializer() {
     // if (Pair.class.getName().equals(valueschema.getFullName())) {
-    schema = valueschema;
+    schema = ReflectData.get().getSchema(SimpleEvent.class);
     // } else {
     // schema = Pair.getPairSchema(Schema.create(Schema.Type.LONG),
     // valueschema);
     // }
-    datumReader = GenericData.get().createDatumReader(valueschema);
+    writer = new ReflectDatumWriter<Event>(schema);
+    datumReader = GenericData.get().createDatumReader(schema);
   }
   
   public Schema getSchema() {
@@ -70,9 +74,15 @@ public class AvroFileSerializer {
     return obj;
   }
   
-  public ByteBuffer serialize(Event e) {
-    return ByteBuffer.wrap(e.getBody());
-    
+  ByteBufferOutputStream bos = new ByteBufferOutputStream();
+  
+  public List<ByteBuffer> serialize(Event e) throws IOException {
+    BinaryEncoder encoder = EncoderFactory.get().directBinaryEncoder(bos, null);
+    writer.write(e, encoder);
+    return bos.getBufferList();
   }
   
+  public static void main(String[] args) {
+    System.out.println( ReflectData.get().getSchema(SimpleEvent.class));
+  }
 }

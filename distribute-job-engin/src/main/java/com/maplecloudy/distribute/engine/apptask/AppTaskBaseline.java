@@ -31,7 +31,6 @@ import com.google.gson.JsonIOException;
 import com.maplecloudy.distribute.engine.app.engine.EngineInstallInfo;
 import com.maplecloudy.distribute.engine.appserver.AppStatus;
 import com.maplecloudy.distribute.engine.utils.EngineUtils;
-import com.maplecloudy.yarn.rpc.ClientRpc;
 
 public abstract class AppTaskBaseline extends Configured implements Runnable {
   
