@@ -53,6 +53,7 @@ public class OozieToolRunner {
 		GenericOptionsParser parser = new GenericOptionsParser(conf, args);
 		tool.setConf(conf);
 		tool.loadOozieConf();
+		tool.loadSparkConf();
 		// get the args w/o generic hadoop args
 		String[] toolArgs = parser.getRemainingArgs();
 

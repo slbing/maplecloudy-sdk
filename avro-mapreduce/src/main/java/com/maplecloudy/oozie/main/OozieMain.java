@@ -36,20 +36,26 @@ public abstract class OozieMain extends Configured implements Tool {
   }
   
   public void loadOozieConf() throws Exception {
-    if (System.getProperty("oozie.action.conf.xml") != null) getConf()
-        .addResource(
-            new Path("file:///", System.getProperty("oozie.action.conf.xml")));
+    if (System.getProperty("oozie.action.conf.xml") != null)
+      getConf().addResource(
+          new Path("file:///", System.getProperty("oozie.action.conf.xml")));
   }
   
-  public boolean runJob(AvroJob job) throws IOException, InterruptedException,
-      ClassNotFoundException {
+  public void loadSparkConf() throws Exception {
+    Properties props = new Properties();
+    props.load(OozieMain.class.getResourceAsStream("/spark-defaults.conf"));
+    System.setProperties(props);
+  }
+  
+  public boolean runJob(AvroJob job)
+      throws IOException, InterruptedException, ClassNotFoundException {
     job.submit();
     String idf = System.getProperty("oozie.action.newId.properties");
     if (idf != null) {
-     
+      
       File idFile = new File(idf);
       String jobId = job.getJobID().toString();
-      LOG.info("Save the Job ID:"+jobId +" to the file:"+idf);
+      LOG.info("Save the Job ID:" + jobId + " to the file:" + idf);
       Properties props = new Properties();
       props.setProperty("id", jobId);
       OutputStream os = new FileOutputStream(idFile);
