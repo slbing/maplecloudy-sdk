@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Properties;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configured;
@@ -43,8 +44,14 @@ public abstract class OozieMain extends Configured implements Tool {
   
   public void loadSparkConf() throws Exception {
     Properties props = new Properties();
-    props.load(OozieMain.class.getResourceAsStream("/spark-defaults.conf"));
-    System.setProperties(props);
+    String runModel = System.getProperty("maplecloudy.run", "prod");
+    if (StringUtils.equals(runModel, "dev")) props
+        .load(OozieMain.class.getResourceAsStream("/spark-defaults-dev.conf"));
+    else props
+        .load(OozieMain.class.getResourceAsStream("/spark-defaults.conf"));
+    for (Object key : props.keySet()) {
+      System.setProperty((String) key, (String) props.get(key));
+    }
   }
   
   public boolean runJob(AvroJob job)
