@@ -18,7 +18,9 @@
 package com.maplecloudy.spider.parse;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -61,7 +63,9 @@ public class ParseSegment extends OozieMain implements Tool{
       List pd = parse.parse(key.toString(), value);
       for (Object o : pd) {
         if (o instanceof Outlink) {
-          ((Outlink) o).setExtend(value.getExtendData());
+//          ((Outlink) o).setExtend(value.getExtendData());
+          Map<String,String> oldExtend = value.getExtendData();
+          ((Outlink) o).getExtend().putAll(oldExtend);
           context.write(key, new UnionData(((Outlink) o)));
         } else context.write(key, new UnionData(o));
       }
