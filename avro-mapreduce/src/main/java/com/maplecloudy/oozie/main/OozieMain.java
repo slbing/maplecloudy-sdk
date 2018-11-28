@@ -45,10 +45,15 @@ public abstract class OozieMain extends Configured implements Tool {
   public void loadSparkConf() throws Exception {
     Properties props = new Properties();
     String runModel = System.getProperty("maplecloudy.run", "prod");
-    if (StringUtils.equals(runModel, "dev")) props
-        .load(OozieMain.class.getResourceAsStream("/spark-defaults-dev.conf"));
-    else props
-        .load(OozieMain.class.getResourceAsStream("/spark-defaults.conf"));
+    
+    if (StringUtils.equals(runModel, "dev")) {
+      if (OozieMain.class.getResource("/spark-defaults-dev.conf") != null)
+        props.load(
+            OozieMain.class.getResourceAsStream("/spark-defaults-dev.conf"));
+    } else {
+      if (OozieMain.class.getResource("/spark-defaults.conf") != null)
+        props.load(OozieMain.class.getResourceAsStream("/spark-defaults.conf"));
+    }
     for (Object key : props.keySet()) {
       System.setProperty((String) key, (String) props.get(key));
     }
