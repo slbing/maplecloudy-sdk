@@ -274,7 +274,7 @@ public class FetcherSmart extends Configured implements Tool {
 			LOG.fatal("Fetcher: " + StringUtils.stringifyException(e));
 			return -1;
 		}
-
+		
 	}
 }
 

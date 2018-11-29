@@ -19,6 +19,7 @@ package com.maplecloudy.spider.parse;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -69,8 +70,13 @@ public class ParseSegment extends Configured implements Tool {
       List pd = parse.parse(key.toString(), value);
       for (Object o : pd) {
         if (o instanceof Outlink) {
+          Map<String,String> extend = ((Outlink) o).getExtend();
           ((Outlink) o).setExtend(value.getExtendData());
+          // do not replace outlink extend
+          ((Outlink) o).getExtend().putAll(extend);
           context.write(key, new UnionData(((Outlink) o)));
+//          ((Outlink) o).setExtend(value.getExtendData());
+//          context.write(key, new UnionData(((Outlink) o)));
         } else context.write(key, new UnionData(o));
       }
     }

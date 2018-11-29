@@ -116,7 +116,7 @@ public class HttpDateFormat {
     String string = HttpDateFormat.toString(now);
 
     long time = HttpDateFormat.toLong(string);
-
+    System.out.println(now);
     System.out.println(string);
     System.out.println(HttpDateFormat.toString(time));
   }
