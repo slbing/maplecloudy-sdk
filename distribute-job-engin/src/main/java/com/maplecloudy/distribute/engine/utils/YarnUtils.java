@@ -1,5 +1,14 @@
-
 package com.maplecloudy.distribute.engine.utils;
+
+import static org.apache.hadoop.yarn.conf.YarnConfiguration.DEFAULT_RM_AM_EXPIRY_INTERVAL_MS;
+import static org.apache.hadoop.yarn.conf.YarnConfiguration.DEFAULT_RM_SCHEDULER_ADDRESS;
+import static org.apache.hadoop.yarn.conf.YarnConfiguration.DEFAULT_RM_SCHEDULER_MINIMUM_ALLOCATION_MB;
+import static org.apache.hadoop.yarn.conf.YarnConfiguration.DEFAULT_RM_SCHEDULER_MINIMUM_ALLOCATION_VCORES;
+import static org.apache.hadoop.yarn.conf.YarnConfiguration.DEFAULT_RM_SCHEDULER_PORT;
+import static org.apache.hadoop.yarn.conf.YarnConfiguration.RM_AM_EXPIRY_INTERVAL_MS;
+import static org.apache.hadoop.yarn.conf.YarnConfiguration.RM_SCHEDULER_ADDRESS;
+import static org.apache.hadoop.yarn.conf.YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_MB;
+import static org.apache.hadoop.yarn.conf.YarnConfiguration.RM_SCHEDULER_MINIMUM_ALLOCATION_VCORES;
 
 import java.net.InetSocketAddress;
 import java.util.LinkedHashMap;
@@ -7,7 +16,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
@@ -15,8 +23,6 @@ import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.util.ConverterUtils;
-
-import static org.apache.hadoop.yarn.conf.YarnConfiguration.*;
 
 public abstract class YarnUtils {
 

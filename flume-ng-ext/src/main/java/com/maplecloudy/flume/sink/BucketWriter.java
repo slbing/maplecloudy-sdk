@@ -32,7 +32,6 @@ import org.apache.flume.Context;
 import org.apache.flume.Event;
 import org.apache.flume.SystemClock;
 import org.apache.flume.instrumentation.SinkCounter;
-import org.apache.flume.source.SyslogTcpSource.syslogTcpHandler;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;

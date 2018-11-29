@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Properties;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configured;
@@ -36,20 +37,37 @@ public abstract class OozieMain extends Configured implements Tool {
   }
   
   public void loadOozieConf() throws Exception {
-    if (System.getProperty("oozie.action.conf.xml") != null) getConf()
-        .addResource(
-            new Path("file:///", System.getProperty("oozie.action.conf.xml")));
+    if (System.getProperty("oozie.action.conf.xml") != null)
+      getConf().addResource(
+          new Path("file:///", System.getProperty("oozie.action.conf.xml")));
   }
   
-  public boolean runJob(AvroJob job) throws IOException, InterruptedException,
-      ClassNotFoundException {
+  public void loadSparkConf() throws Exception {
+    Properties props = new Properties();
+    String runModel = System.getProperty("maplecloudy.run", "prod");
+    
+    if (StringUtils.equals(runModel, "dev")) {
+      if (OozieMain.class.getResource("/spark-defaults-dev.conf") != null)
+        props.load(
+            OozieMain.class.getResourceAsStream("/spark-defaults-dev.conf"));
+    } else {
+      if (OozieMain.class.getResource("/spark-defaults.conf") != null)
+        props.load(OozieMain.class.getResourceAsStream("/spark-defaults.conf"));
+    }
+    for (Object key : props.keySet()) {
+      System.setProperty((String) key, (String) props.get(key));
+    }
+  }
+  
+  public boolean runJob(AvroJob job)
+      throws IOException, InterruptedException, ClassNotFoundException {
     job.submit();
     String idf = System.getProperty("oozie.action.newId.properties");
     if (idf != null) {
-     
+      
       File idFile = new File(idf);
       String jobId = job.getJobID().toString();
-      LOG.info("Save the Job ID:"+jobId +" to the file:"+idf);
+      LOG.info("Save the Job ID:" + jobId + " to the file:" + idf);
       Properties props = new Properties();
       props.setProperty("id", jobId);
       OutputStream os = new FileOutputStream(idFile);

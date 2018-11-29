@@ -1,4 +1,11 @@
 */.classpath
+distribute-job-engin/conf.cloudera.yarn/
+distribute-job-engin/nginx/
+distribute-job-engin/maplecloudy/
+distribute-job-engin/gxiang/
+elasticsearch-yarn/cfg
+elasticsearch-yarn/cfg2.4.4
+elasticsearch-yarn/conf.cloudera.yarn/
 */src/test/java/org/apache/hadoop/util/Shell.java
 */.project
 */target
@@ -15,3 +22,5 @@ logs
 */log
 */*.iml
 *.iml
+*/downloads
+*.DS_Store

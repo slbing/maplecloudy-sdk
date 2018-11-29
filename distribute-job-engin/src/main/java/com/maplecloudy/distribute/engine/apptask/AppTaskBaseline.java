@@ -31,7 +31,6 @@ import com.google.gson.JsonIOException;
 import com.maplecloudy.distribute.engine.app.engine.EngineInstallInfo;
 import com.maplecloudy.distribute.engine.appserver.AppStatus;
 import com.maplecloudy.distribute.engine.utils.EngineUtils;
-import com.maplecloudy.yarn.rpc.ClientRpc;
 
 public abstract class AppTaskBaseline extends Configured implements Runnable {
   
@@ -64,7 +63,7 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
   public String type;
   
   public boolean isDistribution = true;
-
+  
   public boolean damon = true;
   public boolean nginx = true;
   public JSONObject json;
@@ -78,8 +77,8 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
       this.memory = json.getInt("memory");
       this.cpu = json.getInt("cpu");
       this.domain = json.getString("domain");
-      this.nginxIp = json.getString("nginxIp");
-      this.nginxDomain = json.getString("nginxDomain");
+      this.nginxIp = json.optString("nginxIp");
+      this.nginxDomain = json.optString("nginxDomain");
       this.proxyPort = json.getInt("proxyPort");
       this.port = json.getInt("port");
       this.defaultFS = json.getString("defaultFS");
@@ -87,10 +86,8 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
       this.isDistribution = json.getBoolean("isDistribution");
       this.type = json.getString("type");
       this.user = json.getString("user");
-      if(json.has("damon") && !json.getBoolean("damon"))
-        this.damon = false;
-      if(json.has("nginx") && !json.getBoolean("nginx"))
-        this.nginx = false;
+      if (json.has("damon") && !json.getBoolean("damon")) this.damon = false;
+      if (json.has("nginx") && !json.getBoolean("nginx")) this.nginx = false;
       this.json = json;
       exportJson(json);
       
@@ -103,7 +100,7 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
     }
     
     Configuration conf = new Configuration();
-    this.setTaskConf(conf);
+    // this.setTaskConf(conf);
     this.setConf(conf);
   }
   
@@ -111,33 +108,38 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
   
   public boolean checkEngine() throws IOException {
     boolean bret = true;
-    final FileSystem fs = FileSystem.get(getConf());
-    if (fs.exists(new Path(EngineInstallInfo.getPack()))) {
-      runInfo.add("Maplecloudy Engine install ok!");
-    } else {
-      runInfo.add("Try install Maplecloudy engine!");
-      UserGroupInformation ugi = UserGroupInformation
-          .createProxyUser("maplecloudy", UserGroupInformation.getLoginUser());
-      bret = ugi.doAs(new PrivilegedAction<Boolean>() {
-        @Override
-        public Boolean run() {
-          try {
+    
+    UserGroupInformation ugi = UserGroupInformation
+        .createProxyUser("maplecloudy", UserGroupInformation.getLoginUser());
+    bret = ugi.doAs(new PrivilegedAction<Boolean>() {
+      @Override
+      public Boolean run() {
+        try {
+          
+          FileSystem fs = FileSystem.get(getConf());
+          if (fs.exists(new Path(EngineInstallInfo.getPack()))) {
+            runInfo.add("Maplecloudy Engine install ok!");
+            return true;
+          } else {
+            runInfo.add("Try install Maplecloudy engine!");
             fs.copyFromLocalFile(false, true,
                 new Path("lib/" + EngineInstallInfo.pack),
                 new Path(EngineInstallInfo.getPack()));
-          } catch (IllegalArgumentException | IOException e) {
-            e.printStackTrace();
-            runInfo
-                .add("Install Maplecloudy engine faild whit:" + e.getMessage());
-            return false;
+            
+            runInfo.add("Install Maplecloudy engine succes!");
+            return true;
           }
-          runInfo.add("Install Maplecloudy engine succes!");
-          return true;
+        } catch (IllegalArgumentException | IOException e) {
+          e.printStackTrace();
+          runInfo
+              .add("Install Maplecloudy engine faild whit:" + e.getMessage());
+          return false;
         }
-        
-      });
-    }
+      }
+      
+    });
     return bret;
+    
   }
   
   public List<AppStatus> getAppStatus() throws Exception {
@@ -176,6 +178,9 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
           }
           
         });
+        System.out.println("appstatus:"+as.toString());
+        Gson gson = new GsonBuilder().create();
+        System.out.println("appreport:"+ gson.toJson(report));
       }
     }
     
@@ -211,7 +216,7 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
   
   public ApplicationId checkTaskApp() throws YarnException, IOException {
     ApplicationId bret = null;
-//    YarnClient yarnClient = ClientRpc.getYarnClient(getConf());
+    // YarnClient yarnClient = ClientRpc.getYarnClient(getConf());
     YarnClient yarnClient = YarnClient.createYarnClient();
     Configuration conf = new YarnConfiguration(this.getConf());
     yarnClient.init(conf);
@@ -229,6 +234,8 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
               + ", and not runing with status:"
               + report.getYarnApplicationState());
         } else {
+          runInfo.add("App have run with appid:" + report.getApplicationId()
+          + ", with runing status:"+report.getApplicationId());
           this.appids.add(report.getApplicationId());
           bret = report.getApplicationId();
         }
@@ -286,14 +293,14 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
     return type;
   }
   
-  public void setTaskConf(Configuration conf) {
-    conf.set("yarn.resourcemanager.address", this.resourceManagerAddress);
-    conf.set("fs.defaultFS", this.defaultFS);
-    
-    conf.set("yarn.application.classpath",
-        "$HADOOP_CLIENT_CONF_DIR,$HADOOP_CONF_DIR,$HADOOP_COMMON_HOME/*,$HADOOP_COMMON_HOME/lib/*,$HADOOP_HDFS_HOME/*,$HADOOP_HDFS_HOME/lib/*,$HADOOP_YARN_HOME/*,$HADOOP_YARN_HOME/lib/*");
-//    conf.set("app.para", this.json.toString());
-  }
+  // public void setTaskConf(Configuration conf) {
+  // conf.set("yarn.resourcemanager.address", this.resourceManagerAddress);
+  // conf.set("fs.defaultFS", this.defaultFS);
+  //
+  // conf.set("yarn.application.classpath",
+  // "$HADOOP_CLIENT_CONF_DIR,$HADOOP_CONF_DIR,$HADOOP_COMMON_HOME/*,$HADOOP_COMMON_HOME/lib/*,$HADOOP_HDFS_HOME/*,$HADOOP_HDFS_HOME/lib/*,$HADOOP_YARN_HOME/*,$HADOOP_YARN_HOME/lib/*");
+  //// conf.set("app.para", this.json.toString());
+  // }
   
   public void exportJson(JSONObject json) throws IOException {
     String runJsonFile = this.user + "/" + this.project + "/" + this.appConf

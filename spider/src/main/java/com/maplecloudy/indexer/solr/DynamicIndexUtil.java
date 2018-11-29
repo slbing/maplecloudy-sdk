@@ -18,7 +18,7 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.solr.common.SolrInputDocument;
 
 import com.google.common.collect.Maps;
-import com.maplecloudy.share.json.DateFormatStr;
+import com.maplecloudy.bi.util.DateFormatStr;
 
 public class DynamicIndexUtil extends IndexerBase {
 	private static Map<String, DateFormat> dfsCache = Maps.newHashMap();

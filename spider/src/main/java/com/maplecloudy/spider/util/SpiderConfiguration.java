@@ -42,6 +42,13 @@ public class SpiderConfiguration {
 		addSpiderResources(conf);
 		return conf;
 	}
+	
+	/** Create a {@link Configuration} for Spider. */
+  public static Configuration create(Configuration confo) {
+    Configuration conf = new Configuration(confo);
+    addSpiderResources(conf);
+    return conf;
+  }
 
 	/**
 	 * Create a {@link Configuration for Spider invoked with the command line
