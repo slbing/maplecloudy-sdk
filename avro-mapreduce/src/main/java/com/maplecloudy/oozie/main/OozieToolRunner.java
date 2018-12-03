@@ -43,7 +43,7 @@ public class OozieToolRunner {
 	 *            command-line arguments to the tool.
 	 * @return exit code of the {@link Tool#run(String[])} method.
 	 */
-	public static int run(Configuration conf, OozieMain tool, String[] args) throws Exception {
+	public static int run(Configuration conf, final OozieMain tool, String[] args) throws Exception {
 		System.getProperties().store(System.out, "corrent properties:");
 
 		String user = System.getProperties().getProperty("user.name");
@@ -55,7 +55,7 @@ public class OozieToolRunner {
 		tool.loadOozieConf();
 		tool.loadSparkConf();
 		// get the args w/o generic hadoop args
-		String[] toolArgs = parser.getRemainingArgs();
+		final String[] toolArgs = parser.getRemainingArgs();
 
 		if (user == null || "".equals(user.trim())) {
 			return tool.run(toolArgs);

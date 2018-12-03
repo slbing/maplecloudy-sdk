@@ -3,10 +3,10 @@ package com.maplecloudy.spider.fetcher;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedDeque;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -53,6 +53,8 @@ public class FetcherWithParse extends OozieMain implements Tool {
   public static final String CONTENT_REDIR = "content";
   
   public static final String PROTOCOL_REDIR = "protocol";
+  
+  public static final LinkedBlockingQueue<Outlink> parseQueue = new LinkedBlockingQueue<>();
   
   public FetcherWithParse(Configuration conf) {
     this.setConf(conf);
@@ -145,13 +147,44 @@ public class FetcherWithParse extends OozieMain implements Tool {
       } catch (Throwable t) { // unexpected exception
         logError(key.toString(), t.toString());
         t.printStackTrace();
-        output(key, value, null, CrawlDatum.STATUS_FETCH_RETRY);
+        output(key, value, null, CrawlDatum.STATUS_FETCH_RETRY);        
       }
-      // process fetch_right_now
-      while (nowFetcQueue.peek() != null) {
-        Outlink ol = nowFetcQueue.poll();
-        
+      int k= 1;
+      while(k++<50000 && !parseQueue.isEmpty()) {
+		  Outlink o = parseQueue.poll();
+		  try {
+		    if (LOG.isInfoEnabled()) {
+		      LOG.info("fetching " + o.url);
+		    }
+		    
+		    Protocol protocol = this.protocolFactory.getProtocol(o.getUrl());
+		    ProtocolOutput output = protocol.getProtocolOutput(o.getUrl(), new CrawlDatum());
+		    ProtocolStatus status = output.getStatus();
+		    Content content = output.getContent();
+		    
+		    switch (status.getCode()) {
+		    
+		      case ProtocolStatus.SUCCESS: // got a page
+		        output(o.getUrl(), new CrawlDatum(), content, CrawlDatum.STATUS_FETCH_SUCCESS);
+		        updateStatus(content.getContent().length);
+		        
+		        break;
+		      
+		      default:
+		        if (LOG.isWarnEnabled()) {
+		          LOG.warn("ProtocolStatus: " + status.getName());
+		        }
+		        output(o.getUrl(), new CrawlDatum(), null, CrawlDatum.STATUS_FETCH_RETRY);
+		        logError(o.getUrl(), "" + status.getName());
+		    }
+		    
+		  } catch (Throwable t) { // unexpected exception
+		    logError(o.getUrl().toString(), t.toString());
+		    t.printStackTrace();
+		    output(o.getUrl(), value, null, CrawlDatum.STATUS_FETCH_RETRY);        
+		  }
       }
+      
     }
     
     @Override
@@ -196,7 +229,6 @@ public class FetcherWithParse extends OozieMain implements Tool {
       }
       
       try {
-        outer.write(key, new UnionData(datum));
         
         if (content != null && storingContent)
           outer.write(key, new UnionData(content));
@@ -207,14 +239,13 @@ public class FetcherWithParse extends OozieMain implements Tool {
             List pd = parse.parse(key, content);
             for (Object o : pd) {
               if (o instanceof Outlink) {
-                if (((Outlink) o).getExtend("fetch_right_now") != null
-                    && Boolean.valueOf(
-                        ((Outlink) o).getExtend("fetch_right_now")) == true) {
-                  nowFetcQueue.add((Outlink) o);
-                } else {
-                  ((Outlink) o).addExtend(content.getExtendData());
-                  outer.write(key, new UnionData(((Outlink) o)));
-                }
+            	if (((Outlink) o).getExtend("fetch_right_now") != null && "true".equals(((Outlink) o).getExtend("fetch_right_now"))) {
+					parseQueue.add((Outlink) o);
+				} else {
+					((Outlink) o).setExtend(content.getExtendData());
+	                outer.write(key, new UnionData(((Outlink) o)));
+				}  
+
               } else outer.write(key, new UnionData(o));
             }
           } catch (Exception e) {
