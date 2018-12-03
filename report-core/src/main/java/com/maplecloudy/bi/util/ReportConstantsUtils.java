@@ -11,7 +11,6 @@ import org.apache.hadoop.util.StringUtils;
 import com.maplecloudy.bi.ReportConstants;
 import com.maplecloudy.bi.ReportFrequence;
 import com.maplecloudy.bi.ReportProperties;
-import com.maplecloudy.share.util.ConstantsUtils;
 
 public class ReportConstantsUtils extends ConstantsUtils implements
     ReportConstants {

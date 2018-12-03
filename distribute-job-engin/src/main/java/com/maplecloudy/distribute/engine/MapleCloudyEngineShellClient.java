@@ -1,6 +1,5 @@
 package com.maplecloudy.distribute.engine;
 
-import java.io.IOException;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
 import java.util.List;
@@ -26,14 +25,12 @@ import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.client.api.YarnClientApplication;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
-import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.maplecloudy.distribute.engine.utils.Config;
-import com.maplecloudy.yarn.rpc.ClientRpc;
+import com.maplecloudy.distribute.engine.app.engine.EngineInstallInfo;
 
 public class MapleCloudyEngineShellClient extends Configured implements Tool {
   
@@ -161,6 +158,7 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
     
     yarnClient.init(this.getConf());
     yarnClient.start();
+    
     YarnClientApplication app = yarnClient.createApplication();
     
     // Set up the container launch context for the application master
@@ -191,7 +189,7 @@ public class MapleCloudyEngineShellClient extends Configured implements Tool {
     // add engine
     LocalResource elr = Records.newRecord(LocalResource.class);
     
-    FileStatus enginejar = fs.getFileStatus(new Path(Config.getEngieJar()));
+    FileStatus enginejar = fs.getFileStatus(new Path(EngineInstallInfo.getPack()));
     elr.setResource(ConverterUtils.getYarnUrlFromPath(enginejar.getPath()));
     elr.setSize(enginejar.getLen());
     elr.setTimestamp(enginejar.getModificationTime());

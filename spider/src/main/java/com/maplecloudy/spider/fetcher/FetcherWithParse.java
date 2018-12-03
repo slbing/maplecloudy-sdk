@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
-
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -15,6 +17,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.Mapper.Context;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -57,16 +60,16 @@ public class FetcherWithParse extends OozieMain implements Tool {
     this.setConf(conf);
   }
   
-  public static class InputFormat extends
-      AvroPairInputFormat<String,CrawlDatum> {
+  public static class InputFormat
+      extends AvroPairInputFormat<String,CrawlDatum> {
     @Override
     public List<InputSplit> getSplits(JobContext job) throws IOException {
       // generate splits
       List<InputSplit> splits = new ArrayList<InputSplit>();
       List<FileStatus> files = listStatus(job);
       for (FileStatus file : files) {
-        splits.add(new FileSplit(file.getPath(), 0, file.getLen(),
-            (String[]) null));
+        splits.add(
+            new FileSplit(file.getPath(), 0, file.getLen(), (String[]) null));
       }
       // Save the number of input files for metrics/loadgen
       // job.getConfiguration().setLong(NUM_INPUT_FILES, files.size());
@@ -87,8 +90,8 @@ public class FetcherWithParse extends OozieMain implements Tool {
     return conf.getBoolean("fetcher.store.content", true);
   }
   
-  public static class FetchMapper extends
-      BlockMapper<String,CrawlDatum,String,UnionData> {
+  public static class FetchMapper
+      extends BlockMapper<String,CrawlDatum,String,UnionData> {
     
     private ProtocolFactory protocolFactory;
     Context outer;
@@ -97,15 +100,16 @@ public class FetcherWithParse extends OozieMain implements Tool {
     // fetcher
     private boolean storingContent;
     private boolean parsing;
+    private ConcurrentLinkedDeque<Outlink> nowFetcQueue = new ConcurrentLinkedDeque<Outlink>();
     
-    protected void setup(Context context) throws IOException,
-        InterruptedException {
+    protected void setup(Context context)
+        throws IOException, InterruptedException {
       this.protocolFactory = new ProtocolFactory(context.getConfiguration());
       outer = context;
       this.segmentName = context.getConfiguration()
           .get(Spider.SEGMENT_NAME_KEY);
-      storingContent = FetcherWithParse.isStoringContent(context
-          .getConfiguration());
+      storingContent = FetcherWithParse
+          .isStoringContent(context.getConfiguration());
       parsing = FetcherWithParse.isParsing(context.getConfiguration());
     }
     
@@ -125,7 +129,7 @@ public class FetcherWithParse extends OozieMain implements Tool {
         Content content = output.getContent();
         
         switch (status.getCode()) {
-        
+          
           case ProtocolStatus.SUCCESS: // got a page
             output(key, value, content, CrawlDatum.STATUS_FETCH_SUCCESS);
             updateStatus(content.getContent().length);
@@ -145,41 +149,49 @@ public class FetcherWithParse extends OozieMain implements Tool {
         t.printStackTrace();
         output(key, value, null, CrawlDatum.STATUS_FETCH_RETRY);        
       }
-      
-      while(!parseQueue.isEmpty()) {
-    	  Outlink o = parseQueue.poll();
-    	  try {
-    	        if (LOG.isInfoEnabled()) {
-    	          LOG.info("fetching " + o.url);
-    	        }
-    	        
-    	        Protocol protocol = this.protocolFactory.getProtocol(o.getUrl());
-    	        ProtocolOutput output = protocol.getProtocolOutput(o.getUrl(), new CrawlDatum());
-    	        ProtocolStatus status = output.getStatus();
-    	        Content content = output.getContent();
-    	        
-    	        switch (status.getCode()) {
-    	        
-    	          case ProtocolStatus.SUCCESS: // got a page
-    	            output(key, value, content, CrawlDatum.STATUS_FETCH_SUCCESS);
-    	            updateStatus(content.getContent().length);
-    	            
-    	            break;
-    	          
-    	          default:
-    	            if (LOG.isWarnEnabled()) {
-    	              LOG.warn("ProtocolStatus: " + status.getName());
-    	            }
-    	            output(key, value, null, CrawlDatum.STATUS_FETCH_RETRY);
-    	            logError(key.toString(), "" + status.getName());
-    	        }
-    	        
-    	      } catch (Throwable t) { // unexpected exception
-    	        logError(key.toString(), t.toString());
-    	        t.printStackTrace();
-    	        output(key, value, null, CrawlDatum.STATUS_FETCH_RETRY);        
-    	      }
+      int k= 1;
+      while(k++<50000 && !parseQueue.isEmpty()) {
+		  Outlink o = parseQueue.poll();
+		  try {
+		    if (LOG.isInfoEnabled()) {
+		      LOG.info("fetching " + o.url);
+		    }
+		    
+		    Protocol protocol = this.protocolFactory.getProtocol(o.getUrl());
+		    ProtocolOutput output = protocol.getProtocolOutput(o.getUrl(), new CrawlDatum());
+		    ProtocolStatus status = output.getStatus();
+		    Content content = output.getContent();
+		    
+		    switch (status.getCode()) {
+		    
+		      case ProtocolStatus.SUCCESS: // got a page
+		        output(o.getUrl(), new CrawlDatum(), content, CrawlDatum.STATUS_FETCH_SUCCESS);
+		        updateStatus(content.getContent().length);
+		        
+		        break;
+		      
+		      default:
+		        if (LOG.isWarnEnabled()) {
+		          LOG.warn("ProtocolStatus: " + status.getName());
+		        }
+		        output(o.getUrl(), new CrawlDatum(), null, CrawlDatum.STATUS_FETCH_RETRY);
+		        logError(o.getUrl(), "" + status.getName());
+		    }
+		    
+		  } catch (Throwable t) { // unexpected exception
+		    logError(o.getUrl().toString(), t.toString());
+		    t.printStackTrace();
+		    output(o.getUrl(), value, null, CrawlDatum.STATUS_FETCH_RETRY);        
+		  }
       }
+      
+    }
+    
+    @Override
+    public void cleanup(Context context)
+        throws IOException, InterruptedException {
+      
+      super.cleanup(context);
     }
     
     // private long lastlogtime = 0;
@@ -198,8 +210,8 @@ public class FetcherWithParse extends OozieMain implements Tool {
     
     @Override
     public void BlockRecord() throws InterruptedException {
-      if (currentValue != null) output(currentKey, currentValue, null,
-          CrawlDatum.STATUS_FETCH_RETRY);
+      if (currentValue != null)
+        output(currentKey, currentValue, null, CrawlDatum.STATUS_FETCH_RETRY);
     }
     
     @SuppressWarnings({"deprecation"})
@@ -218,8 +230,8 @@ public class FetcherWithParse extends OozieMain implements Tool {
       
       try {
         
-        if (content != null && storingContent) outer.write(key, new UnionData(
-            content));
+        if (content != null && storingContent)
+          outer.write(key, new UnionData(content));
         if (content != null && parsing) {
           Parse parse = new ParserFactory().getParsers(key, content);
           try {
@@ -233,6 +245,7 @@ public class FetcherWithParse extends OozieMain implements Tool {
 					((Outlink) o).setExtend(content.getExtendData());
 	                outer.write(key, new UnionData(((Outlink) o)));
 				}  
+
               } else outer.write(key, new UnionData(o));
             }
           } catch (Exception e) {
@@ -258,14 +271,14 @@ public class FetcherWithParse extends OozieMain implements Tool {
     System.exit(res);
   }
   
-  public boolean fetch(Path segment) throws IOException, InterruptedException,
-      ClassNotFoundException {
+  public boolean fetch(Path segment)
+      throws IOException, InterruptedException, ClassNotFoundException {
     int threads = getConf().getInt("fetcher.threads.fetch", 10);
     return fetch(segment, threads);
   }
   
-  public boolean fetch(Path segment, int threads) throws IOException,
-      InterruptedException, ClassNotFoundException {
+  public boolean fetch(Path segment, int threads)
+      throws IOException, InterruptedException, ClassNotFoundException {
     
     if (LOG.isInfoEnabled()) {
       LOG.info("FetcherSmart: starting");
@@ -281,8 +294,8 @@ public class FetcherWithParse extends OozieMain implements Tool {
     // for politeness, don't permit parallel execution of a single task
     job.setSpeculativeExecution(false);
     
-    FileInputFormat.addInputPath(job, new Path(segment,
-        CrawlDatum.GENERATE_DIR_NAME));
+    FileInputFormat.addInputPath(job,
+        new Path(segment, CrawlDatum.GENERATE_DIR_NAME));
     job.setInputFormatClass(InputFormat.class);
     job.setMapperClass(MultithreadedBlockMapper.class);
     // job.setReducerClass(MOReduce.class);

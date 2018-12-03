@@ -24,7 +24,7 @@
      {
        "fileName": "elasticsearch.yml",
        "<network.host>": 0.0.0.0,
-       "<path.data>": "path.data=/tmp/elasticsearch/data"
+       "<path.data>": "path.data=/tmp/elasticsearch/data",
        "<path.logs>": "path.logs=/tmp/elasticsearch/logs"
      },
       {
@@ -33,7 +33,7 @@
        "<Xmx>": "-Xmx2g"
      },
      {
-       "fileName": elasticsearch.sh"
+       "fileName": "elasticsearch.sh"
      }
    ],
    "files": [

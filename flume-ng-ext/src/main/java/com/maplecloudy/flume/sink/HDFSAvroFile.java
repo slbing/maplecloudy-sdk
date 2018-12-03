@@ -1,6 +1,8 @@
 package com.maplecloudy.flume.sink;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.avro.file.CodecFactory;
@@ -51,26 +53,27 @@ public class HDFSAvroFile implements HDFSWriter {
   }
   
   @Override
-  public void open(String filePath) throws IOException {
+  public void open(String filePath) throws IOException, ClassNotFoundException {
     open(filePath, null, CompressionType.NONE);
   }
   
   @Override
   public void open(String filePath, CompressionCodec codeC,
-      CompressionType compType) throws IOException {
+      CompressionType compType) throws IOException, ClassNotFoundException {
     open(filePath, codeC, compType, null);
   }
   
   @Override
-  public void append(Event e) throws IOException {
-    // for (Pair pair : serializer.serialize(e)) {
-    writer.appendEncoded(serializer.serialize(e));
-    // }
+  public void append(Event event) throws IOException {
+    List<ByteBuffer> bfs = serializer.serialize(event);
+    for (ByteBuffer bf : bfs) {
+      writer.appendEncoded(bf);
+    }
   }
   
   @Override
   public void sync() throws IOException {
-     writer.flush();
+    writer.flush();
   }
   
   @Override
@@ -79,13 +82,15 @@ public class HDFSAvroFile implements HDFSWriter {
   }
   
   @Override
-  public void open(String filePath, Map<String,String> head) throws IOException {
+  public void open(String filePath, Map<String,String> head)
+      throws IOException, ClassNotFoundException {
     open(filePath, null, CompressionType.NONE, head);
   }
   
   @Override
   public void open(String filePath, CompressionCodec codec,
-      CompressionType cType, Map<String,String> head) throws IOException {
+      CompressionType cType, Map<String,String> head)
+      throws IOException, ClassNotFoundException {
     Configuration conf = new Configuration();
     Path dstPath = new Path(filePath);
     FileSystem hdfs = dstPath.getFileSystem(conf);
@@ -97,14 +102,11 @@ public class HDFSAvroFile implements HDFSWriter {
             + "is not of type LocalFileSystem: " + hdfs.getClass().getName());
       }
     }
-    String sn = head.get("s.n");
-    String sv = head.get("s.v");
-    serializer = LogSchemaSource.getInstance(mContext)
-        .getAvroSerializer(sn, sv);
+    serializer = LogSchemaSource.getInstance(mContext).getAvroSerializer();
     
     writer = new DataFileWriter<Pair>(new ReflectDatumWriter<Pair>());
-    writer.setCodec(CodecFactory
-        .deflateCodec(MapAvroFile.DEFAULT_DEFLATE_LEVEL));
+    writer
+        .setCodec(CodecFactory.deflateCodec(MapAvroFile.DEFAULT_DEFLATE_LEVEL));
     // data.setCodec(CodecFactory.snappyCodec());
     // if (conf.getBoolean("hdfs.append.support", false) == true
     // && hdfs.isFile(dstPath)) {

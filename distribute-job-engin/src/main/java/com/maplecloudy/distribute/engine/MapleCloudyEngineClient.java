@@ -31,7 +31,7 @@ import org.apache.hadoop.yarn.util.Records;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.maplecloudy.distribute.engine.utils.Config;
+import com.maplecloudy.distribute.engine.app.engine.EngineInstallInfo;
 import com.maplecloudy.distribute.engine.utils.YarnUtils;
 import com.maplecloudy.yarn.rpc.ClientRpc;
 
@@ -136,7 +136,7 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
           .newRecord(ContainerLaunchContext.class);
       
       List<String> cmds = Lists.newArrayList();
-      // cmds.add("sleep 600 \n");
+      cmds.add("sleep 60000 \n");
       String cmd = "$JAVA_HOME/bin/java ";
       for (String pp : pps) {
         cmd += " " + pp;
@@ -158,7 +158,7 @@ public class MapleCloudyEngineClient extends Configured implements Tool {
       
       // add engine
       LocalResource elr = Records.newRecord(LocalResource.class);
-      FileStatus enginejar = fs.getFileStatus(new Path(Config.getEngieJar()));
+      FileStatus enginejar = fs.getFileStatus(new Path(EngineInstallInfo.getPack()));
       elr.setResource(ConverterUtils.getYarnUrlFromPath(enginejar.getPath()));
       elr.setSize(enginejar.getLen());
       elr.setTimestamp(enginejar.getModificationTime());

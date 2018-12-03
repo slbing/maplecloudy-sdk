@@ -30,7 +30,7 @@
   "appConf": "27",
   "nginxDomain": "maplecloudy.com",
   "user": "gxiang",
-  "isDistribution": False,
+  "isDistribution": false,
   "memory": 1024,
   "defaultFS": "hdfs://kkyl02.bj.maplecloudy.com:8020",
   "type": "JETTY",

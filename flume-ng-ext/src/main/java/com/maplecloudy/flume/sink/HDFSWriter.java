@@ -28,15 +28,15 @@ import org.apache.hadoop.io.compress.CompressionCodec;
 
 public interface HDFSWriter extends Configurable {
 
-  public void open(String filePath) throws IOException;
+  public void open(String filePath) throws IOException, ClassNotFoundException;
   
-  public void open(String filePath,Map<String,String> head) throws IOException;
+  public void open(String filePath,Map<String,String> head) throws IOException, ClassNotFoundException;
 
   public void open(String filePath, CompressionCodec codec,
-      CompressionType cType) throws IOException;
+      CompressionType cType) throws IOException, ClassNotFoundException;
   
   public void open(String filePath, CompressionCodec codec,
-      CompressionType cType,Map<String,String> head) throws IOException;
+      CompressionType cType,Map<String,String> head) throws IOException, ClassNotFoundException;
 
   public void append(Event e) throws IOException;
 

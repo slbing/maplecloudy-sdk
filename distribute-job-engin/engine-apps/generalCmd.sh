@@ -3,4 +3,4 @@
 #-m 1024 
 #-user gxiang 
 #-damon
-jdk-8u121-linux-x64.tar.gz/jdk1.8.0_121/jre/bin/java -cp *: <cmd>
+<cmd>
