@@ -278,13 +278,13 @@ public class GeneratorSmart extends OozieMain implements Tool {
         // task
       }
       //remove local numLists contorl
-      if ("local".equals(job.getConfiguration().get("mapred.job.tracker"))
-          && numLists != 1) {
-        // override
-        LOG.info(
-            "Generator: jobtracker is 'local', generating exactly one partition.");
-        numLists = 1;
-      }
+//      if ("local".equals(job.getConfiguration().get("mapred.job.tracker"))
+//          && numLists != 1) {
+//        // override
+//        LOG.info(
+//            "Generator: jobtracker is 'local', generating exactly one partition.");
+//        numLists = 1;
+//      }
       LOG.info("Generator: with " + numLists + " partition.");
       job.getConfiguration().setLong(GENERATOR_CUR_TIME, curTime);
       // record real generation time
