@@ -277,6 +277,7 @@ public class GeneratorSmart extends OozieMain implements Tool {
         numLists = job.getNumReduceTasks(); // a partition per fetch
         // task
       }
+      //remove local numLists contorl
       if ("local".equals(job.getConfiguration().get("mapred.job.tracker"))
           && numLists != 1) {
         // override
