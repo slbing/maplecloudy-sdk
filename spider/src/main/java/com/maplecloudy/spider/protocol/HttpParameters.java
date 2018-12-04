@@ -23,6 +23,10 @@ public class HttpParameters {
   private String charset;
   private String validateTLSCertificates;
   
+  public Map<String,String> getMap() {
+    return map;
+  }
+  
   public HttpParameters(Map<String,String> map) {
     this.map = map;
   }
