@@ -12,8 +12,11 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 import com.maplecloudy.avro.io.UnionData;
 import com.maplecloudy.avro.mapreduce.output.AvroMapOutputFormat;
+import com.maplecloudy.avro.mapreduce.output.AvroPairOutputFormat;
 import com.maplecloudy.avro.mapreduce.output.MultipleOutputs;
 import com.maplecloudy.spider.crawl.CrawlDatum;
+import com.maplecloudy.spider.metadata.Spider;
+import com.maplecloudy.spider.parse.Outlink;
 import com.maplecloudy.spider.protocol.Content;
 
 public class FetcherOutputFormat extends FileOutputFormat<String,UnionData> {
@@ -27,19 +30,30 @@ public class FetcherOutputFormat extends FileOutputFormat<String,UnionData> {
     return new RecordWriter<String,UnionData>() {
       
       @Override
-      public void write(String key, UnionData value) throws IOException,
-          InterruptedException {
-        
-        if (value.datum instanceof CrawlDatum) {
-          mos.write(AvroMapOutputFormat.class, CrawlDatum.FETCH_DIR_NAME + "/", key, value.datum);
-        } else if (value.datum instanceof Content) {
-          mos.write(AvroMapOutputFormat.class, FetcherSmart.CONTENT_REDIR + "/",key, value.datum);
+      public void write(String key, UnionData value)
+          throws IOException, InterruptedException {
+      
+//        if (value.datum instanceof CrawlDatum) {
+//          mos.write(AvroMapOutputFormat.class, CrawlDatum.FETCH_DIR_NAME + "/", key, value.datum);
+//        } else if (value.datum instanceof Content) {
+//          mos.write(AvroMapOutputFormat.class, FetcherSmart.CONTENT_REDIR + "/",key, value.datum);
+//        }
+        if (value.datum instanceof Outlink) {
+          Outlink ol = (Outlink) value.datum;
+          CrawlDatum datum = new CrawlDatum((int) CrawlDatum.STATUS_LINKED,
+              ol.getFetchInterval());
+          datum.setExtendData(ol.getExtend());
+          mos.write(AvroPairOutputFormat.class, Spider.PARSE_DIR_NAME + "/",
+              ol.url, datum);
+        } else {
+          mos.write(AvroMapOutputFormat.class,
+              value.datum.getClass().getSimpleName() + "/", key, value.datum);
         }
       }
       
       @Override
-      public void close(TaskAttemptContext context) throws IOException,
-          InterruptedException {
+      public void close(TaskAttemptContext context)
+          throws IOException, InterruptedException {
         mos.close();
         
       }

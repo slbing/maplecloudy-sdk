@@ -147,42 +147,45 @@ public class FetcherWithParse extends OozieMain implements Tool {
       } catch (Throwable t) { // unexpected exception
         logError(key.toString(), t.toString());
         t.printStackTrace();
-        output(key, value, null, CrawlDatum.STATUS_FETCH_RETRY);        
+        output(key, value, null, CrawlDatum.STATUS_FETCH_RETRY);
       }
-      int k= 1;
-      while(k++<50000 && !parseQueue.isEmpty()) {
-		  Outlink o = parseQueue.poll();
-		  try {
-		    if (LOG.isInfoEnabled()) {
-		      LOG.info("fetching " + o.url);
-		    }
-		    
-		    Protocol protocol = this.protocolFactory.getProtocol(o.getUrl());
-		    ProtocolOutput output = protocol.getProtocolOutput(o.getUrl(), new CrawlDatum());
-		    ProtocolStatus status = output.getStatus();
-		    Content content = output.getContent();
-		    
-		    switch (status.getCode()) {
-		    
-		      case ProtocolStatus.SUCCESS: // got a page
-		        output(o.getUrl(), new CrawlDatum(), content, CrawlDatum.STATUS_FETCH_SUCCESS);
-		        updateStatus(content.getContent().length);
-		        
-		        break;
-		      
-		      default:
-		        if (LOG.isWarnEnabled()) {
-		          LOG.warn("ProtocolStatus: " + status.getName());
-		        }
-		        output(o.getUrl(), new CrawlDatum(), null, CrawlDatum.STATUS_FETCH_RETRY);
-		        logError(o.getUrl(), "" + status.getName());
-		    }
-		    
-		  } catch (Throwable t) { // unexpected exception
-		    logError(o.getUrl().toString(), t.toString());
-		    t.printStackTrace();
-		    output(o.getUrl(), value, null, CrawlDatum.STATUS_FETCH_RETRY);        
-		  }
+      int k = 1;
+      while (k++ < 50000 && !parseQueue.isEmpty()) {
+        Outlink o = parseQueue.poll();
+        try {
+          if (LOG.isInfoEnabled()) {
+            LOG.info("fetching " + o.url);
+          }
+          
+          Protocol protocol = this.protocolFactory.getProtocol(o.getUrl());
+          ProtocolOutput output = protocol.getProtocolOutput(o.getUrl(),
+              new CrawlDatum());
+          ProtocolStatus status = output.getStatus();
+          Content content = output.getContent();
+          
+          switch (status.getCode()) {
+            
+            case ProtocolStatus.SUCCESS: // got a page
+              output(o.getUrl(), new CrawlDatum(), content,
+                  CrawlDatum.STATUS_FETCH_SUCCESS);
+              updateStatus(content.getContent().length);
+              
+              break;
+            
+            default:
+              if (LOG.isWarnEnabled()) {
+                LOG.warn("ProtocolStatus: " + status.getName());
+              }
+              output(o.getUrl(), new CrawlDatum(), null,
+                  CrawlDatum.STATUS_FETCH_RETRY);
+              logError(o.getUrl(), "" + status.getName());
+          }
+          
+        } catch (Throwable t) { // unexpected exception
+          logError(o.getUrl().toString(), t.toString());
+          t.printStackTrace();
+          output(o.getUrl(), value, null, CrawlDatum.STATUS_FETCH_RETRY);
+        }
       }
       
     }
@@ -239,13 +242,17 @@ public class FetcherWithParse extends OozieMain implements Tool {
             List pd = parse.parse(key, content);
             for (Object o : pd) {
               if (o instanceof Outlink) {
-            	if (((Outlink) o).getExtend("fetch_right_now") != null && "true".equals(((Outlink) o).getExtend("fetch_right_now"))) {
-					parseQueue.add((Outlink) o);
-				} else {
-					((Outlink) o).setExtend(content.getExtendData());
-	                outer.write(key, new UnionData(((Outlink) o)));
-				}  
-
+                if (((Outlink) o).getExtend("fetch_right_now") != null && "true"
+                    .equals(((Outlink) o).getExtend("fetch_right_now"))) {
+                  ((Outlink) o).addExtend(content.getExtendData());
+                  parseQueue.add((Outlink) o);
+                  
+                } else {
+                  ((Outlink) o).addExtend(content.getExtendData());
+                  System.out.println("come in ");
+                  outer.write(((Outlink) o).getUrl(), new UnionData(((Outlink) o)));
+                }
+                
               } else outer.write(key, new UnionData(o));
             }
           } catch (Exception e) {
