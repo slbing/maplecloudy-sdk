@@ -121,7 +121,7 @@ public class HttpUtils implements Protocol {
 	@Override
 	public ProtocolOutput getProtocolOutput(String url) {
 		// TODO Auto-generated method stub
-		return null;
+		return getProtocolOutput(url,new CrawlDatum());
 	}
 	
 	
