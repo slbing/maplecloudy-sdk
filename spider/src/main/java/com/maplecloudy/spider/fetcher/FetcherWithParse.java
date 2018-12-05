@@ -79,7 +79,7 @@ public class FetcherWithParse extends OozieMain implements Tool {
   }
   
   public static boolean isParsing(Configuration conf) {
-    return conf.getBoolean("fetcher.parse", false);
+    return conf.getBoolean("fetcher.parse", true);
   }
   
   public static void setIsParseing(Configuration conf, boolean parseing) {
@@ -149,51 +149,53 @@ public class FetcherWithParse extends OozieMain implements Tool {
         t.printStackTrace();
         output(key, value, null, CrawlDatum.STATUS_FETCH_RETRY);
       }
-      int k = 1;
-      while (k++ < 50000 && !parseQueue.isEmpty()) {
-        Outlink o = parseQueue.poll();
-        try {
-          if (LOG.isInfoEnabled()) {
-            LOG.info("fetching " + o.url);
-          }
-          
-          Protocol protocol = this.protocolFactory.getProtocol(o.getUrl());
-          ProtocolOutput output = protocol.getProtocolOutput(o.getUrl(),
-              new CrawlDatum());
-          ProtocolStatus status = output.getStatus();
-          Content content = output.getContent();
-          
-          switch (status.getCode()) {
-            
-            case ProtocolStatus.SUCCESS: // got a page
-              output(o.getUrl(), new CrawlDatum(), content,
-                  CrawlDatum.STATUS_FETCH_SUCCESS);
-              updateStatus(content.getContent().length);
-              
-              break;
-            
-            default:
-              if (LOG.isWarnEnabled()) {
-                LOG.warn("ProtocolStatus: " + status.getName());
-              }
-              output(o.getUrl(), new CrawlDatum(), null,
-                  CrawlDatum.STATUS_FETCH_RETRY);
-              logError(o.getUrl(), "" + status.getName());
-          }
-          
-        } catch (Throwable t) { // unexpected exception
-          logError(o.getUrl().toString(), t.toString());
-          t.printStackTrace();
-          output(o.getUrl(), value, null, CrawlDatum.STATUS_FETCH_RETRY);
-        }
-      }
+      
       
     }
     
     @Override
     public void cleanup(Context context)
         throws IOException, InterruptedException {
-      
+    	int k = 1;
+        while (k++ < 50000 && !parseQueue.isEmpty()) {
+          Outlink o = parseQueue.poll();
+          CrawlDatum crawlDatum = new CrawlDatum();
+          crawlDatum.setExtendData(o.getExtend());
+          try {
+            if (LOG.isInfoEnabled()) {
+              LOG.info("fetching " + o.url);
+            }            
+            Protocol protocol = this.protocolFactory.getProtocol(o.getUrl());
+            
+            ProtocolOutput output = protocol.getProtocolOutput(o.getUrl(),
+                crawlDatum);
+            ProtocolStatus status = output.getStatus();
+            Content content = output.getContent();
+            
+            switch (status.getCode()) {
+              
+              case ProtocolStatus.SUCCESS: // got a page
+                output(o.getUrl(), crawlDatum, content,
+                    CrawlDatum.STATUS_FETCH_SUCCESS);
+                updateStatus(content.getContent().length);
+                
+                break;
+              
+              default:
+                if (LOG.isWarnEnabled()) {
+                  LOG.warn("ProtocolStatus: " + status.getName());
+                }
+                output(o.getUrl(), crawlDatum, null,
+                    CrawlDatum.STATUS_FETCH_RETRY);
+                logError(o.getUrl(), "" + status.getName());
+            }
+            
+          } catch (Throwable t) { // unexpected exception
+            logError(o.getUrl().toString(), t.toString());
+            t.printStackTrace();
+            output(o.getUrl(), crawlDatum, null, CrawlDatum.STATUS_FETCH_RETRY);
+          }
+        }
       super.cleanup(context);
     }
     
@@ -232,7 +234,6 @@ public class FetcherWithParse extends OozieMain implements Tool {
       }
       
       try {
-        
         if (content != null && storingContent)
           outer.write(key, new UnionData(content));
         if (content != null && parsing) {
@@ -244,11 +245,10 @@ public class FetcherWithParse extends OozieMain implements Tool {
               if (o instanceof Outlink) {
                 if (((Outlink) o).getExtend("fetch_right_now") != null && "true"
                     .equals(((Outlink) o).getExtend("fetch_right_now"))) {
-                  ((Outlink) o).addExtend(content.getExtendData());
-                  parseQueue.add((Outlink) o);
-                  
+                  ((Outlink) o).addExtend(Spider.PARSE_CLASS, content.getExtend(Spider.PARSE_CLASS));
+                  parseQueue.add((Outlink) o);                  
                 } else {
-                  ((Outlink) o).addExtend(content.getExtendData());
+                  ((Outlink) o).addExtend(datum.getExtendData());
                   outer.write(((Outlink) o).getUrl(), new UnionData(((Outlink) o)));
                 }
                 

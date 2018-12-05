@@ -41,7 +41,6 @@ public class HttpUtils implements Protocol {
 	@Override
 	public ProtocolOutput getProtocolOutput(String url, CrawlDatum datum) {
 		// TODO Auto-generated method stub
-		System.out.println(datum.getExtendData().toString());
 		try {
 			HttpParameters parm = new HttpParameters(datum.getExtendData());
 			if ("http".equals(parm.getMethod())) {
@@ -115,7 +114,7 @@ public class HttpUtils implements Protocol {
 				}
 			}
 		} catch (Exception e) {
-			LOG.error("fetch url" + url + " error", e);
+			LOG.error("fetch -- url" + url + " error ", e);
 			return new ProtocolOutput(null, new ProtocolStatus(e));
 		}
 	}
