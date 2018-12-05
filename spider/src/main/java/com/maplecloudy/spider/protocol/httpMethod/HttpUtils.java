@@ -41,6 +41,7 @@ public class HttpUtils implements Protocol {
 	@Override
 	public ProtocolOutput getProtocolOutput(String url, CrawlDatum datum) {
 		// TODO Auto-generated method stub
+		System.out.println(datum.getExtendData().toString());
 		try {
 			HttpParameters parm = new HttpParameters(datum.getExtendData());
 			if ("http".equals(parm.getMethod())) {
@@ -79,6 +80,7 @@ public class HttpUtils implements Protocol {
 				int code = response.statusCode();
 				byte[] content = response.bodyAsBytes();
 				Content c = new Content(url,(content == null ? EMPTY_CONTENT : content),Maps.newConcurrentMap());
+				c.setExtendData(datum.getExtendData());
 				if (code == 200) { // got a good response
 					return new ProtocolOutput(c); // return it
 

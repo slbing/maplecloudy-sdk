@@ -249,7 +249,6 @@ public class FetcherWithParse extends OozieMain implements Tool {
                   
                 } else {
                   ((Outlink) o).addExtend(content.getExtendData());
-                  System.out.println("come in ");
                   outer.write(((Outlink) o).getUrl(), new UnionData(((Outlink) o)));
                 }
                 
