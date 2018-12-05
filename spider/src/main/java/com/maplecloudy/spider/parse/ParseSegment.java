@@ -43,19 +43,19 @@ import com.maplecloudy.spider.protocol.Content;
 import com.maplecloudy.spider.util.SpiderConfiguration;
 
 /* Parse content in a segment. */
-public class ParseSegment extends OozieMain implements Tool{
+public class ParseSegment extends OozieMain implements Tool {
   public static final Log LOG = LogFactory.getLog(ParseSegment.class);
   
-  public ParseSegment() {
-  }
+  public ParseSegment() {}
   
   public ParseSegment(Configuration conf) {
     this.setConf(conf);
   }
+  
   public void close() {}
   
-  public static class ParseMapper extends
-      Mapper<String,Content,String,UnionData> {
+  public static class ParseMapper
+      extends Mapper<String,Content,String,UnionData> {
     @Override
     protected void map(String key, Content value, Context context)
         throws IOException, InterruptedException {
@@ -63,27 +63,20 @@ public class ParseSegment extends OozieMain implements Tool{
       List pd = parse.parse(key.toString(), value);
       for (Object o : pd) {
         if (o instanceof Outlink) {
-<<<<<<< HEAD
-          Map<String,String> extend = ((Outlink) o).getExtend();
-          ((Outlink) o).setExtend(value.getExtendData());
-          // do not replace outlink extend
-          ((Outlink) o).getExtend().putAll(extend);
-=======
-//          ((Outlink) o).setExtend(value.getExtendData());
+          // ((Outlink) o).setExtend(value.getExtendData());
           Map<String,String> oldExtend = value.getExtendData();
           ((Outlink) o).getExtend().putAll(oldExtend);
->>>>>>> master
           context.write(key, new UnionData(((Outlink) o)));
-//          ((Outlink) o).setExtend(value.getExtendData());
-//          context.write(key, new UnionData(((Outlink) o)));
+          // ((Outlink) o).setExtend(value.getExtendData());
+          // context.write(key, new UnionData(((Outlink) o)));
         } else context.write(key, new UnionData(o));
       }
     }
     
   }
   
-  public void parse(Path segment) throws IOException, InterruptedException,
-      ClassNotFoundException {
+  public void parse(Path segment)
+      throws IOException, InterruptedException, ClassNotFoundException {
     
     if (LOG.isInfoEnabled()) {
       LOG.info("Parse: starting");
@@ -111,8 +104,8 @@ public class ParseSegment extends OozieMain implements Tool{
   }
   
   public static void main(String[] args) throws Exception {
-    int res = OozieToolRunner.run(SpiderConfiguration.create(), new ParseSegment(),
-        args);
+    int res = OozieToolRunner.run(SpiderConfiguration.create(),
+        new ParseSegment(), args);
     System.exit(res);
   }
   
@@ -126,10 +119,10 @@ public class ParseSegment extends OozieMain implements Tool{
     }
     FileSystem fs = FileSystem.get(getConf());
     for (FileStatus p : fs.listStatus(new Path(args[0]))) {
-      if (fs.exists(new Path(p.getPath(), "crawl_parse"))) fs.delete(
-          new Path(p.getPath(), "crawl_parse"), true);
-      if (fs.exists(new Path(p.getPath(), "parse_data"))) fs.delete(
-          new Path(p.getPath(), "parse_data"), true);
+      if (fs.exists(new Path(p.getPath(), "crawl_parse")))
+        fs.delete(new Path(p.getPath(), "crawl_parse"), true);
+      if (fs.exists(new Path(p.getPath(), "parse_data")))
+        fs.delete(new Path(p.getPath(), "parse_data"), true);
       parse(p.getPath());
     }
     return 0;
