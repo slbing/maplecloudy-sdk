@@ -62,6 +62,11 @@ public class Outlink {
     this.extend = extend;
   }
   
+  public void addExtend(
+      Map<String,String> extend) {
+    this.getExtend().putAll(extend);
+  }
+  
   public void addExtend(String name, String value) {
     this.getExtend().put(name, value);
   }

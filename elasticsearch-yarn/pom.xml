@@ -6,7 +6,6 @@
 		<artifactId>maplecloudy-sdk-parent</artifactId>
 		<version>0.3.0-jdk8-SNAPSHOT</version>
 	</parent>
-	<groupId>com.maplecloudy.maple</groupId>
 	<artifactId>elasticsearch-yarn</artifactId>
 	<name>elasticsearch-yarn</name>
 	<description>elasticsearch on yarn</description>
