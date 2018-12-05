@@ -25,7 +25,7 @@
 		<!-- defaults for flaky test and focused test exclusions -->
 		<test.exclude.pattern>$</test.exclude.pattern>		<!-- junk pattern -->
 		<test.include.pattern>**/Test*.java</test.include.pattern>
-		<stagingDirectory>${project.basedir}/target/docs</stagingDirectory>
+		<avro.version>1.7.6-kf-cdh5.15.1</avro.version>
 	</properties>
 	<modules>
 		<module>avro-mapreduce</module>
@@ -62,6 +62,7 @@
 			<url>http://www.maplecloudy.com:9083/repository/maven-snapshots/</url>
 		</snapshotRepository>
 	</distributionManagement>
+
 
 	<dependencies>
 		<dependency>
