@@ -23,6 +23,11 @@ public class HttpParameters {
   private String charset ;
   private String validateTLSCertificates ;
   
+  private String proxy ;
+  private String proxyIp;
+  private String proxyPort;
+
+  
   public Map<String,String> getMap() {
     return map;
   }
@@ -170,5 +175,34 @@ public class HttpParameters {
   public void setValidateTLSCertificates(String validateTLSCertificates) {
     map.put("validateTLSCertificates", validateTLSCertificates);
   }
+
+	public boolean getProxy() {
+		if (!map.containsKey("proxy")) return false;
+	    return Boolean.valueOf(map.get("proxy"));
+	}
+	
+	public void setProxy(Boolean proxy) {
+		map.put("proxy", proxy.toString());
+	}
+	
+	public String getProxyIp() {
+		if (!map.containsKey("proxyIp")) return "127.0.0.1";
+	    return map.get("proxyIp");
+	}
+	
+	public void setProxyIp(String proxyIp) {
+		map.put("proxyIp", proxyIp);
+	}
+	
+	public Integer getProxyPort() {
+		if (!map.containsKey("proxyPort")) return 12;
+	    return Integer.valueOf(map.get("proxyPort"));
+	}
+	
+	public void setProxyPort(Integer proxyPort) {
+		map.put("proxyPort", proxyPort.toString());
+	}
+  
+  
   
 }
