@@ -1,4 +1,4 @@
-package com.maplecloudy.spider.protocol.httpMethod;
+package com.maplecloudy.spider.protocol.httpmethod;
 
 import java.lang.invoke.MethodHandles;
 

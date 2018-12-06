@@ -33,11 +33,11 @@ public class FetcherOutputFormat extends FileOutputFormat<String,UnionData> {
       public void write(String key, UnionData value)
           throws IOException, InterruptedException {
       
-//        if (value.datum instanceof CrawlDatum) {
-//          mos.write(AvroMapOutputFormat.class, CrawlDatum.FETCH_DIR_NAME + "/", key, value.datum);
-//        } else if (value.datum instanceof Content) {
-//          mos.write(AvroMapOutputFormat.class, FetcherSmart.CONTENT_REDIR + "/",key, value.datum);
-//        }
+        if (value.datum instanceof CrawlDatum) {
+          mos.write(AvroMapOutputFormat.class, CrawlDatum.FETCH_DIR_NAME + "/", key, value.datum);
+        } else if (value.datum instanceof Content) {
+          mos.write(AvroMapOutputFormat.class, FetcherSmart.CONTENT_REDIR + "/",key, value.datum);
+        }
         if (value.datum instanceof Outlink) {
           Outlink ol = (Outlink) value.datum;
           CrawlDatum datum = new CrawlDatum((int) CrawlDatum.STATUS_LINKED,
