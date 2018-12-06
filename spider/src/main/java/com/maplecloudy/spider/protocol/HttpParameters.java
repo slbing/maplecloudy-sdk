@@ -6,22 +6,27 @@ import com.google.common.collect.Maps;
 
 public class HttpParameters {
   private Map<String,String> map;
-  private String method; // 访问方法 jsoup http
-  private String type; // 访问类型:post get
+  private String method = "jsoup"; // 访问方法 jsoup http
+  private String type = "get"; // 访问类型:post get
   // http header
   private String cookie;
   private String userAgent;
   private String accept;
   private String contentType;
   private String requestBody; // post 请求体
-  private String ignoreContentType;
-  private String x_requested_with;
+  private String ignoreContentType ;
+  private String x_requested_with ;
   private String refer;
-  private String accept_encoding;
-  private String accept_language;
-  private String timeout;
-  private String charset;
-  private String validateTLSCertificates;
+  private String accept_encoding ;
+  private String accept_language ;
+  private String timeout ;
+  private String charset ;
+  private String validateTLSCertificates ;
+  
+  private String proxy ;
+  private String proxyIp;
+  private String proxyPort;
+
   
   public Map<String,String> getMap() {
     return map;
@@ -170,5 +175,34 @@ public class HttpParameters {
   public void setValidateTLSCertificates(String validateTLSCertificates) {
     map.put("validateTLSCertificates", validateTLSCertificates);
   }
+
+	public boolean getProxy() {
+		if (!map.containsKey("proxy")) return false;
+	    return Boolean.valueOf(map.get("proxy"));
+	}
+	
+	public void setProxy(Boolean proxy) {
+		map.put("proxy", proxy.toString());
+	}
+	
+	public String getProxyIp() {
+		if (!map.containsKey("proxyIp")) return "127.0.0.1";
+	    return map.get("proxyIp");
+	}
+	
+	public void setProxyIp(String proxyIp) {
+		map.put("proxyIp", proxyIp);
+	}
+	
+	public Integer getProxyPort() {
+		if (!map.containsKey("proxyPort")) return 12;
+	    return Integer.valueOf(map.get("proxyPort"));
+	}
+	
+	public void setProxyPort(Integer proxyPort) {
+		map.put("proxyPort", proxyPort.toString());
+	}
+  
+  
   
 }

@@ -57,7 +57,7 @@ public class ProtocolFactory {
 	public Protocol getProtocol(String urlString) throws ProtocolNotFound {
 		
 //		Protocol po = new HttpSimply();
-		Protocol po = new HttpUtils();
+		Protocol po = HttpUtils.getInstance();
 		po.setConf(conf);
 		return  po;
 //		try {
