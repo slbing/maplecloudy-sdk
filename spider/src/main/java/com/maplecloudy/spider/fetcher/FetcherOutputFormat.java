@@ -38,7 +38,7 @@ public class FetcherOutputFormat extends FileOutputFormat<String,UnionData> {
         } else if (value.datum instanceof Content) {
           mos.write(AvroMapOutputFormat.class, FetcherSmart.CONTENT_REDIR + "/",key, value.datum);
         }
-        if (value.datum instanceof Outlink) {
+        else if (value.datum instanceof Outlink) {
           Outlink ol = (Outlink) value.datum;
           CrawlDatum datum = new CrawlDatum((int) CrawlDatum.STATUS_LINKED,
               ol.getFetchInterval());

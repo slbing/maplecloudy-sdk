@@ -129,7 +129,7 @@ public class HttpUtils implements Protocol {
 				} else {
 					connection = connection.method(Method.GET);
 				}
-				connection.wait();
+//				connection.wait();
 				Connection.Response response = connection.execute();
 				code = response.statusCode();
 				byte[] content = response.bodyAsBytes();
