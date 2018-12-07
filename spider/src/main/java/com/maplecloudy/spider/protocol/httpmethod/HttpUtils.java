@@ -130,6 +130,10 @@ public class HttpUtils implements Protocol {
 				} else {
 					connection = connection.method(Method.GET);
 				}
+<<<<<<< HEAD:spider/src/main/java/com/maplecloudy/spider/protocol/httpmethod/HttpUtils.java
+=======
+//				connection.wait();
+>>>>>>> master:spider/src/main/java/com/maplecloudy/spider/protocol/httpmethod/HttpUtils.java
 				Connection.Response response = connection.execute();
 				code = response.statusCode();
 				byte[] content = response.bodyAsBytes();

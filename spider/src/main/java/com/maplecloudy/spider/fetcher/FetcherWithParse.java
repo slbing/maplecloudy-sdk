@@ -234,6 +234,7 @@ public class FetcherWithParse extends OozieMain implements Tool {
       }
       
       try {
+        outer.write(key, new UnionData(datum));
         if (content != null && storingContent)
           outer.write(key, new UnionData(content));
         if (content != null && parsing) {
