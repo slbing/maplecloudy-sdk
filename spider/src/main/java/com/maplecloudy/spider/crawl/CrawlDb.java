@@ -38,7 +38,7 @@ public class CrawlDb extends OozieMain implements Tool {
 
 	public static final String CRAWLDB_ADDITIONS_ALLOWED = "db.update.additions.allowed";
 
-	public static final String CURRENT_NAME = "current";
+	public static final String CURRENT_NAME = "Current";
 
 	public static final String LOCK_NAME = ".locked";
 

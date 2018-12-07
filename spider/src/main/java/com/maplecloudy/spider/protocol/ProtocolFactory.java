@@ -23,8 +23,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 
-import com.maplecloudy.spider.protocol.httpMethod.HttpUtils;
 import com.maplecloudy.spider.protocol.httpclient.HttpSimply;
+import com.maplecloudy.spider.protocol.httpmethod.HttpUtils;
 
 /**
  * Creates and caches {@link Protocol} plugins. Protocol plugins should define
@@ -57,7 +57,7 @@ public class ProtocolFactory {
 	public Protocol getProtocol(String urlString) throws ProtocolNotFound {
 		
 //		Protocol po = new HttpSimply();
-		Protocol po = new HttpUtils();
+		Protocol po = HttpUtils.getInstance();
 		po.setConf(conf);
 		return  po;
 //		try {
