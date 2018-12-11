@@ -9,7 +9,9 @@ import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.mortbay.log.Log;
 
+import com.google.gson.Gson;
 import com.maplecloudy.avro.io.UnionData;
 import com.maplecloudy.avro.mapreduce.output.AvroMapOutputFormat;
 import com.maplecloudy.avro.mapreduce.output.AvroPairOutputFormat;
@@ -24,7 +26,7 @@ public class ParseOutputFormat extends FileOutputFormat<String,UnionData> {
       throws IOException, InterruptedException {
     
     final MultipleOutputs mos = new MultipleOutputs(job);
-    
+    Gson gson = new Gson();
     return new RecordWriter<String,UnionData>() {
       
       @Override
@@ -39,8 +41,13 @@ public class ParseOutputFormat extends FileOutputFormat<String,UnionData> {
           mos.write(AvroPairOutputFormat.class, Spider.PARSE_DIR_NAME + "/",
               ol.url, datum);
         } else {
+          try {
           mos.write(AvroMapOutputFormat.class, value.datum.getClass()
               .getSimpleName() + "/", key, value.datum);
+          }catch(Exception e) {
+            //to avoid datum null 
+            Log.info(gson.toJson(value.datum));
+          }
         }
       }
       
