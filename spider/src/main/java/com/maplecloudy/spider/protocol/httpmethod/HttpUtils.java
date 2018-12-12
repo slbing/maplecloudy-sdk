@@ -104,6 +104,7 @@ public class HttpUtils implements Protocol {
 				String chareset = "utf-8";
 				if (parm.getCharset() != null) chareset = parm.getCharset();
 				String s = EntityUtils.toString(response.getEntity(), chareset);
+				response.close();
 				byte[] content = s.getBytes();
 				c = new Content(url,(content == null ? EMPTY_CONTENT : content),Maps.newHashMap());
 				c.setExtendData(datum.getExtendData());
@@ -119,9 +120,9 @@ public class HttpUtils implements Protocol {
 				if (parm.getCookie() != null) connection.header("Cookie", parm.getCookie()); 
 				if (parm.getX_requested_with() != null) connection.header("x_requested_with", parm.getX_requested_with()); 
 				if (parm.getContentType() != null) connection.header("Content-Type", parm.getContentType());
-				if (parm.getProxy()) {
-					connection.proxy(parm.getProxyIp(), parm.getProxyPort());
-				}
+//				if (parm.getProxy()) {
+//					connection.proxy(parm.getProxyIp(), parm.getProxyPort());
+//				}
 				
 				if ("post".equals(parm.getType())) {
 					connection.method(Method.POST);
@@ -129,7 +130,6 @@ public class HttpUtils implements Protocol {
 				} else {
 					connection = connection.method(Method.GET);
 				}
-//				connection.wait();
 				Connection.Response response = connection.execute();
 				code = response.statusCode();
 				byte[] content = response.bodyAsBytes();

@@ -12,16 +12,16 @@ import com.maplecloudy.avro.util.AvroUtils;
 import com.maplecloudy.spider.metadata.Spider;
 
 /** Merge new page entries with existing entries. */
-public class CrawlDbReducer extends
-    Reducer<String,CrawlDatum,String,CrawlDatum> {
+public class CrawlDbReducer
+    extends Reducer<String,CrawlDatum,String,CrawlDatum> {
   public static final Log LOG = LogFactory.getLog(CrawlDbReducer.class);
   
   private int retryMax;
   private CrawlDatum result = new CrawlDatum();
   
   @Override
-  protected void setup(Context context) throws IOException,
-      InterruptedException {
+  protected void setup(Context context)
+      throws IOException, InterruptedException {
     Configuration job = context.getConfiguration();
     retryMax = job.getInt("db.fetch.retry.max", 3);
   }
@@ -29,12 +29,12 @@ public class CrawlDbReducer extends
   // private ArrayList<CrawlDatum> linked = new ArrayList<CrawlDatum>();
   
   @Override
-  protected void reduce(String key, Iterable<CrawlDatum> values, Context context)
-      throws IOException, InterruptedException {
+  protected void reduce(String key, Iterable<CrawlDatum> values,
+      Context context) throws IOException, InterruptedException {
     CrawlDatum fetch = null;
     CrawlDatum old = null;
     CrawlDatum link = null;
-    
+    result.clean();
     while (values.iterator().hasNext()) {
       CrawlDatum datum = values.iterator().next();
       // LOG.info("status:" + datum.getStatus() + " " + key);
@@ -78,8 +78,8 @@ public class CrawlDbReducer extends
       if (old.getMetaData().size() > 0) {
         result.getMetaData().putAll(old.getMetaData());
         // overlay with new, if any
-        if (fetch.getMetaData().size() > 0) result.getMetaData().putAll(
-            fetch.getMetaData());
+        if (fetch.getMetaData().size() > 0)
+          result.getMetaData().putAll(fetch.getMetaData());
       }
       // set the most recent valid value of modifiedTime
       if (old.getModifiedTime() > 0 && fetch.getModifiedTime() == 0) {
@@ -123,8 +123,8 @@ public class CrawlDbReducer extends
         break;
       
       default:
-        throw new RuntimeException("Unknown status: " + fetch.getStatus() + " "
-            + key);
+        throw new RuntimeException(
+            "Unknown status: " + fetch.getStatus() + " " + key);
     }
     
     result.getMetaData().remove(Spider.GENERATE_TIME_KEY);
