@@ -102,7 +102,7 @@ public class FetcherWithParse extends OozieMain implements Tool {
     private boolean storingContent;
     private boolean parsing;
     private ConcurrentLinkedDeque<Outlink> nowFetcQueue = new ConcurrentLinkedDeque<Outlink>();
-    Gson gson = new Gson();
+//    Gson gson = new Gson();
     
     protected void setup(Context context)
         throws IOException, InterruptedException {
@@ -120,7 +120,7 @@ public class FetcherWithParse extends OozieMain implements Tool {
         throws IOException, InterruptedException {
       // url may be changed through redirects.
       // CrawlDatum value = new CrawlDatum(val);
-      System.out.println(gson.toJson(value));
+//      System.out.println(gson.toJson(value));
       try {
         if (LOG.isInfoEnabled()) {
           LOG.info("fetching " + key);
@@ -224,7 +224,7 @@ public class FetcherWithParse extends OozieMain implements Tool {
     @SuppressWarnings({"deprecation"})
     private void output(String key, CrawlDatum datum, Content content,
         int status) throws InterruptedException {
-      
+//      System.out.println(gson.toJson(datum));
       datum.setStatus(status);
       datum.setFetchTime(System.currentTimeMillis());
       
