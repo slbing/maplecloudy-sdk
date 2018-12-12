@@ -19,7 +19,6 @@ import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.services.directconnect.model.NewBGPPeer;
 import com.google.common.collect.Maps;
 import com.maplecloudy.spider.crawl.CrawlDatum;
 import com.maplecloudy.spider.protocol.Content;

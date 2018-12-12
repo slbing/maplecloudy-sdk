@@ -25,6 +25,7 @@ import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
+import com.google.gson.Gson;
 import com.maplecloudy.avro.io.UnionData;
 import com.maplecloudy.avro.mapreduce.AvroJob;
 import com.maplecloudy.avro.mapreduce.MultithreadedBlockMapper;
@@ -101,6 +102,7 @@ public class FetcherWithParse extends OozieMain implements Tool {
     private boolean storingContent;
     private boolean parsing;
     private ConcurrentLinkedDeque<Outlink> nowFetcQueue = new ConcurrentLinkedDeque<Outlink>();
+    Gson gson = new Gson();
     
     protected void setup(Context context)
         throws IOException, InterruptedException {
@@ -118,6 +120,7 @@ public class FetcherWithParse extends OozieMain implements Tool {
         throws IOException, InterruptedException {
       // url may be changed through redirects.
       // CrawlDatum value = new CrawlDatum(val);
+      System.out.println(gson.toJson(value));
       try {
         if (LOG.isInfoEnabled()) {
           LOG.info("fetching " + key);
@@ -150,52 +153,51 @@ public class FetcherWithParse extends OozieMain implements Tool {
         output(key, value, null, CrawlDatum.STATUS_FETCH_RETRY);
       }
       
-      
     }
     
     @Override
     public void cleanup(Context context)
         throws IOException, InterruptedException {
-    	int k = 1;
-        while (k++ < 50000 && !parseQueue.isEmpty()) {
-          Outlink o = parseQueue.poll();
-          CrawlDatum crawlDatum = new CrawlDatum();
-          crawlDatum.setExtendData(o.getExtend());
-          try {
-            if (LOG.isInfoEnabled()) {
-              LOG.info("fetching " + o.url);
-            }            
-            Protocol protocol = this.protocolFactory.getProtocol(o.getUrl());
-            
-            ProtocolOutput output = protocol.getProtocolOutput(o.getUrl(),
-                crawlDatum);
-            ProtocolStatus status = output.getStatus();
-            Content content = output.getContent();
-            
-            switch (status.getCode()) {
-              
-              case ProtocolStatus.SUCCESS: // got a page
-                output(o.getUrl(), crawlDatum, content,
-                    CrawlDatum.STATUS_FETCH_SUCCESS);
-                updateStatus(content.getContent().length);
-                
-                break;
-              
-              default:
-                if (LOG.isWarnEnabled()) {
-                  LOG.warn("ProtocolStatus: " + status.getName());
-                }
-                output(o.getUrl(), crawlDatum, null,
-                    CrawlDatum.STATUS_FETCH_RETRY);
-                logError(o.getUrl(), "" + status.getName());
-            }
-            
-          } catch (Throwable t) { // unexpected exception
-            logError(o.getUrl().toString(), t.toString());
-            t.printStackTrace();
-            output(o.getUrl(), crawlDatum, null, CrawlDatum.STATUS_FETCH_RETRY);
+      int k = 1;
+      while (k++ < 50000 && !parseQueue.isEmpty()) {
+        Outlink o = parseQueue.poll();
+        CrawlDatum crawlDatum = new CrawlDatum();
+        crawlDatum.setExtendData(o.getExtend());
+        try {
+          if (LOG.isInfoEnabled()) {
+            LOG.info("fetching " + o.url);
           }
+          Protocol protocol = this.protocolFactory.getProtocol(o.getUrl());
+          
+          ProtocolOutput output = protocol.getProtocolOutput(o.getUrl(),
+              crawlDatum);
+          ProtocolStatus status = output.getStatus();
+          Content content = output.getContent();
+          
+          switch (status.getCode()) {
+            
+            case ProtocolStatus.SUCCESS: // got a page
+              output(o.getUrl(), crawlDatum, content,
+                  CrawlDatum.STATUS_FETCH_SUCCESS);
+              updateStatus(content.getContent().length);
+              
+              break;
+            
+            default:
+              if (LOG.isWarnEnabled()) {
+                LOG.warn("ProtocolStatus: " + status.getName());
+              }
+              output(o.getUrl(), crawlDatum, null,
+                  CrawlDatum.STATUS_FETCH_RETRY);
+              logError(o.getUrl(), "" + status.getName());
+          }
+          
+        } catch (Throwable t) { // unexpected exception
+          logError(o.getUrl().toString(), t.toString());
+          t.printStackTrace();
+          output(o.getUrl(), crawlDatum, null, CrawlDatum.STATUS_FETCH_RETRY);
         }
+      }
       super.cleanup(context);
     }
     
@@ -246,11 +248,13 @@ public class FetcherWithParse extends OozieMain implements Tool {
               if (o instanceof Outlink) {
                 if (((Outlink) o).getExtend("fetch_right_now") != null && "true"
                     .equals(((Outlink) o).getExtend("fetch_right_now"))) {
-                  ((Outlink) o).addExtend(Spider.PARSE_CLASS, content.getExtend(Spider.PARSE_CLASS));
-                  parseQueue.add((Outlink) o);                  
+                  ((Outlink) o).addExtend(Spider.PARSE_CLASS,
+                      content.getExtend(Spider.PARSE_CLASS));
+                  parseQueue.add((Outlink) o);
                 } else {
                   ((Outlink) o).addExtend(datum.getExtendData());
-                  outer.write(((Outlink) o).getUrl(), new UnionData(((Outlink) o)));
+                  outer.write(((Outlink) o).getUrl(),
+                      new UnionData(((Outlink) o)));
                 }
                 
               } else outer.write(key, new UnionData(o));
