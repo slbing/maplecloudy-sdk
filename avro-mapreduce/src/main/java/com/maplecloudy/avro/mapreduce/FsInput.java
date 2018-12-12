@@ -6,7 +6,7 @@ import java.io.IOException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.FSDataInputStream;
-
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.avro.file.SeekableInput;
 
 /** Adapt an {@link FSDataInputStream} to {@link SeekableInput}. */
@@ -18,6 +18,12 @@ public class FsInput implements Closeable, SeekableInput {
   public FsInput(Path path, Configuration conf) throws IOException {
     this.stream = path.getFileSystem(conf).open(path);
     this.len = path.getFileSystem(conf).getFileStatus(path).getLen();
+  }
+  
+  /** Construct given a path and a configuration. */
+  public FsInput(Path path, FileSystem fs) throws IOException {
+    this.stream = fs.open(path);
+    this.len = fs.getFileStatus(path).getLen();
   }
 
   public long length() {
