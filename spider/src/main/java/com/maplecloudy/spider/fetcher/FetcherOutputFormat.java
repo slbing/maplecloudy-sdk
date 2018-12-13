@@ -9,7 +9,9 @@ import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.mortbay.log.Log;
 
+import com.google.gson.Gson;
 import com.maplecloudy.avro.io.UnionData;
 import com.maplecloudy.avro.mapreduce.output.AvroMapOutputFormat;
 import com.maplecloudy.avro.mapreduce.output.AvroPairOutputFormat;
@@ -26,19 +28,20 @@ public class FetcherOutputFormat extends FileOutputFormat<String,UnionData> {
       throws IOException, InterruptedException {
     
     final MultipleOutputs mos = new MultipleOutputs(job);
-    
+    Gson gson = new Gson();
     return new RecordWriter<String,UnionData>() {
       
       @Override
       public void write(String key, UnionData value)
           throws IOException, InterruptedException {
-      
+        
         if (value.datum instanceof CrawlDatum) {
-          mos.write(AvroMapOutputFormat.class, CrawlDatum.FETCH_DIR_NAME + "/", key, value.datum);
+          mos.write(AvroMapOutputFormat.class, CrawlDatum.FETCH_DIR_NAME + "/",
+              key, value.datum);
         } else if (value.datum instanceof Content) {
-          mos.write(AvroMapOutputFormat.class, FetcherSmart.CONTENT_REDIR + "/",key, value.datum);
-        }
-        else if (value.datum instanceof Outlink) {
+          mos.write(AvroMapOutputFormat.class, FetcherSmart.CONTENT_REDIR + "/",
+              key, value.datum);
+        } else if (value.datum instanceof Outlink) {
           Outlink ol = (Outlink) value.datum;
           CrawlDatum datum = new CrawlDatum((int) CrawlDatum.STATUS_LINKED,
               ol.getFetchInterval());
@@ -46,8 +49,12 @@ public class FetcherOutputFormat extends FileOutputFormat<String,UnionData> {
           mos.write(AvroPairOutputFormat.class, Spider.PARSE_DIR_NAME + "/",
               ol.url, datum);
         } else {
-          mos.write(AvroMapOutputFormat.class,
-              value.datum.getClass().getSimpleName() + "/", key, value.datum);
+          try {
+            mos.write(AvroMapOutputFormat.class,
+                value.datum.getClass().getSimpleName() + "/", key, value.datum);
+          } catch (Exception e) {
+            Log.info(gson.toJson(value.datum));
+          }
         }
       }
       
