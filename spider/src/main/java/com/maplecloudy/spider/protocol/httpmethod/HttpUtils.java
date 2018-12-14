@@ -3,6 +3,16 @@ package com.maplecloudy.spider.protocol.httpmethod;
 import java.lang.invoke.MethodHandles;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.http.HttpHost;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 //import org.apache.http.HttpHost;
 //import org.apache.http.client.config.CookieSpecs;
 //import org.apache.http.client.config.RequestConfig;
@@ -35,11 +45,11 @@ public class HttpUtils implements Protocol {
 	private final static int TIME_OUT = 10 * 1000;
 	private final static int MAX_SIZE = 10 * 1024 * 1024;
 	
-//	private static CloseableHttpClient httpClient = HttpClients.createDefault();
-//	private static RequestConfig.Builder builder = RequestConfig.custom().setSocketTimeout(TIME_OUT).
-//            setConnectTimeout(TIME_OUT).
-//            setConnectionRequestTimeout(TIME_OUT).
-//            setCookieSpec(CookieSpecs.IGNORE_COOKIES);
+	private static CloseableHttpClient httpClient = HttpClients.createDefault();
+	private static RequestConfig.Builder builder = RequestConfig.custom().setSocketTimeout(TIME_OUT).
+            setConnectTimeout(TIME_OUT).
+            setConnectionRequestTimeout(TIME_OUT).
+            setCookieSpec(CookieSpecs.IGNORE_COOKIES);
 
 
 	private static final byte[] EMPTY_CONTENT = new byte[0];
@@ -81,32 +91,32 @@ public class HttpUtils implements Protocol {
 			Content c;
 			int code;
 			if ("http".equals(parm.getMethod())) {
-//				HttpRequestBase http = null;
-//				if ("post".equals(parm.getType())) {
-//					http = new HttpPost(url);					
-//				} else {
-//					http = new HttpGet(url);					
-//				}
-//				if (parm.getAccept() != null) http.addHeader("Accept", parm.getAccept());
-//				if (parm.getAccept_encoding() != null) http.addHeader("Accept-Encoding", parm.getAccept_encoding()); 
-//				if (parm.getAccept_language() != null) http.addHeader("Accept-Language", parm.getAccept_language()); 
-//				if (parm.getCookie() != null) http.addHeader("Cookie", parm.getCookie()); 
-//				if (parm.getX_requested_with() != null) http.addHeader("x_requested_with", parm.getX_requested_with()); 
-//				if (parm.getContentType() != null) http.addHeader("Content-Type", parm.getContentType());
-//				if (parm.getProxy()) {
-//					http.setConfig(builder.setProxy(new HttpHost(parm.getProxyIp(), parm.getProxyPort())).build());
-//				} else {
-//					http.setConfig(builder.build());
-//				}
-//				CloseableHttpResponse response = httpClient.execute(http);
-//				code = response.getStatusLine().getStatusCode();
-//				String chareset = "utf-8";
-//				if (parm.getCharset() != null) chareset = parm.getCharset();
-//				String s = EntityUtils.toString(response.getEntity(), chareset);
-//				response.close();
-//				byte[] content = s.getBytes();
-//				c = new Content(url,(content == null ? EMPTY_CONTENT : content),Maps.newHashMap());
-//				c.setExtendData(datum.getExtendData());
+				HttpRequestBase http = null;
+				if ("post".equals(parm.getType())) {
+					http = new HttpPost(url);					
+				} else {
+					http = new HttpGet(url);					
+				}
+				if (parm.getAccept() != null) http.addHeader("Accept", parm.getAccept());
+				if (parm.getAccept_encoding() != null) http.addHeader("Accept-Encoding", parm.getAccept_encoding()); 
+				if (parm.getAccept_language() != null) http.addHeader("Accept-Language", parm.getAccept_language()); 
+				if (parm.getCookie() != null) http.addHeader("Cookie", parm.getCookie()); 
+				if (parm.getX_requested_with() != null) http.addHeader("x_requested_with", parm.getX_requested_with()); 
+				if (parm.getContentType() != null) http.addHeader("Content-Type", parm.getContentType());
+				if (parm.getProxy()) {
+					http.setConfig(builder.setProxy(new HttpHost(parm.getProxyIp(), parm.getProxyPort())).build());
+				} else {
+					http.setConfig(builder.build());
+				}
+				CloseableHttpResponse response = httpClient.execute(http);
+				code = response.getStatusLine().getStatusCode();
+				String chareset = "utf-8";
+				if (parm.getCharset() != null) chareset = parm.getCharset();
+				String s = EntityUtils.toString(response.getEntity(), chareset);
+				response.close();
+				byte[] content = s.getBytes();
+				c = new Content(url,(content == null ? EMPTY_CONTENT : content),Maps.newHashMap());
+				c.setExtendData(datum.getExtendData());
 			  c = new Content(url,(EMPTY_CONTENT),Maps.newHashMap());
 			  code=0;
 			} else {
