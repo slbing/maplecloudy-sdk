@@ -149,6 +149,7 @@ public abstract class AppTaskBaseline extends Configured implements Runnable {
     Configuration conf = new YarnConfiguration(this.getConf());
     yarnClient.init(conf);
     yarnClient.start();
+    
     List<ApplicationReport> reports = yarnClient
         .getApplications(Collections.singleton(this.getAppType()));
     for (ApplicationReport report : reports) {
