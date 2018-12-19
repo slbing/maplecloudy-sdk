@@ -4,20 +4,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.Mapper.Context;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -41,6 +36,9 @@ import com.maplecloudy.spider.protocol.Protocol;
 import com.maplecloudy.spider.protocol.ProtocolFactory;
 import com.maplecloudy.spider.protocol.ProtocolOutput;
 import com.maplecloudy.spider.protocol.ProtocolStatus;
+import com.maplecloudy.spider.protocol.httpmethod.HttpUtils;
+import com.maplecloudy.spider.protocol.httpmethod.InfoToEs;
+import com.maplecloudy.spider.protocol.httpmethod.ProxyWithEs;
 import com.maplecloudy.spider.util.LogUtil;
 import com.maplecloudy.spider.util.SpiderConfiguration;
 
@@ -53,9 +51,7 @@ public class FetcherWithParse extends OozieMain implements Tool {
   public static final String CONTENT_REDIR = "content";
   
   public static final String PROTOCOL_REDIR = "protocol";
-  
-  public static final LinkedBlockingQueue<Outlink> parseQueue = new LinkedBlockingQueue<>();
-  
+    
   public FetcherWithParse(Configuration conf) {
     this.setConf(conf);
   }
@@ -96,11 +92,19 @@ public class FetcherWithParse extends OozieMain implements Tool {
     private ProtocolFactory protocolFactory;
     Context outer;
     private String segmentName;
-    private long start = System.currentTimeMillis(); // start time of
+//    private long start = System.currentTimeMillis(); // start time of
     // fetcher
     private boolean storingContent;
     private boolean parsing;
-    private ConcurrentLinkedDeque<Outlink> nowFetcQueue = new ConcurrentLinkedDeque<Outlink>();
+    private static final LinkedBlockingQueue<Outlink> parseQueue = new LinkedBlockingQueue<>();
+    
+//    private String web = "weibo";
+//    private ConcurrentLinkedDeque<Outlink> nowFetcQueue = new ConcurrentLinkedDeque<Outlink>();
+//    private String previousUrl = "^";
+    
+    private long setUpTime;
+    
+    private final static long FIVE_MIN = 5 * 60 * 1000;
     
     protected void setup(Context context)
         throws IOException, InterruptedException {
@@ -111,6 +115,8 @@ public class FetcherWithParse extends OozieMain implements Tool {
       storingContent = FetcherWithParse
           .isStoringContent(context.getConfiguration());
       parsing = FetcherWithParse.isParsing(context.getConfiguration());
+      this.setUpTime = System.currentTimeMillis();
+      ProxyWithEs.getInstance().setUp();
     }
     
     @Override
@@ -118,11 +124,22 @@ public class FetcherWithParse extends OozieMain implements Tool {
         throws IOException, InterruptedException {
       // url may be changed through redirects.
       // CrawlDatum value = new CrawlDatum(val);
+//      if (setUpTime < System.currentTimeMillis() - FIVE_MIN) {
+//    	  ProxyWithEs.getInstance().setUp();
+//    	  setUpTime = System.currentTimeMillis();
+//	  }
       try {
-        if (LOG.isInfoEnabled()) {
-          LOG.info("fetching " + key);
-        }
-        
+//        if (LOG.isInfoEnabled()) {
+//          LOG.info("fetching " + key);
+//        }
+//        if (key.contains(web) ) {
+//        	if(previousUrl.contains(web)) {
+//				Thread.sleep(1000);
+//				previousUrl = key;
+//			}
+//        }
+//        previousUrl = key;
+       
         Protocol protocol = this.protocolFactory.getProtocol(key);
         ProtocolOutput output = protocol.getProtocolOutput(key, value);
         ProtocolStatus status = output.getStatus();
@@ -149,8 +166,6 @@ public class FetcherWithParse extends OozieMain implements Tool {
         t.printStackTrace();
         output(key, value, null, CrawlDatum.STATUS_FETCH_RETRY);
       }
-      
-      
     }
     
     @Override
@@ -164,7 +179,14 @@ public class FetcherWithParse extends OozieMain implements Tool {
           try {
             if (LOG.isInfoEnabled()) {
               LOG.info("fetching " + o.url);
-            }            
+            }
+//            if (o.getUrl().contains(web) ) {
+//            	if(previousUrl.contains(web)) {
+//    				Thread.sleep(1000);
+//    				previousUrl = o.getUrl();
+//    			}
+//            }
+//            previousUrl = o.getUrl();
             Protocol protocol = this.protocolFactory.getProtocol(o.getUrl());
             
             ProtocolOutput output = protocol.getProtocolOutput(o.getUrl(),
@@ -196,7 +218,9 @@ public class FetcherWithParse extends OozieMain implements Tool {
             output(o.getUrl(), crawlDatum, null, CrawlDatum.STATUS_FETCH_RETRY);
           }
         }
-      super.cleanup(context);
+        ProxyWithEs.getInstance().close();
+        InfoToEs.getInstance().cleanUp();
+        super.cleanup(context);
     }
     
     // private long lastlogtime = 0;
@@ -219,7 +243,6 @@ public class FetcherWithParse extends OozieMain implements Tool {
         output(currentKey, currentValue, null, CrawlDatum.STATUS_FETCH_RETRY);
     }
     
-    @SuppressWarnings({"deprecation"})
     private void output(String key, CrawlDatum datum, Content content,
         int status) throws InterruptedException {
       
@@ -240,8 +263,8 @@ public class FetcherWithParse extends OozieMain implements Tool {
         if (content != null && parsing) {
           Parse parse = new ParserFactory().getParsers(key, content);
           try {
-            @SuppressWarnings("rawtypes")
-            List pd = parse.parse(key, content);
+            List<Object> pd = parse.parse(key, content);
+            if(HttpUtils.ES_ABLE) InfoToEs.getInstance().addParseResponse(key, pd);
             for (Object o : pd) {
               if (o instanceof Outlink) {
                 if (((Outlink) o).getExtend("fetch_right_now") != null && "true"

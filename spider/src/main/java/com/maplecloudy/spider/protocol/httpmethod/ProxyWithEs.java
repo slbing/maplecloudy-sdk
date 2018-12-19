@@ -1,26 +1,16 @@
 package com.maplecloudy.spider.protocol.httpmethod;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-//import org.apache.http.client.config.CookieSpecs;
-//import org.apache.http.client.config.RequestConfig;
-//import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.conn.params.ConnRoutePNames;
-import org.apache.http.impl.client.DefaultHttpClient;
-//import org.apache.http.impl.client.CloseableHttpClient;
-//import org.apache.http.impl.client.HttpClients;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.action.index.IndexRequest;
@@ -43,32 +33,34 @@ import org.elasticsearch.search.aggregations.bucket.terms.Terms.Bucket;
 import org.elasticsearch.search.aggregations.metrics.tophits.ParsedTopHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortOrder;
-import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.gson.Gson;
-import com.maplecloudy.spider.protocol.Content;
 
 public class ProxyWithEs {
 
-	private static String ES_IP = "localhost";
+	private static String ES_IP = "es1.ali.szol.bds.com";
 	private static int ES_PORT = 9200;
 	private static String ES_INDEX = "proxy";
 	private static String ES_TYPE = "_doc";
 
 	private static int PROXY_SIZE = 1000;
-	private static String SCORE = "score";
 
 	private final static Object OBJECT = new Object();
+	private final static String IP_URL = "http://maplecloudy.v4.dailiyun.com/query.txt?key=NPEE573347&word=&count=200&rand=true&detail=false";
 
 	private static ProxyWithEs proxyWithEs;
-	private static RestHighLevelClient client;
+	private RestHighLevelClient client;
 
 	private static List<String> proxyList = Lists.newArrayList();
 	private static Map<String, Integer> proxyScore = Maps.newHashMap();
 	private static Random random = new Random();
+	
+	private static boolean flag = false;
+	private static boolean flag2 = true;
+
+	private Timer timer;
 
 	private ProxyWithEs() {
 	}
@@ -86,8 +78,40 @@ public class ProxyWithEs {
 		}
 		return proxyWithEs;
 	}
+	
+	public synchronized void setUp() {
+		if(flag) return;
+		timer = new Timer();
+		timer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				try {
+					String eString = Jsoup.connect(IP_URL).ignoreContentType(true).get().toString().trim();
+					eString = eString.split("<body>")[1].split("</body>")[0].trim();
+					String[] se = eString.split(" ");
+					if (se.length > 0) {
+						proxyList.clear();
+						for (int i = 0; i < se.length; i++) {
+							proxyList.add(se[i].split(",")[0]);
+						}
+						proxyToEs(proxyList);	
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}, 0, 3 * 60 * 1000);
+		flag = true;
+	}
+	
+	public synchronized void close() {
+		if(timer != null && flag2) {
+			timer.cancel();
+			flag2 = false;
+		}
+	}
 
-	public void setUp() {
+	public void setUpBak1() {
 		client = new RestHighLevelClient(
 				RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
 		SearchRequest request = new SearchRequest(ES_INDEX);
@@ -160,7 +184,7 @@ public class ProxyWithEs {
 			request.add(new UpdateRequest(ES_INDEX, ES_TYPE, ip2port.getKey()).script(inline));
 		}
 		try {
-			BulkResponse response = client.bulk(request, RequestOptions.DEFAULT);
+			client.bulk(request, RequestOptions.DEFAULT);
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
@@ -172,10 +196,10 @@ public class ProxyWithEs {
 	 *  @param ip2port : 最大为1000；内容为：127.0.0.1:9200
 	 */
 	public boolean proxyToEs(List<String> ip2portList) {
-		if (ip2portList.size() > 1000) {
-			System.out.println(" proxy size > 1000 ; please control size in 1000");
-			return false;
-		}
+//		if (ip2portList.size() > 1000) {
+//			System.out.println(" proxy size > 1000 ; please control size in 1000");
+//			return false;
+//		}
 		client = new RestHighLevelClient(
 				RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
 		BulkRequest request = new BulkRequest();
@@ -226,98 +250,9 @@ public class ProxyWithEs {
 		        "\""+ time +"\":\"" + new Date().toString() + "\"" +
 		        "}";
 	}
-	private final static int TIME_OUT = 5 * 1000;
-	private final static int MAX_SIZE = 10 * 1024 * 1024;
-//	private static CloseableHttpClient httpClient = HttpClients.createDefault();
-//	private static RequestConfig.Builder builder = RequestConfig.custom().setSocketTimeout(TIME_OUT).
-//            setConnectTimeout(TIME_OUT).
-//            setConnectionRequestTimeout(TIME_OUT).
-//            setCookieSpec(CookieSpecs.IGNORE_COOKIES);
 
 	public static void main(String[] args) throws IOException, InterruptedException {
-//		List<String> s = Arrays.asList("47.52.153.167:80", "47.52.238.112:8118", "47.75.194.109:80", "47.88.192.22:8080",
-//    			"47.52.24.132:8118", "47.75.8.192:80", "47.52.210.47:80", "47.75.48.149:80", "47.52.208.159:80", "47.52.153.167:443", "47.52.209.8:80",
-//    			"47.75.64.102:80", "47.75.62.90:80", "47.91.237.251:80", "47.52.155.245:80", "47.52.64.149:80");
-//    	ProxyWithEs.getInstance().proxyToEs(s);
-		List<String> e = Lists.newArrayList();
-		String eString = Jsoup.connect("http://maplecloudy.v4.dailiyun.com/query.txt?key=NPEE573347&word=&count=1000&rand=true&detail=true").ignoreContentType(true).get().toString().trim();
-		System.out.println(eString);
-		eString = eString.split("<body>")[1].split("</body>")[0].trim();
-		String[] se = eString.split(" ");
-		for (int i = 0; i < se.length; i++) {
-			e.add(se[i].split(",")[0]);
-		}
-//		ProxyWithEs.getInstance().proxyToEs(e);
-//		System.exit(0);
-//		ProxyWithEs.getInstance().setUp();
-		int i=0;
-		String url = "https://news.pconline.com.cn/1211/12117584.html";
-		AtomicInteger as = new AtomicInteger(0);
-		AtomicInteger bs = new AtomicInteger(0);
-		AtomicInteger cs = new AtomicInteger(0);
 
-		HttpClient httpClient = new DefaultHttpClient();
-//		List<String> e = ProxyWithEs.getInstance().proxyList;
-		System.out.println("***********  " + e.size());
-
-		for (String ew : e) {
-			
-			new Thread(new Runnable() {
-				@Override
-				public void run() {
-//					
-					String ip2port = ew;
-					System.out.println(ip2port);
-					String[] proxy = ip2port.split(":");
-					HttpGet http = new HttpGet(url);
-//				String ip2port = ProxyWithEs.getInstance().getProxy();
-					http.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, new HttpHost(proxy[0], Integer.valueOf(proxy[1])));
-//					http.setConfig(builder.setProxy(new HttpHost(proxy[0], Integer.valueOf(proxy[1]))).build());
-//					http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-//					http.addHeader("Cookie", "TC-V5-G0=634dc3e071d0bfd86d751caf174d764e; SUB=_2AkMstywdf8NxqwJRmP4WzW3rZYl1wg3EieKa693GJRMxHRl-yj9jqnM6tRB6BzcC8raDxDR91reemrTMmH_aeOB9hwg6; SUBP=0033WrSXqPxfM72-Ws9jqgMF55529P9D9W5fD9H6XsZ3wx_HpHLR1.sX");
-//					CloseableHttpResponse response = null;
-					HttpResponse response = null;
-					try {
-						response = httpClient.execute(http);		
-						System.out.println("+++++++++++++++"+response.getStatusLine().getStatusCode());
-						if (response.getStatusLine().getStatusCode() == 200) {
-							as.incrementAndGet();
-						}
-					} catch (Exception e1) {
-					} finally {
-//						try {
-//							if (response != null) {
-////								response.close();
-//							}
-//						} catch (IOException e1) {
-//							e1.printStackTrace();
-//						}
-					}
-					try {
-						Connection.Response response2 = Jsoup.connect(url).proxy(proxy[0], Integer.valueOf(proxy[1])).timeout(5000).ignoreContentType(true).execute();
-						System.out.println("--------------------"+response2.statusCode());
-						if (response2.statusCode() == 200) {
-							bs.incrementAndGet();
-//							ProxyWithEs.getInstance().setScore(ip2port);
-//							System.out.println(Jsoup.parse(response2.body()).title());
-						}
-					} catch (Exception e1) {
-//						e1.printStackTrace();
-						// TODO: handle exception
-					}	
-					cs.incrementAndGet();
-					System.out.println( " yyyyyyyyyyyy  as " + as.intValue() + " yyyyyyyyyyyy  bs " + bs.intValue());
-				}
-			}).start();
-		}
-		while (true) {
-			if (cs.intValue() == e.size()) {
-//				ProxyWithEs.getInstance().closeDown();
-				break;
-			}
-			System.out.println(" ccccccccccccccc  " + cs.intValue());
-			Thread.sleep(1000);
-		}
 	}
 	
 }
