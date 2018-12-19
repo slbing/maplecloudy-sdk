@@ -166,7 +166,6 @@ public class Injector extends OozieMain implements Tool {
     }
     AvroJob sortJob = AvroJob.getAvroJob(getConf());
     sortJob.setJobName("inject " + urlDirs);
-    
     for (Path urlDir : urlDirs) {
       FileInputFormat.addInputPath(sortJob, urlDir);
     }
