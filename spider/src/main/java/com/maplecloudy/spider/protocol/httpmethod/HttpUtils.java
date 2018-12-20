@@ -126,6 +126,7 @@ public class HttpUtils implements Protocol {
         try {
           response = httpClient.execute(http);
         } catch (Exception e) {
+          LOG.error("fetch proxy -- url " + url + " error ", e);
           if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 900, e);
           http.setConfig(builder.build());
           response = httpClient.execute(http);
@@ -173,6 +174,7 @@ public class HttpUtils implements Protocol {
         try {
           response = connection.execute();
         } catch (Exception e) {
+          LOG.error("fetch proxy -- url " + url + " error ", e);
           if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 901, e);
           connection.proxy(null);
           response = connection.execute();
