@@ -116,7 +116,7 @@ public class HttpUtils implements Protocol {
         if (parm.getContentType() != null)
           http.addHeader("Content-Type", parm.getContentType());
         
-        if (ip2port != null) {
+        if (ip2port != null && ip2port.contains(":")) {
           String[] proxy = ip2port.split(":");
           http.setConfig(builder
               .setProxy(new HttpHost(proxy[0], Integer.valueOf(proxy[1])))
@@ -156,7 +156,7 @@ public class HttpUtils implements Protocol {
           connection.header("x_requested_with", parm.getX_requested_with());
         if (parm.getContentType() != null)
           connection.header("Content-Type", parm.getContentType());
-        if (ip2port != null) {
+        if (ip2port != null && ip2port.contains(":")) {
           String[] proxy = ip2port.split(":");
           connection.proxy(new Proxy(Proxy.Type.HTTP, InetSocketAddress
               .createUnresolved(proxy[0], Integer.valueOf(proxy[1]))));

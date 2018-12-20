@@ -87,7 +87,7 @@ public class ProxyWithEs {
               .toString().trim();
           eString = eString.split("<body>")[1].split("</body>")[0].trim();
           String[] se = eString.split(" ");
-          if (se.length > 0) {
+          if (eString.length() > 10) {
             proxyList.clear();
             for (int i = 0; i < se.length; i++) {
               proxyList.add(se[i].split(",")[0]);
