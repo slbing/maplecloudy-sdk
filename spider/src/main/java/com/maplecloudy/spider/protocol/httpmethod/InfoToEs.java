@@ -50,9 +50,12 @@ public class InfoToEs {
 	private static InfoToEs infoToEs;
 
 	private InfoToEs(){}
+	Configuration conf;
 	
 	private InfoToEs(Configuration conf) {
+	  this.conf = conf;
 	}
+	
 
 	public static InfoToEs getInstance() {
 		if (infoToEs != null)

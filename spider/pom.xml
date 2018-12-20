@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
@@ -8,7 +9,6 @@
 		<artifactId>maplecloudy-sdk-parent</artifactId>
 		<version>0.3.0-jdk8-SNAPSHOT</version>
 	</parent>
-	<groupId>com.maplecloudy.maple</groupId>
 	<artifactId>spider</artifactId>
 	<name>Maplecloudy Spider</name>
 	<properties>
@@ -18,46 +18,10 @@
 	<dependencies>
 		<dependency>
 			<groupId>com.maplecloudy.maple</groupId>
-			<artifactId>report-core</artifactId>
+			<artifactId>avro-mapreduce</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>org.apache.solr</groupId>
-			<artifactId>solr-core</artifactId>
-			<version>4.10.3-cdh5.7.3</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.slf4j</groupId>
-					<artifactId>slf4j-jdk14</artifactId>					<!-- instead use slf4j on top of log4j or logback -->
-				</exclusion>
-				<exclusion>
-					<groupId>com.google.guava</groupId>
-					<artifactId>guava</artifactId>
-				</exclusion>
-				<!-- The current version of the httpclient dependency from solr (2.4.3) 
-					does not work with the current version of commons-codec (1.4) that is on 
-					the hadoop classpath. Bumping the version of httpclient is probably the easiest 
-					way to address this. -->
-				<exclusion>
-					<groupId>org.apache.httpcomponents</groupId>
-					<artifactId>httpclient</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>org.apache.httpcomponents</groupId>
-					<artifactId>httpcore</artifactId>
-				</exclusion>
-				<exclusion>
-				<groupId>org.apache.lucene</groupId>
-    <artifactId>lucene-core</artifactId>
-				</exclusion>
-				<exclusion><groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId></exclusion>
-            <exclusion><groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-smile</artifactId></exclusion>
-			</exclusions>
-		</dependency>
-		<!-- <dependency> <groupId>com.maplecloudy.maple</groupId> <artifactId>indexer</artifactId> 
-			<version>${project.version}</version> </dependency> -->
+
 		<dependency>
 			<groupId>xerces</groupId>
 			<artifactId>xercesImpl</artifactId>
@@ -102,13 +66,9 @@
 		<dependency>
 			<groupId>org.elasticsearch.client</groupId>
 			<artifactId>elasticsearch-rest-high-level-client</artifactId>
-			<version>6.5.3</version>
+			<version>6.5.1</version>
 		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-web</artifactId>
-			<version>3.2.2.RELEASE</version>
-		</dependency>
+		
 		<dependency>
 			<groupId>oro</groupId>
 			<artifactId>oro</artifactId>
@@ -127,8 +87,10 @@
 					<groupId>org.apache.httpcomponents</groupId>
 					<artifactId>httpcore</artifactId>
 				</exclusion>
-				<exclusion><groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId></exclusion>
+				<exclusion>
+					<groupId>com.fasterxml.jackson.core</groupId>
+					<artifactId>jackson-core</artifactId>
+				</exclusion>
 			</exclusions>
 		</dependency>
 		<dependency>

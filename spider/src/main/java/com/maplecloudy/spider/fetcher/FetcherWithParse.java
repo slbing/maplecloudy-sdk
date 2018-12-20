@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -20,7 +21,6 @@ import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
-import com.google.gson.Gson;
 import com.maplecloudy.avro.io.UnionData;
 import com.maplecloudy.avro.mapreduce.AvroJob;
 import com.maplecloudy.avro.mapreduce.MultithreadedBlockMapper;
@@ -52,7 +52,7 @@ public class FetcherWithParse extends OozieMain implements Tool {
   public static final String CONTENT_REDIR = "content";
   
   public static final String PROTOCOL_REDIR = "protocol";
-    
+  
   public FetcherWithParse(Configuration conf) {
     this.setConf(conf);
   }
@@ -136,7 +136,7 @@ public class FetcherWithParse extends OozieMain implements Tool {
 //			}
 //        }
 //        previousUrl = key;
-       
+        
         Protocol protocol = this.protocolFactory.getProtocol(key);
         ProtocolOutput output = protocol.getProtocolOutput(key, value);
         ProtocolStatus status = output.getStatus();
@@ -208,9 +208,9 @@ public class FetcherWithParse extends OozieMain implements Tool {
           output(o.getUrl(), crawlDatum, null, CrawlDatum.STATUS_FETCH_RETRY);
         }
       }
-        ProxyWithEs.getInstance().close();
-        InfoToEs.getInstance().cleanUp();
-        super.cleanup(context);
+      ProxyWithEs.getInstance().close();
+      InfoToEs.getInstance().cleanUp();
+      super.cleanup(context);
     }
     
     // private long lastlogtime = 0;
@@ -254,7 +254,8 @@ public class FetcherWithParse extends OozieMain implements Tool {
           Parse parse = new ParserFactory().getParsers(key, content);
           try {
             List<Object> pd = parse.parse(key, content);
-            if(HttpUtils.ES_ABLE) InfoToEs.getInstance().addParseResponse(key, pd);
+            if (HttpUtils.ES_ABLE)
+              InfoToEs.getInstance().addParseResponse(key, pd);
             for (Object o : pd) {
               if (o instanceof Outlink) {
                 if (((Outlink) o).getExtend("fetch_right_now") != null && "true"
