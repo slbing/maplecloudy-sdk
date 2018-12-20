@@ -83,7 +83,7 @@ public class InfoToEs {
     StackTraceElement[] exceptionStack = e.getStackTrace();
     message.append(e.getMessage());
     for (StackTraceElement ste : exceptionStack) {
-      message.append("\n\tat " + ste);
+      message.append("     @      " + ste);
     }
     httpErrorList.add(String.format(HTTP_ERROR_MODEL, url, code,
         message.toString(), System.currentTimeMillis()));
@@ -113,7 +113,7 @@ public class InfoToEs {
     StackTraceElement[] exceptionStack = e.getStackTrace();
     message.append(e.getMessage());
     for (StackTraceElement ste : exceptionStack) {
-      message.append("\n\tat " + ste);
+      message.append("     @     " + ste);
     }
     parseErrorList.add(String.format(PARSE_ERROR_MODEL, url, message.toString(),
         System.currentTimeMillis()));
@@ -136,7 +136,7 @@ public class InfoToEs {
     }
   }
   
-  private static String HTTP_RESPONSE_MODEL = "{\"url\":\"%s\",\"code\":%s,\"response\":\"%s\",\"time\":%s}";
+  private static String HTTP_RESPONSE_MODEL = "{\"url\":\"%s\",\"code\":%s,\"response\":%s,\"time\":%s}";
   
   public synchronized void addHttpResponse(String url, int code,
       String response) {
