@@ -1,6 +1,7 @@
 package com.maplecloudy.spider.protocol.httpmethod;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.util.List;
 import java.util.Map;
 
@@ -33,7 +34,7 @@ public class InfoToEs {
   
   private final static String ES_TYPE = "_doc";
   
-  private final static int BULK_SIZE = 1000;
+  private final static int BULK_SIZE = 500;
   
   private final static Object OBJECT = new Object();
   private final static Gson gson = new Gson();
@@ -140,9 +141,9 @@ public class InfoToEs {
   
   public synchronized void addHttpResponse(String url, int code,
       String response) {
-    httpResponseList.add(String.format(HTTP_RESPONSE_MODEL, url, code, response,
-        System.currentTimeMillis()));
-    if (httpResponseList.size() >= BULK_SIZE) {
+    httpResponseList.add(String.format(HTTP_RESPONSE_MODEL, url, code,
+        URLEncoder.encode(response), System.currentTimeMillis()));
+    if (httpResponseList.size() >= BULK_SIZE / 2) {
       if (client == null) client = new RestHighLevelClient(
           RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
       BulkRequest request = new BulkRequest();
@@ -247,6 +248,18 @@ public class InfoToEs {
     for (String error : httpErrorList) {
       request.add(new IndexRequest(ES_INDEX_HTTP_REEOE, ES_TYPE).source(error,
           XContentType.JSON));
+    }
+    for (String info : urlTypeList) {
+      Map<String,Object> parameters = Maps.newHashMap();
+      parameters.put(UrlTypeModel.retry, 1);
+      Script inline = new Script(ScriptType.INLINE, "painless", "ctx._source."
+          + UrlTypeModel.retry + " += params." + UrlTypeModel.retry,
+          parameters);
+      request.add(new UpdateRequest(ES_INDEX_URL_TYPE, ES_TYPE,
+          info.split("url\":\"")[1].split("\",\"web")[0])
+              .upsert(info, XContentType.JSON)
+              .id(info.split("url\":\"")[1].split("\",\"web")[0])
+              .script(inline));
     }
     try {
       client.bulk(request, RequestOptions.DEFAULT);
