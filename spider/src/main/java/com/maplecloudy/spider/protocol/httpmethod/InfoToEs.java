@@ -2,11 +2,14 @@ package com.maplecloudy.spider.protocol.httpmethod;
 
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.http.HttpHost;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.update.UpdateRequest;
@@ -45,6 +48,8 @@ public class InfoToEs {
   private static List<String> urlTypeList = Lists.newArrayList();
   
   private static boolean flag = false;
+  private final static JSONObject json = new JSONObject();
+  private final static StringBuffer sb = new StringBuffer();
   
   private RestHighLevelClient client;
   private static InfoToEs infoToEs;
@@ -80,14 +85,23 @@ public class InfoToEs {
   private static String HTTP_ERROR_MODEL = "{\"url\":\"%s\",\"code\":%s,\"error\":\"%s\",\"time\":%s}";
   
   public synchronized void addHttpError(String url, int code, Exception e) {
-    StringBuffer message = new StringBuffer();
+    
     StackTraceElement[] exceptionStack = e.getStackTrace();
-    message.append(e.getMessage());
+    sb.append(e.getMessage());
     for (StackTraceElement ste : exceptionStack) {
-      message.append("     @      " + ste);
+      sb.append("     @      " + ste);
     }
-    httpErrorList.add(String.format(HTTP_ERROR_MODEL, url, code,
-        message.toString(), System.currentTimeMillis()));
+    try {
+      json.put("url", url);
+      json.put("code", code);
+      json.put("error", sb.toString());
+      json.put("time", System.currentTimeMillis());
+      httpErrorList.add(json.toString());
+    } catch (JSONException e2) {
+      e2.printStackTrace();
+    } finally {
+      cleanData();
+    }
     if (httpErrorList.size() >= BULK_SIZE) {
       if (client == null) client = new RestHighLevelClient(
           RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
@@ -110,14 +124,22 @@ public class InfoToEs {
   private static String PARSE_ERROR_MODEL = "{\"url\":\"%s\",\"error\":\"%s\",\"time\":%s}";
   
   public synchronized void addParseError(String url, Exception e) {
-    StringBuffer message = new StringBuffer();
     StackTraceElement[] exceptionStack = e.getStackTrace();
-    message.append(e.getMessage());
+    sb.append(e.getMessage());
     for (StackTraceElement ste : exceptionStack) {
-      message.append("     @     " + ste);
+      sb.append("     @     " + ste);
     }
-    parseErrorList.add(String.format(PARSE_ERROR_MODEL, url, message.toString(),
-        System.currentTimeMillis()));
+    try {
+      json.put("url", url);
+      json.put("error", sb.toString());
+      json.put("time", System.currentTimeMillis());
+      httpErrorList.add(json.toString());
+    } catch (JSONException e2) {
+      e2.printStackTrace();
+    } finally {
+      cleanData();
+    }
+    parseErrorList.add(json.toString());
     if (parseErrorList.size() >= BULK_SIZE) {
       if (client == null) client = new RestHighLevelClient(
           RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
@@ -141,8 +163,18 @@ public class InfoToEs {
   
   public synchronized void addHttpResponse(String url, int code,
       String response) {
-    httpResponseList.add(String.format(HTTP_RESPONSE_MODEL, url, code,
-        URLEncoder.encode(response), System.currentTimeMillis()));
+    try {
+      json.put("url", url);
+      json.put("code", code);
+      json.put("response", response);
+      json.put("time", System.currentTimeMillis());
+      httpErrorList.add(json.toString());
+    } catch (JSONException e2) {
+      e2.printStackTrace();
+    } finally {
+      cleanData();
+    }
+    httpResponseList.add(json.toString());
     if (httpResponseList.size() >= BULK_SIZE / 2) {
       if (client == null) client = new RestHighLevelClient(
           RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
@@ -165,8 +197,17 @@ public class InfoToEs {
   private static String PARSE_RESPONSE_MODEL = "{\"url\":\"%s\",\"response\":%s,\"time\":%s}";
   
   public synchronized void addParseResponse(String url, List<Object> response) {
-    parseResponseList.add(String.format(PARSE_RESPONSE_MODEL, url,
-        gson.toJson(response), System.currentTimeMillis()));
+    try {
+      json.put("url", url);
+      json.put("response", gson.toJson(response));
+      json.put("time", System.currentTimeMillis());
+      httpErrorList.add(json.toString());
+    } catch (JSONException e2) {
+      e2.printStackTrace();
+    } finally {
+      cleanData();
+    }
+    parseResponseList.add(json.toString());
     if (parseResponseList.size() >= BULK_SIZE) {
       if (client == null) client = new RestHighLevelClient(
           RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
@@ -230,8 +271,8 @@ public class InfoToEs {
   public synchronized void cleanUp() {
     if (client == null) return;
     if (flag) return;
-    client = new RestHighLevelClient(
-        RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
+//    client = new RestHighLevelClient(
+//        RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
     BulkRequest request = new BulkRequest();
     for (String info : parseResponseList) {
       request.add(new IndexRequest(ES_INDEX_PARSE_RESPONSE, ES_TYPE)
@@ -280,6 +321,16 @@ public class InfoToEs {
       client.close();
     } catch (IOException e) {
       e.printStackTrace();
+    }
+  }
+  
+  private void cleanData() {
+    Iterator keys = json.keys();
+    while (keys.hasNext()) {
+      json.remove((String) keys.next());
+    }
+    if(sb.length()>=1) {
+      sb.delete(0, sb.length() - 1);
     }
   }
   
