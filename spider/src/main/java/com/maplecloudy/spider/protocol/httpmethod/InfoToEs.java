@@ -2,6 +2,7 @@ package com.maplecloudy.spider.protocol.httpmethod;
 
 import java.io.IOException;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +51,7 @@ public class InfoToEs {
   private static boolean flag = false;
   private final static JSONObject json = new JSONObject();
   private final static StringBuffer sb = new StringBuffer();
+  private final static List<String> listKey = Lists.newArrayList();
   
   private RestHighLevelClient client;
   private static InfoToEs infoToEs;
@@ -326,10 +328,15 @@ public class InfoToEs {
   
   private void cleanData() {
     Iterator keys = json.keys();
+    
     while (keys.hasNext()) {
-      json.remove((String) keys.next());
+      listKey.add((String) keys.next());
     }
-    if(sb.length()>=1) {
+    Iterator<String> itKey = listKey.iterator();
+    while (itKey.hasNext()) {
+      json.remove(itKey.next());
+    }
+    if (sb.length() >= 1) {
       sb.delete(0, sb.length() - 1);
     }
   }
