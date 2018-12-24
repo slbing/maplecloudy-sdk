@@ -2,9 +2,7 @@ package com.maplecloudy.spider.protocol.httpmethod;
 
 import java.lang.invoke.MethodHandles;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
 import java.net.Proxy;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
@@ -32,11 +30,8 @@ import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.gson.Gson;
 import com.maplecloudy.spider.crawl.CrawlDatum;
-import com.maplecloudy.spider.parse.Outlink;
 import com.maplecloudy.spider.protocol.Content;
 import com.maplecloudy.spider.protocol.HttpParameters;
 import com.maplecloudy.spider.protocol.Protocol;
