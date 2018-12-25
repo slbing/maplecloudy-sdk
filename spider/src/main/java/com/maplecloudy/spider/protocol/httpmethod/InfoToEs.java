@@ -16,6 +16,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.script.Script;
@@ -78,7 +79,7 @@ public class InfoToEs {
     synchronized (OBJECT) {
       if (infoToEs == null) {
         infoToEs = new InfoToEs(conf);
-        String clusterNodes = conf.getStrings("clusterNodes").toString();
+        String clusterNodes = conf.toString();
         ArrayList<HttpHost> hosts = Lists.newArrayList();
         for (String clusterNode : clusterNodes.split(",")) {
           String hostName = clusterNode.split(":")[0];
@@ -89,11 +90,11 @@ public class InfoToEs {
             RestClient.builder(hosts.toArray(new HttpHost[hosts.size()]))
                 .setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() {
                   @Override
-                  public RequestConfig.Builder customizeRequestConfig(
-                          RequestConfig.Builder requestConfigBuilder) {
-                      return requestConfigBuilder.setConnectTimeout(connectTimeout)
-                            .setSocketTimeout(socketTimeout)
-                            .setConnectionRequestTimeout(requestTimeout); 
+                  public Builder customizeRequestConfig(Builder requestConfigBuilder) {
+              // 请超时
+                      return requestConfigBuilder.setConnectTimeout(1000)
+                          .setSocketTimeout(1000)
+                          .setConnectionRequestTimeout(1000); 
                   }
               }).setMaxRetryTimeoutMillis(1000));
       }
@@ -104,7 +105,7 @@ public class InfoToEs {
   
   private static String HTTP_ERROR_MODEL = "{\"url\":\"%s\",\"code\":%s,\"error\":\"%s\",\"time\":%s}";
   
-  public synchronized void addHttpError(String url, int code, Exception e) {
+  public synchronized void addHttpError(String url, int code,String web, String urltype, Exception e) {
     
     StackTraceElement[] exceptionStack = e.getStackTrace();
     sb.append(e.getMessage());
@@ -114,6 +115,8 @@ public class InfoToEs {
     try {
       json.put("url", url);
       json.put("code", code);
+      json.put("web", web);
+      json.put("urltype", urltype);
       json.put("error", sb.toString());
       json.put("time", System.currentTimeMillis());
       httpErrorList.add(json.toString());
@@ -141,9 +144,9 @@ public class InfoToEs {
     }
   }
   
-  private static String PARSE_ERROR_MODEL = "{\"url\":\"%s\",\"error\":\"%s\",\"time\":%s}";
+  private static String PARSE_ERROR_MODEL = "{\"url\":\"%s\",\"web\":\"%s\",\"urltype\":\"%s\",\"error\":\"%s\",\"time\":%s}";
   
-  public synchronized void addParseError(String url, String web, String urlType,
+  public synchronized void addParseError(String url,
       Exception e) {
     StackTraceElement[] exceptionStack = e.getStackTrace();
     sb.append(e.getMessage());
@@ -152,8 +155,6 @@ public class InfoToEs {
     }
     try {
       json.put("url", url);
-      json.put("web", web);
-      json.put("url_type", urlType);
       json.put("error", sb.toString());
       json.put("time", System.currentTimeMillis());
       httpErrorList.add(json.toString());
@@ -182,12 +183,53 @@ public class InfoToEs {
     }
   }
   
-  private static String HTTP_RESPONSE_MODEL = "{\"url\":\"%s\",\"code\":%s,\"response\":%s,\"time\":%s}";
+  public synchronized void addParseDetailError(String url, String web, String urlType,
+      Exception e) {
+    StackTraceElement[] exceptionStack = e.getStackTrace();
+    sb.append(e.getMessage());
+    for (StackTraceElement ste : exceptionStack) {
+      sb.append("     @     " + ste);
+    }
+    try {
+      json.put("url", url);
+      json.put("web", web);
+      json.put("urltype", urlType);
+      json.put("error", sb.toString());
+      json.put("time", System.currentTimeMillis());
+      parseErrorList.add(json.toString());
+    } catch (JSONException e2) {
+      e2.printStackTrace();
+    } finally {
+      cleanData();
+    }
+    parseErrorList.add(json.toString());
+    if (parseErrorList.size() >= BULK_SIZE) {
+      if (client == null) client = new RestHighLevelClient(
+          RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
+      BulkRequest request = new BulkRequest();
+      for (String error : parseErrorList) {
+        request.add(new IndexRequest(ES_INDEX_PARSE_REEOE, ES_TYPE)
+            .source(error, XContentType.JSON));
+      }
+      try {
+        client.bulk(request, RequestOptions.DEFAULT);
+      } catch (Exception e1) {
+        e1.printStackTrace();
+      } finally {
+        parseErrorList.clear();
+        // closeClient();
+      }
+    }
+  }
   
-  public synchronized void addHttpResponse(String url, int code,
+  private static String HTTP_RESPONSE_MODEL = "{\"url\":\"%s\",\"web\":%s,\"urlType\":%s,\"code\":%s,\"response\":%s,\"time\":%s}";
+  
+  public synchronized void addHttpResponse(String url,String web,String urlType, int code,
       String response) {
     try {
       json.put("url", url);
+      json.put("web", web);
+      json.put("urltype", urlType);
       json.put("code", code);
       json.put("response", response);
       json.put("time", System.currentTimeMillis());
@@ -217,11 +259,11 @@ public class InfoToEs {
     }
   }
   
-  private static String PARSE_RESPONSE_MODEL = "{\"url\":\"%s\",\"response\":%s,\"time\":%s}";
-  
-  public synchronized void addParseResponse(String url, List<Object> response) {
+  public synchronized void addParseResponse(String url,String web,String urlType, List<Object> response) {
     try {
       json.put("url", url);
+      json.put("web", web);
+      json.put("urltype", urlType);
       json.put("response", gson.toJson(response));
       json.put("time", System.currentTimeMillis());
       httpErrorList.add(json.toString());

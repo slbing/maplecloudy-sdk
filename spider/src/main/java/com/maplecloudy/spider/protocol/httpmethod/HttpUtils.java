@@ -88,6 +88,12 @@ public class HttpUtils implements Protocol {
     try {
       HttpParameters parm = new HttpParameters(datum.getExtendData());
       String ip2port = ProxyWithEs.getInstance().getProxy();
+      if(!datum.getExtendData().containsKey("web")){
+        datum.setExtend("web", " Undefine");
+      }
+      if(!datum.getExtendData().containsKey("urltype")){
+        datum.setExtend("urltype", " Undefine");
+      }
       Content c;
       int code;
       String html = "";
@@ -122,7 +128,7 @@ public class HttpUtils implements Protocol {
           response = httpClient.execute(http);
         } catch (Exception e) {
           LOG.error("fetch proxy -- url " + url + " error ", e);
-          if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 900, e);
+          if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 900, datum.getExtend("web"),datum.getExtend("urltype"),e);
           http.setConfig(builder.build());
           response = httpClient.execute(http);
         }
@@ -170,7 +176,7 @@ public class HttpUtils implements Protocol {
           response = connection.execute();
         } catch (Exception e) {
           LOG.error("fetch proxy -- url " + url + " error ", e);
-          if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 901, e);
+          if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 901, datum.getExtend("web"),datum.getExtend("urltype"), e);
           connection.proxy(null);
           response = connection.execute();
         }
@@ -181,7 +187,7 @@ public class HttpUtils implements Protocol {
             Maps.newHashMap());
         c.setExtendData(datum.getExtendData());
       }
-      if (ES_ABLE) InfoToEs.getInstance().addHttpResponse(url, code, html);
+      if (ES_ABLE) InfoToEs.getInstance().addHttpResponse(url,datum.getExtend("web"),datum.getExtend("urltype"),code, html);
       if (code == 200) { // got a good response
         return new ProtocolOutput(c); // return it
         
@@ -214,7 +220,7 @@ public class HttpUtils implements Protocol {
       }
     } catch (Exception e) {
       LOG.error("fetch -- url " + url + " error ", e);
-      if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 0, e);
+      if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 0, datum.getExtend("web"),datum.getExtend("urltype"), e);
       return new ProtocolOutput(null, new ProtocolStatus(e));
     }
   }
