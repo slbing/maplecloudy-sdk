@@ -251,11 +251,19 @@ public class FetcherWithParse extends OozieMain implements Tool {
         if (content != null && storingContent)
           outer.write(key, new UnionData(content));
         if (content != null && parsing) {
+          if(!content.getExtendData().containsKey("web")){
+            content.setExtend("web", " Undefine");
+          }
+          if(!content.getExtendData().containsKey("urltype")){
+            content.setExtend("urltype", " Undefine");
+          }
+          InfoToEs.getInstance().addUrlType(key, content.getExtend("web"), content.getExtend("urltype"),
+              content.getExtend("parse_class"));
           Parse parse = new ParserFactory().getParsers(key, content);
           try {
             List<Object> pd = parse.parse(key, content);
             if (HttpUtils.ES_ABLE)
-              InfoToEs.getInstance().addParseResponse(key, pd);
+              InfoToEs.getInstance().addParseResponse(key, content.getExtend("web"),content.getExtend("urltype"),pd);
             for (Object o : pd) {
               if (o instanceof Outlink) {
                 if (((Outlink) o).getExtend("fetch_right_now") != null && "true"

@@ -2,9 +2,7 @@ package com.maplecloudy.spider.protocol.httpmethod;
 
 import java.lang.invoke.MethodHandles;
 import java.net.InetSocketAddress;
-import java.net.MalformedURLException;
 import java.net.Proxy;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
@@ -32,11 +30,8 @@ import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.gson.Gson;
 import com.maplecloudy.spider.crawl.CrawlDatum;
-import com.maplecloudy.spider.parse.Outlink;
 import com.maplecloudy.spider.protocol.Content;
 import com.maplecloudy.spider.protocol.HttpParameters;
 import com.maplecloudy.spider.protocol.Protocol;
@@ -93,6 +88,12 @@ public class HttpUtils implements Protocol {
     try {
       HttpParameters parm = new HttpParameters(datum.getExtendData());
       String ip2port = ProxyWithEs.getInstance().getProxy();
+      if(!datum.getExtendData().containsKey("web")){
+        datum.setExtend("web", " Undefine");
+      }
+      if(!datum.getExtendData().containsKey("urltype")){
+        datum.setExtend("urltype", " Undefine");
+      }
       Content c;
       int code;
       String html = "";
@@ -127,7 +128,7 @@ public class HttpUtils implements Protocol {
           response = httpClient.execute(http);
         } catch (Exception e) {
           LOG.error("fetch proxy -- url " + url + " error ", e);
-          if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 900, e);
+          if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 900, datum.getExtend("web"),datum.getExtend("urltype"),e);
           http.setConfig(builder.build());
           response = httpClient.execute(http);
         }
@@ -175,7 +176,7 @@ public class HttpUtils implements Protocol {
           response = connection.execute();
         } catch (Exception e) {
           LOG.error("fetch proxy -- url " + url + " error ", e);
-          if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 901, e);
+          if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 901, datum.getExtend("web"),datum.getExtend("urltype"), e);
           connection.proxy(null);
           response = connection.execute();
         }
@@ -186,7 +187,7 @@ public class HttpUtils implements Protocol {
             Maps.newHashMap());
         c.setExtendData(datum.getExtendData());
       }
-      if (ES_ABLE) InfoToEs.getInstance().addHttpResponse(url, code, html);
+      if (ES_ABLE) InfoToEs.getInstance().addHttpResponse(url,datum.getExtend("web"),datum.getExtend("urltype"),code, html);
       if (code == 200) { // got a good response
         return new ProtocolOutput(c); // return it
         
@@ -219,7 +220,7 @@ public class HttpUtils implements Protocol {
       }
     } catch (Exception e) {
       LOG.error("fetch -- url " + url + " error ", e);
-      if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 0, e);
+      if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 0, datum.getExtend("web"),datum.getExtend("urltype"), e);
       return new ProtocolOutput(null, new ProtocolStatus(e));
     }
   }

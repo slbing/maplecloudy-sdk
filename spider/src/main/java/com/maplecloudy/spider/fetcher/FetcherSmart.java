@@ -275,7 +275,7 @@ public class FetcherSmart extends OozieMain implements Tool {
 			LOG.fatal("Fetcher: " + StringUtils.stringifyException(e));
 			return -1;
 		}
-
+		
 	}
 }
 
