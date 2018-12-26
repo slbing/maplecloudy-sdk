@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.http.HttpHost;
@@ -21,6 +24,7 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
+import org.junit.experimental.theories.Theories;
 
 import com.amazonaws.thirdparty.apache.http.client.config.RequestConfig;
 import com.google.common.collect.Lists;
@@ -31,6 +35,8 @@ public class InfoToEs {
   
   private static String ES_IP = "es1.ali.szol.bds.com";
   private final static int ES_PORT = 9200;
+  private static String ES_HOST = "lochost:9200";
+
   
   private final static String ES_INDEX_HTTP_REEOE = "http_error";
   private final static String ES_INDEX_HTTP_RESPONSE = "http_response";
@@ -50,17 +56,38 @@ public class InfoToEs {
   private static List<String> parseResponseList = Lists.newArrayList();
   private static List<String> urlTypeList = Lists.newArrayList();
   
-  private static boolean flag = false;
+  private volatile static boolean flag = false;
   private final static JSONObject json = new JSONObject();
   private final static StringBuffer sb = new StringBuffer();
   private final static List<String> listKey = Lists.newArrayList();
   
   private RestHighLevelClient client;
   private static InfoToEs infoToEs;
+  private Configuration conf;
   
   private InfoToEs() {}
   
-  private InfoToEs(Configuration conf) {}
+  private InfoToEs(Configuration conf) {
+	  this.conf = conf;
+	  String clusterNodes = this.conf.getStrings("es.hosts", ES_HOST)[0];
+      ArrayList<HttpHost> hosts = Lists.newArrayList();
+      for (String clusterNode : clusterNodes.split(",")) {
+        String hostName = clusterNode.split(":")[0];
+        String port = clusterNode.split(":")[1];
+        hosts.add(new HttpHost(hostName, Integer.valueOf(port)));
+      }
+      infoToEs.client = new RestHighLevelClient(
+          RestClient.builder(hosts.toArray(new HttpHost[hosts.size()]))
+              .setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() {
+                @Override
+                public Builder customizeRequestConfig(Builder requestConfigBuilder) {
+            // 请超时
+                    return requestConfigBuilder.setConnectTimeout(5000)
+                        .setSocketTimeout(10000)
+                        .setConnectionRequestTimeout(10000); 
+                }
+            }).setMaxRetryTimeoutMillis(10000));
+  }
   
   public static InfoToEs getInstance() {
     if (infoToEs != null) return infoToEs;
@@ -79,31 +106,11 @@ public class InfoToEs {
     synchronized (OBJECT) {
       if (infoToEs == null) {
         infoToEs = new InfoToEs(conf);
-        String clusterNodes = conf.toString();
-        ArrayList<HttpHost> hosts = Lists.newArrayList();
-        for (String clusterNode : clusterNodes.split(",")) {
-          String hostName = clusterNode.split(":")[0];
-          String port = clusterNode.split(":")[1];
-          hosts.add(new HttpHost(hostName, Integer.valueOf(port)));
-        }
-        infoToEs.client = new RestHighLevelClient(
-            RestClient.builder(hosts.toArray(new HttpHost[hosts.size()]))
-                .setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() {
-                  @Override
-                  public Builder customizeRequestConfig(Builder requestConfigBuilder) {
-              // 请超时
-                      return requestConfigBuilder.setConnectTimeout(1000)
-                          .setSocketTimeout(1000)
-                          .setConnectionRequestTimeout(1000); 
-                  }
-              }).setMaxRetryTimeoutMillis(1000));
       }
     }
     return infoToEs;
     
   }
-  
-  private static String HTTP_ERROR_MODEL = "{\"url\":\"%s\",\"code\":%s,\"error\":\"%s\",\"time\":%s}";
   
   public synchronized void addHttpError(String url, int code,String web, String urltype, Exception e) {
     
@@ -144,8 +151,6 @@ public class InfoToEs {
     }
   }
   
-  private static String PARSE_ERROR_MODEL = "{\"url\":\"%s\",\"web\":\"%s\",\"urltype\":\"%s\",\"error\":\"%s\",\"time\":%s}";
-  
   public synchronized void addParseError(String url,
       Exception e) {
     StackTraceElement[] exceptionStack = e.getStackTrace();
@@ -157,7 +162,7 @@ public class InfoToEs {
       json.put("url", url);
       json.put("error", sb.toString());
       json.put("time", System.currentTimeMillis());
-      httpErrorList.add(json.toString());
+      parseErrorList.add(json.toString());
     } catch (JSONException e2) {
       e2.printStackTrace();
     } finally {
@@ -182,8 +187,8 @@ public class InfoToEs {
       }
     }
   }
-  
-  public synchronized void addParseDetailError(String url, String web, String urlType,
+   
+  public synchronized void addParseError(String url, String web, String urlType,
       Exception e) {
     StackTraceElement[] exceptionStack = e.getStackTrace();
     sb.append(e.getMessage());
@@ -222,8 +227,6 @@ public class InfoToEs {
     }
   }
   
-  private static String HTTP_RESPONSE_MODEL = "{\"url\":\"%s\",\"web\":%s,\"urlType\":%s,\"code\":%s,\"response\":%s,\"time\":%s}";
-  
   public synchronized void addHttpResponse(String url,String web,String urlType, int code,
       String response) {
     try {
@@ -233,7 +236,7 @@ public class InfoToEs {
       json.put("code", code);
       json.put("response", response);
       json.put("time", System.currentTimeMillis());
-      httpErrorList.add(json.toString());
+      httpResponseList.add(json.toString());
     } catch (JSONException e2) {
       e2.printStackTrace();
     } finally {
@@ -264,9 +267,10 @@ public class InfoToEs {
       json.put("url", url);
       json.put("web", web);
       json.put("urltype", urlType);
-      json.put("response", gson.toJson(response));
+      json.put("size", response.size());
+      json.put("response", response.stream().map(e -> gson.toJson(e)).collect(Collectors.toList()));
       json.put("time", System.currentTimeMillis());
-      httpErrorList.add(json.toString());
+      parseResponseList.add(json.toString());
     } catch (JSONException e2) {
       e2.printStackTrace();
     } finally {
@@ -301,11 +305,11 @@ public class InfoToEs {
     
   }
   
-  private static String UTL_TYPE_MODEL = "{\"url\":\"%s\",\"web\":\"%s\",\"type\":\"%s\",\"retry\":%s,\"parse\":\"%s\"}";
+  private static String UTL_TYPE_MODEL = "{\"url\":\"%s\",\"web\":\"%s\",\"type\":\"%s\",\"retry\":%s,\"parse\":\"%s\",\"time\":%s}";
   
   public synchronized void addUrlType(String url, String web, String type,
       String parse) {
-    urlTypeList.add(String.format(UTL_TYPE_MODEL, url, web, type, 1, parse));
+    urlTypeList.add(String.format(UTL_TYPE_MODEL, url, web, type, 1, parse, System.currentTimeMillis()));
     if (urlTypeList.size() >= BULK_SIZE) {
       if (client == null) client = new RestHighLevelClient(
           RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
@@ -399,6 +403,7 @@ public class InfoToEs {
     while (itKey.hasNext()) {
       json.remove(itKey.next());
     }
+    listKey.clear();
     if (sb.length() >= 1) {
       sb.delete(0, sb.length() - 1);
     }
