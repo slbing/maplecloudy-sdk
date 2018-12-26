@@ -24,7 +24,6 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
-import org.junit.experimental.theories.Theories;
 
 import com.amazonaws.thirdparty.apache.http.client.config.RequestConfig;
 import com.google.common.collect.Lists;
