@@ -135,13 +135,12 @@ public class InfoToEs {
       json.put("url", url);
       json.put("error", sb.toString());
       json.put("time", System.currentTimeMillis());
-      httpErrorList.add(json.toString());
+      parseErrorList.add(json.toString());
     } catch (JSONException e2) {
       e2.printStackTrace();
     } finally {
       cleanData();
     }
-    parseErrorList.add(json.toString());
     if (parseErrorList.size() >= BULK_SIZE) {
       if (client == null) client = new RestHighLevelClient(
           RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
@@ -170,13 +169,12 @@ public class InfoToEs {
       json.put("code", code);
       json.put("response", response);
       json.put("time", System.currentTimeMillis());
-      httpErrorList.add(json.toString());
+      httpResponseList.add(json.toString());
     } catch (JSONException e2) {
       e2.printStackTrace();
     } finally {
       cleanData();
     }
-    httpResponseList.add(json.toString());
     if (httpResponseList.size() >= BULK_SIZE / 2) {
       if (client == null) client = new RestHighLevelClient(
           RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
@@ -203,13 +201,12 @@ public class InfoToEs {
       json.put("url", url);
       json.put("response", gson.toJson(response));
       json.put("time", System.currentTimeMillis());
-      httpErrorList.add(json.toString());
+      parseResponseList.add(json.toString());
     } catch (JSONException e2) {
       e2.printStackTrace();
     } finally {
       cleanData();
     }
-    parseResponseList.add(json.toString());
     if (parseResponseList.size() >= BULK_SIZE) {
       if (client == null) client = new RestHighLevelClient(
           RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
