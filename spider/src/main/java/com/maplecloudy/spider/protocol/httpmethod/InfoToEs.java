@@ -5,9 +5,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.http.HttpHost;
@@ -24,18 +22,16 @@ import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.script.Script;
 import org.elasticsearch.script.ScriptType;
-import org.junit.experimental.theories.Theories;
 
-import com.amazonaws.thirdparty.apache.http.client.config.RequestConfig;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 
 public class InfoToEs {
   
-  private static String ES_IP = "es1.ali.szol.bds.com";
+  private final static String ES_IP = "localhost";
   private final static int ES_PORT = 9200;
-  private static String ES_HOST = "lochost:9200";
+  private final static String ES_HOST = "es1.ali.szol.bds.com:9200,es2.ali.szol.bds.com:9200,es1.ali.szol.bds.com:9201,es2.ali.szol.bds.com:9201";
 
   
   private final static String ES_INDEX_HTTP_REEOE = "http_error";
@@ -61,14 +57,36 @@ public class InfoToEs {
   private final static StringBuffer sb = new StringBuffer();
   private final static List<String> listKey = Lists.newArrayList();
   
-  private RestHighLevelClient client;
+  private volatile RestHighLevelClient client;
   private static InfoToEs infoToEs;
-  private Configuration conf;
+  private volatile Configuration conf;
   
   private InfoToEs() {}
   
-  private InfoToEs(Configuration conf) {
-	  this.conf = conf;
+  public static InfoToEs getInstance() {
+    if (infoToEs != null) return infoToEs;
+    synchronized (OBJECT) {
+      if (infoToEs == null) {
+        infoToEs = new InfoToEs();
+      }
+    }
+    return infoToEs;
+  }
+  
+  public static InfoToEs getInstance(Configuration conf) {
+    if (infoToEs != null) return infoToEs;
+    synchronized (OBJECT) {
+      if (infoToEs == null) {
+        infoToEs = new InfoToEs();
+        infoToEs.conf = conf;
+      }
+    }
+    return infoToEs;
+  }
+  
+  public void initClient() {
+	  if (this.client != null) return;
+	  if (this.conf == null) this.conf = new Configuration();
 	  String clusterNodes = this.conf.getStrings("es.hosts", ES_HOST)[0];
       ArrayList<HttpHost> hosts = Lists.newArrayList();
       for (String clusterNode : clusterNodes.split(",")) {
@@ -76,7 +94,7 @@ public class InfoToEs {
         String port = clusterNode.split(":")[1];
         hosts.add(new HttpHost(hostName, Integer.valueOf(port)));
       }
-      infoToEs.client = new RestHighLevelClient(
+      this.client = new RestHighLevelClient(
           RestClient.builder(hosts.toArray(new HttpHost[hosts.size()]))
               .setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() {
                 @Override
@@ -87,29 +105,6 @@ public class InfoToEs {
                         .setConnectionRequestTimeout(10000); 
                 }
             }).setMaxRetryTimeoutMillis(10000));
-  }
-  
-  public static InfoToEs getInstance() {
-    if (infoToEs != null) return infoToEs;
-    synchronized (OBJECT) {
-      if (infoToEs == null) {
-        infoToEs = new InfoToEs();
-        infoToEs.client = new RestHighLevelClient(
-            RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
-      }
-    }
-    return infoToEs;
-  }
-  
-  public static InfoToEs getInstance(Configuration conf) {
-    if (infoToEs != null) return infoToEs;
-    synchronized (OBJECT) {
-      if (infoToEs == null) {
-        infoToEs = new InfoToEs(conf);
-      }
-    }
-    return infoToEs;
-    
   }
   
   public synchronized void addHttpError(String url, int code,String web, String type, String urlType,String pageNum,String deepth, Exception e) {
@@ -136,8 +131,6 @@ public class InfoToEs {
       cleanData();
     }
     if (httpErrorList.size() >= BULK_SIZE) {
-      if (client == null) client = new RestHighLevelClient(
-          RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
       BulkRequest request = new BulkRequest();
       for (String error : httpErrorList) {
         request.add(new IndexRequest(ES_INDEX_HTTP_REEOE, ES_TYPE).source(error,
@@ -149,7 +142,6 @@ public class InfoToEs {
         e1.printStackTrace();
       } finally {
         httpErrorList.clear();
-        // closeClient();
       }
     }
   }
@@ -175,8 +167,6 @@ public class InfoToEs {
     }
     parseErrorList.add(json.toString());
     if (parseErrorList.size() >= BULK_SIZE) {
-      if (client == null) client = new RestHighLevelClient(
-          RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
       BulkRequest request = new BulkRequest();
       for (String error : parseErrorList) {
         request.add(new IndexRequest(ES_INDEX_PARSE_REEOE, ES_TYPE)
@@ -188,7 +178,6 @@ public class InfoToEs {
         e1.printStackTrace();
       } finally {
         parseErrorList.clear();
-        // closeClient();
       }
     }
   }
@@ -213,8 +202,6 @@ public class InfoToEs {
     }
     httpResponseList.add(json.toString());
     if (httpResponseList.size() >= BULK_SIZE / 2) {
-      if (client == null) client = new RestHighLevelClient(
-          RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
       BulkRequest request = new BulkRequest();
       for (String info : httpResponseList) {
         request.add(new IndexRequest(ES_INDEX_HTTP_RESPONSE, ES_TYPE)
@@ -226,7 +213,6 @@ public class InfoToEs {
         e.printStackTrace();
       } finally {
         httpResponseList.clear();
-        // closeClient();
       }
     }
   }
@@ -250,7 +236,6 @@ public class InfoToEs {
     }
     parseResponseList.add(json.toString());
     if (parseResponseList.size() >= BULK_SIZE) {
-      if (client == null) {
         BulkRequest request = new BulkRequest();
         for (String info : parseResponseList) {
           request.add(new IndexRequest(ES_INDEX_PARSE_RESPONSE, ES_TYPE)
@@ -262,9 +247,7 @@ public class InfoToEs {
           e.printStackTrace();
         } finally {
           parseResponseList.clear();
-          // closeClient();
         }
-      }
     }
   }
   
@@ -296,8 +279,6 @@ public class InfoToEs {
 	      cleanData();
 	    }
     if (urlTypeList.size() >= BULK_SIZE) {
-      if (client == null) client = new RestHighLevelClient(
-          RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
       BulkRequest request = new BulkRequest();
       for (String info : urlTypeList) {
         Map<String,Object> parameters = Maps.newHashMap();
@@ -317,7 +298,6 @@ public class InfoToEs {
         e.printStackTrace();
       } finally {
         urlTypeList.clear();
-        // closeClient();
       }
     }
   }
@@ -325,8 +305,6 @@ public class InfoToEs {
   public synchronized void cleanUp() {
     if (client == null) return;
     if (flag) return;
-    // client = new RestHighLevelClient(
-    // RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
     BulkRequest request = new BulkRequest();
     for (String info : parseResponseList) {
       request.add(new IndexRequest(ES_INDEX_PARSE_RESPONSE, ES_TYPE)
@@ -379,8 +357,7 @@ public class InfoToEs {
   }
   
   private void cleanData() {
-    Iterator keys = json.keys();
-    
+    Iterator<?> keys = json.keys();
     while (keys.hasNext()) {
       listKey.add((String) keys.next());
     }

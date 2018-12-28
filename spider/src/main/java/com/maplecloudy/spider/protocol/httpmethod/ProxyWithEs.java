@@ -12,6 +12,7 @@ import java.util.TimerTask;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.http.HttpHost;
+import org.codehaus.jettison.json.JSONObject;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
@@ -192,14 +193,7 @@ public class ProxyWithEs {
     }
   }
   
-  /*
-   * @param ip2port : 最大为1000；内容为：127.0.0.1:9200
-   */
-  public boolean proxyToEs(List<String> ip2portList) {
-//		if (ip2portList.size() > 1000) {
-//			System.out.println(" proxy size > 1000 ; please control size in 1000");
-//			return false;
-//		}
+  public void proxyToEs(List<String> ip2portList) {
     client = new RestHighLevelClient(
         RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
     BulkRequest request = new BulkRequest();
@@ -211,13 +205,11 @@ public class ProxyWithEs {
     }
     try {
       client.bulk(request, RequestOptions.DEFAULT);
-//			BulkResponse response = client.bulk(request, RequestOptions.DEFAULT);
     } catch (Exception e) {
       e.printStackTrace();
     } finally {
       closeClient();
     }
-    return true;
   }
   
   private void closeClient() {
@@ -249,8 +241,11 @@ public class ProxyWithEs {
   }
   
   public static void main(String[] args)
-      throws IOException, InterruptedException {
-    ProxyWithEs.getInstance().proxyToEs(Arrays.asList("123.145.89.2:920"));
+      throws Exception, InterruptedException {
+	  JSONObject jsonObject = new JSONObject();
+	  jsonObject.put("url", "rereff");
+	  jsonObject.put("web", "ewe");
+	  System.out.println(jsonObject.toString().split("url\":\"")[1].split("\",\"web")[0]);
   }
   
 }
