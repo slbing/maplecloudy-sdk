@@ -3,6 +3,7 @@ package com.maplecloudy.spider.fetcher;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.logging.Log;
@@ -245,6 +246,12 @@ public class FetcherWithParse extends OozieMain implements Tool {
         content.addMetadata(Spider.FETCH_STATUS_KEY, String.valueOf(status));
         content.setExtendData(datum.getExtendData());
       }
+      Map<String, String> map = content.getExtendData();
+      String web = map.containsKey("web") ? map.get("web") : "DEFAULT";
+      String type = map.containsKey("type") ? map.get("type") : "DEFAULT";
+      String urlType = map.containsKey("urlType") ? map.get("urlType") : "DEFAULT";
+      String pageNum = map.containsKey("pageNum") ? map.get("pageNum") : "1";
+      String deepth = map.containsKey("deepth") ? map.get("deepth") : "1";
       
       try {
         outer.write(key, new UnionData(datum));
@@ -257,13 +264,12 @@ public class FetcherWithParse extends OozieMain implements Tool {
           if(!content.getExtendData().containsKey("urltype")){
             content.setExtend("urltype", " Undefine");
           }
-          InfoToEs.getInstance().addUrlType(key, content.getExtend("web"), content.getExtend("urltype"),
-              content.getExtend("parse_class"));
+          InfoToEs.getInstance().addUrlType(key, web,type,urlType,pageNum,deepth,content.getExtend("parse_class"));
           Parse parse = new ParserFactory().getParsers(key, content);
           try {
             List<Object> pd = parse.parse(key, content);
             if (HttpUtils.ES_ABLE)
-              InfoToEs.getInstance().addParseResponse(key, content.getExtend("web"),content.getExtend("urltype"),pd);
+              InfoToEs.getInstance().addParseResponse(key, web,type,urlType,pageNum,deepth,pd);
             for (Object o : pd) {
               if (o instanceof Outlink) {
                 if (((Outlink) o).getExtend("fetch_right_now") != null && "true"

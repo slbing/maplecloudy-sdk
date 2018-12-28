@@ -111,7 +111,7 @@ public class InfoToEs {
     
   }
   
-  public synchronized void addHttpError(String url, int code,String web, String urltype, Exception e) {
+  public synchronized void addHttpError(String url, int code,String web, String type, String urlType,String pageNum,String deepth, Exception e) {
     
     StackTraceElement[] exceptionStack = e.getStackTrace();
     sb.append(e.getMessage());
@@ -122,7 +122,10 @@ public class InfoToEs {
       json.put("url", url);
       json.put("code", code);
       json.put("web", web);
-      json.put("urltype", urltype);
+      json.put("type", type);
+      json.put("urltype", urlType);
+      json.put("pageNum", Integer.valueOf(pageNum));
+      json.put("deepth", Integer.valueOf(deepth));
       json.put("error", sb.toString());
       json.put("time", System.currentTimeMillis());
       httpErrorList.add(json.toString());
@@ -150,44 +153,7 @@ public class InfoToEs {
     }
   }
   
-  public synchronized void addParseError(String url,
-      Exception e) {
-    StackTraceElement[] exceptionStack = e.getStackTrace();
-    sb.append(e.getMessage());
-    for (StackTraceElement ste : exceptionStack) {
-      sb.append("     @     " + ste);
-    }
-    try {
-      json.put("url", url);
-      json.put("error", sb.toString());
-      json.put("time", System.currentTimeMillis());
-      parseErrorList.add(json.toString());
-    } catch (JSONException e2) {
-      e2.printStackTrace();
-    } finally {
-      cleanData();
-    }
-    if (parseErrorList.size() >= BULK_SIZE) {
-      if (client == null) client = new RestHighLevelClient(
-          RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
-      BulkRequest request = new BulkRequest();
-      for (String error : parseErrorList) {
-        request.add(new IndexRequest(ES_INDEX_PARSE_REEOE, ES_TYPE)
-            .source(error, XContentType.JSON));
-      }
-      try {
-        client.bulk(request, RequestOptions.DEFAULT);
-      } catch (Exception e1) {
-        e1.printStackTrace();
-      } finally {
-        parseErrorList.clear();
-        // closeClient();
-      }
-    }
-  }
-   
-  public synchronized void addParseError(String url, String web, String urlType,
-      Exception e) {
+  public synchronized void addParseError(String url,String web, String type, String urlType, Exception e) {
     StackTraceElement[] exceptionStack = e.getStackTrace();
     sb.append(e.getMessage());
     for (StackTraceElement ste : exceptionStack) {
@@ -196,6 +162,7 @@ public class InfoToEs {
     try {
       json.put("url", url);
       json.put("web", web);
+      json.put("type", type);
       json.put("urltype", urlType);
       json.put("error", sb.toString());
       json.put("time", System.currentTimeMillis());
@@ -225,12 +192,15 @@ public class InfoToEs {
     }
   }
   
-  public synchronized void addHttpResponse(String url,String web,String urlType, int code,
+  public synchronized void addHttpResponse(String url, int code,String web, String type, String urlType,String pageNum,String deepth,
       String response) {
     try {
       json.put("url", url);
       json.put("web", web);
+      json.put("type", type);
       json.put("urltype", urlType);
+      json.put("pageNum", Integer.valueOf(pageNum));
+      json.put("deepth", Integer.valueOf(deepth));
       json.put("code", code);
       json.put("response", response);
       json.put("time", System.currentTimeMillis());
@@ -259,11 +229,14 @@ public class InfoToEs {
     }
   }
   
-  public synchronized void addParseResponse(String url,String web,String urlType, List<Object> response) {
+  public synchronized void addParseResponse(String url,String web, String type, String urlType,String pageNum,String deepth, List<Object> response) {
     try {
       json.put("url", url);
       json.put("web", web);
+      json.put("type", type);
       json.put("urltype", urlType);
+      json.put("pageNum", Integer.valueOf(pageNum));
+      json.put("deepth", Integer.valueOf(deepth));
       json.put("size", response.size());
       json.put("response", response.stream().map(e -> gson.toJson(e)).collect(Collectors.toList()));
       json.put("time", System.currentTimeMillis());
@@ -301,11 +274,24 @@ public class InfoToEs {
     
   }
   
-  private static String UTL_TYPE_MODEL = "{\"url\":\"%s\",\"web\":\"%s\",\"type\":\"%s\",\"retry\":%s,\"parse\":\"%s\",\"time\":%s}";
-  
-  public synchronized void addUrlType(String url, String web, String type,
+  public synchronized void addUrlType(String url, String web, String type, String urlType,String pageNum,String deepth,
       String parse) {
-    urlTypeList.add(String.format(UTL_TYPE_MODEL, url, web, type, 1, parse, System.currentTimeMillis()));
+	  try {
+	      json.put("url", url);
+	      json.put("web", web);
+	      json.put("type", type);
+	      json.put("urltype", urlType);
+	      json.put("pageNum", Integer.valueOf(pageNum));
+	      json.put("deepth", Integer.valueOf(deepth));
+	      json.put("parse", parse);
+	      json.put("retry", 1);
+	      json.put("time", System.currentTimeMillis());
+	      urlTypeList.add(json.toString());
+	    } catch (JSONException e2) {
+	      e2.printStackTrace();
+	    } finally {
+	      cleanData();
+	    }
     if (urlTypeList.size() >= BULK_SIZE) {
       if (client == null) client = new RestHighLevelClient(
           RestClient.builder(new HttpHost(ES_IP, ES_PORT, "http")));
