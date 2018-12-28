@@ -57,8 +57,8 @@ public class ProxyWithEs {
   private static Map<String,Integer> proxyScore = Maps.newHashMap();
   private static Random random = new Random();
   
-  private static boolean flag = false;
-  private static boolean flag2 = true;
+  private static volatile boolean flag = false;
+  private static volatile boolean flag2 = true;
   
   private Timer timer;
   
