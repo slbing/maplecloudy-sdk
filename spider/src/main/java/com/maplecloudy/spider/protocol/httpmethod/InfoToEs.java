@@ -33,7 +33,6 @@ public class InfoToEs {
   private final static String ES_IP = "localhost";
   private final static int ES_PORT = 9200;
   private final static String ES_HOST = "es1.ali.szol.bds.com:9200,es2.ali.szol.bds.com:9200";
-
   
   private final static String ES_INDEX_HTTP_REEOE = "http_error";
   private final static String ES_INDEX_HTTP_RESPONSE = "http_response";
@@ -85,29 +84,33 @@ public class InfoToEs {
   }
   
   public void initClient() {
-	  if (this.client != null) return;
-	  if (this.conf == null) this.conf = new Configuration();
-	  String clusterNodes = this.conf.getStrings("es.hosts", ES_HOST)[0];
-      ArrayList<HttpHost> hosts = Lists.newArrayList();
-      for (String clusterNode : clusterNodes.split(",")) {
-        String hostName = clusterNode.split(":")[0];
-        String port = clusterNode.split(":")[1];
-        hosts.add(new HttpHost(hostName, Integer.valueOf(port)));
-      }
-      this.client = new RestHighLevelClient(
-          RestClient.builder(hosts.toArray(new HttpHost[hosts.size()]))
-              .setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() {
-                @Override
-                public Builder customizeRequestConfig(Builder requestConfigBuilder) {
-            // 请超时
+    if (this.client != null) return;
+    if (this.conf == null) this.conf = new Configuration();
+    String clusterNodes = this.conf.getStrings("es.hosts", ES_HOST)[0];
+    ArrayList<HttpHost> hosts = Lists.newArrayList();
+    for (String clusterNode : clusterNodes.split(",")) {
+      String hostName = clusterNode.split(":")[0];
+      String port = clusterNode.split(":")[1];
+      hosts.add(new HttpHost(hostName, Integer.valueOf(port)));
+    }
+    this.client = new RestHighLevelClient(
+        RestClient.builder(hosts.toArray(new HttpHost[hosts.size()]))
+            .setRequestConfigCallback(
+                new RestClientBuilder.RequestConfigCallback() {
+                  @Override
+                  public Builder customizeRequestConfig(
+                      Builder requestConfigBuilder) {
+                    // 请超时
                     return requestConfigBuilder.setConnectTimeout(5000)
                         .setSocketTimeout(10000)
-                        .setConnectionRequestTimeout(10000); 
-                }
-            }).setMaxRetryTimeoutMillis(10000));
+                        .setConnectionRequestTimeout(10000);
+                  }
+                })
+            .setMaxRetryTimeoutMillis(10000));
   }
   
-  public synchronized void addHttpError(String url, int code,String web, String type, String urlType,String pageNum,String deepth, Exception e) {
+  public synchronized void addHttpError(String url, int code, String web,
+      String type, String urlType, String pageNum, String deepth, Exception e) {
     
     try {
       json.put("url", url);
@@ -132,7 +135,7 @@ public class InfoToEs {
             XContentType.JSON));
       }
       try {
-    	  this.client.bulk(request, RequestOptions.DEFAULT);
+        this.client.bulk(request, RequestOptions.DEFAULT);
       } catch (Exception e1) {
         e1.printStackTrace();
       } finally {
@@ -141,7 +144,8 @@ public class InfoToEs {
     }
   }
   
-  public synchronized void addParseError(String url,String web, String type, String urlType, Exception e) {
+  public synchronized void addParseError(String url, String web, String type,
+      String urlType, Exception e) {
     try {
       json.put("url", url);
       json.put("web", web);
@@ -163,7 +167,7 @@ public class InfoToEs {
             .source(error, XContentType.JSON));
       }
       try {
-    	  this.client.bulk(request, RequestOptions.DEFAULT);
+        this.client.bulk(request, RequestOptions.DEFAULT);
       } catch (Exception e1) {
         e1.printStackTrace();
       } finally {
@@ -172,7 +176,8 @@ public class InfoToEs {
     }
   }
   
-  public synchronized void addHttpResponse(String url, int code,String web, String type, String urlType,String pageNum,String deepth,
+  public synchronized void addHttpResponse(String url, int code, String web,
+      String type, String urlType, String pageNum, String deepth,
       String response) {
     try {
       json.put("url", url);
@@ -206,7 +211,8 @@ public class InfoToEs {
     }
   }
   
-  public synchronized void addParseResponse(String url,String web, String type, String urlType,String pageNum,String deepth, List<Object> response) {
+  public synchronized void addParseResponse(String url, String web, String type,
+      String urlType, String pageNum, String deepth, List<Object> response) {
     try {
       json.put("url", url);
       json.put("web", web);
@@ -215,7 +221,8 @@ public class InfoToEs {
       json.put("pageNum", Integer.valueOf(pageNum));
       json.put("deepth", Integer.valueOf(deepth));
       json.put("size", response.size());
-      json.put("response", response.stream().map(e -> gson.toJson(e)).collect(Collectors.toList()));
+      json.put("response", response.stream().map(e -> gson.toJson(e))
+          .collect(Collectors.toList()));
       json.put("time", System.currentTimeMillis());
       parseResponseList.add(json.toString());
     } catch (JSONException e2) {
@@ -224,18 +231,18 @@ public class InfoToEs {
       cleanData();
     }
     if (parseResponseList.size() >= BULK_SIZE) {
-        BulkRequest request = new BulkRequest();
-        for (String info : parseResponseList) {
-          request.add(new IndexRequest(ES_INDEX_PARSE_RESPONSE, ES_TYPE)
-              .source(info, XContentType.JSON));
-        }
-        try {
-           this.client.bulk(request, RequestOptions.DEFAULT);
-        } catch (Exception e) {
-          e.printStackTrace();
-        } finally {
-          parseResponseList.clear();
-        }
+      BulkRequest request = new BulkRequest();
+      for (String info : parseResponseList) {
+        request.add(new IndexRequest(ES_INDEX_PARSE_RESPONSE, ES_TYPE)
+            .source(info, XContentType.JSON));
+      }
+      try {
+        this.client.bulk(request, RequestOptions.DEFAULT);
+      } catch (Exception e) {
+        e.printStackTrace();
+      } finally {
+        parseResponseList.clear();
+      }
     }
   }
   
@@ -248,24 +255,24 @@ public class InfoToEs {
     
   }
   
-  public synchronized void addUrlType(String url, String web, String type, String urlType,String pageNum,String deepth,
-      String parse) {
-	  try {
-	      json.put("url", url);
-	      json.put("web", web);
-	      json.put("type", type);
-	      json.put("urltype", urlType);
-	      json.put("pageNum", Integer.valueOf(pageNum));
-	      json.put("deepth", Integer.valueOf(deepth));
-	      json.put("parse", parse);
-	      json.put("retry", 1);
-	      json.put("time", System.currentTimeMillis());
-	      urlTypeList.add(json.toString());
-	    } catch (JSONException e2) {
-	      e2.printStackTrace();
-	    } finally {
-	      cleanData();
-	    }
+  public synchronized void addUrlType(String url, String web, String type,
+      String urlType, String pageNum, String deepth, String parse) {
+    try {
+      json.put("url", url);
+      json.put("web", web);
+      json.put("type", type);
+      json.put("urltype", urlType);
+      json.put("pageNum", Integer.valueOf(pageNum));
+      json.put("deepth", Integer.valueOf(deepth));
+      json.put("parse", parse);
+      json.put("retry", 1);
+      json.put("time", System.currentTimeMillis());
+      urlTypeList.add(json.toString());
+    } catch (JSONException e2) {
+      e2.printStackTrace();
+    } finally {
+      cleanData();
+    }
     if (urlTypeList.size() >= BULK_SIZE) {
       BulkRequest request = new BulkRequest();
       for (String info : urlTypeList) {
@@ -281,7 +288,7 @@ public class InfoToEs {
                 .script(inline));
       }
       try {
-    	  this.client.bulk(request, RequestOptions.DEFAULT);
+        this.client.bulk(request, RequestOptions.DEFAULT);
       } catch (Exception e) {
         e.printStackTrace();
       } finally {
@@ -323,7 +330,8 @@ public class InfoToEs {
               .script(inline));
     }
     try {
-    	this.client.bulk(request, RequestOptions.DEFAULT);
+      if (!request.requests().isEmpty())
+        this.client.bulk(request, RequestOptions.DEFAULT);
     } catch (Exception e) {
       e.printStackTrace();
     } finally {
@@ -338,7 +346,10 @@ public class InfoToEs {
   
   private void closeClient() {
     try {
-      client.close();
+      if (client != null) {
+        client.close();
+        client = null;
+      }
     } catch (IOException e) {
       e.printStackTrace();
     }

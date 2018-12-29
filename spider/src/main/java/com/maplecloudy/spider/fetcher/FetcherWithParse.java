@@ -145,55 +145,55 @@ public class FetcherWithParse extends OozieMain implements Tool {
     
     @Override
     public void cleanup(Context context)
-    		throws IOException, InterruptedException {
+        throws IOException, InterruptedException {
       int k = 1;
       try {
-    	  while (k++ < 50000 && !parseQueue.isEmpty()) {
-    	        Outlink o = parseQueue.poll();
-    	        CrawlDatum crawlDatum = new CrawlDatum();
-    	        crawlDatum.setExtendData(o.getExtend());
-    	        try {
-    	          if (LOG.isInfoEnabled()) {
-    	            LOG.info("fetching " + o.url);
-    	          }
-    	          Protocol protocol = this.protocolFactory.getProtocol(o.getUrl());
-    	          
-    	          ProtocolOutput output = protocol.getProtocolOutput(o.getUrl(),
-    	              crawlDatum);
-    	          ProtocolStatus status = output.getStatus();
-    	          Content content = output.getContent();
-    	          
-    	          switch (status.getCode()) {
-    	            
-    	            case ProtocolStatus.SUCCESS: // got a page
-    	              output(o.getUrl(), crawlDatum, content,
-    	                  CrawlDatum.STATUS_FETCH_SUCCESS);
-    	              updateStatus(content.getContent().length);
-    	              
-    	              break;
-    	            
-    	            default:
-    	              if (LOG.isWarnEnabled()) {
-    	                LOG.warn("ProtocolStatus: " + status.getName());
-    	              }
-    	              output(o.getUrl(), crawlDatum, null,
-    	                  CrawlDatum.STATUS_FETCH_RETRY);
-    	              logError(o.getUrl(), "" + status.getName());
-    	          }
-    	          
-    	        } catch (Throwable t) { // unexpected exception
-    	          logError(o.getUrl().toString(), t.toString());
-    	          t.printStackTrace();
-    	          output(o.getUrl(), crawlDatum, null, CrawlDatum.STATUS_FETCH_RETRY);
-    	        }
-    	      }
-	} catch (Exception e) {
-		e.printStackTrace();
-	} finally {
-		ProxyWithEs.getInstance().close();
-	      InfoToEs.getInstance().cleanUp();
-	      super.cleanup(context);
-	}
+        while (k++ < 50000 && !parseQueue.isEmpty()) {
+          Outlink o = parseQueue.poll();
+          CrawlDatum crawlDatum = new CrawlDatum();
+          crawlDatum.setExtendData(o.getExtend());
+          try {
+            if (LOG.isInfoEnabled()) {
+              LOG.info("fetching " + o.url);
+            }
+            Protocol protocol = this.protocolFactory.getProtocol(o.getUrl());
+            
+            ProtocolOutput output = protocol.getProtocolOutput(o.getUrl(),
+                crawlDatum);
+            ProtocolStatus status = output.getStatus();
+            Content content = output.getContent();
+            
+            switch (status.getCode()) {
+              
+              case ProtocolStatus.SUCCESS: // got a page
+                output(o.getUrl(), crawlDatum, content,
+                    CrawlDatum.STATUS_FETCH_SUCCESS);
+                updateStatus(content.getContent().length);
+                
+                break;
+              
+              default:
+                if (LOG.isWarnEnabled()) {
+                  LOG.warn("ProtocolStatus: " + status.getName());
+                }
+                output(o.getUrl(), crawlDatum, null,
+                    CrawlDatum.STATUS_FETCH_RETRY);
+                logError(o.getUrl(), "" + status.getName());
+            }
+            
+          } catch (Throwable t) { // unexpected exception
+            logError(o.getUrl().toString(), t.toString());
+            t.printStackTrace();
+            output(o.getUrl(), crawlDatum, null, CrawlDatum.STATUS_FETCH_RETRY);
+          }
+        }
+      } catch (Exception e) {
+        e.printStackTrace();
+      } finally {
+        ProxyWithEs.getInstance().close();
+        InfoToEs.getInstance().cleanUp();
+        super.cleanup(context);
+      }
       
     }
     
@@ -254,7 +254,8 @@ public class FetcherWithParse extends OozieMain implements Tool {
                       content.getExtend(Spider.PARSE_CLASS));
                   parseQueue.add((Outlink) o);
                 } else {
-                  ((Outlink) o).addExtend(datum.getExtendData());
+                  ((Outlink) o).addExtend(Spider.PARSE_CLASS,
+                      content.getExtend(Spider.PARSE_CLASS));
                   outer.write(((Outlink) o).getUrl(),
                       new UnionData(((Outlink) o)));
                 }
