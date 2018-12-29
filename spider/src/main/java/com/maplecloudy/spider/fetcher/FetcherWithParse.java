@@ -94,19 +94,9 @@ public class FetcherWithParse extends OozieMain implements Tool {
     private ProtocolFactory protocolFactory;
     Context outer;
     private String segmentName;
-//    private long start = System.currentTimeMillis(); // start time of
-    // fetcher
     private boolean storingContent;
     private boolean parsing;
     private static final LinkedBlockingQueue<Outlink> parseQueue = new LinkedBlockingQueue<>();
-    
-//    private String web = "weibo";
-//    private ConcurrentLinkedDeque<Outlink> nowFetcQueue = new ConcurrentLinkedDeque<Outlink>();
-//    private String previousUrl = "^";
-    
-    private long setUpTime;
-    
-    private final static long FIVE_MIN = 5 * 60 * 1000;
     
     protected void setup(Context context)
         throws IOException, InterruptedException {
@@ -117,27 +107,14 @@ public class FetcherWithParse extends OozieMain implements Tool {
       storingContent = FetcherWithParse
           .isStoringContent(context.getConfiguration());
       parsing = FetcherWithParse.isParsing(context.getConfiguration());
-      this.setUpTime = System.currentTimeMillis();
       ProxyWithEs.getInstance().setUp();
+     InfoToEs.getInstance(context.getConfiguration()).initClient();
     }
     
     @Override
     protected void map(String key, CrawlDatum value, Context context)
         throws IOException, InterruptedException {
-      // url may be changed through redirects.
-      // CrawlDatum value = new CrawlDatum(val);
       try {
-//        if (LOG.isInfoEnabled()) {
-//          LOG.info("fetching " + key);
-//        }
-//        if (key.contains(web) ) {
-//        	if(previousUrl.contains(web)) {
-//				Thread.sleep(1000);
-//				previousUrl = key;
-//			}
-//        }
-//        previousUrl = key;
-        
         Protocol protocol = this.protocolFactory.getProtocol(key);
         ProtocolOutput output = protocol.getProtocolOutput(key, value);
         ProtocolStatus status = output.getStatus();
@@ -236,12 +213,9 @@ public class FetcherWithParse extends OozieMain implements Tool {
     
     private void output(String key, CrawlDatum datum, Content content,
         int status) throws InterruptedException {
-//      System.out.println(gson.toJson(datum));
       datum.setStatus(status);
       datum.setFetchTime(System.currentTimeMillis());
-      
       if (content != null) {
-        
         content.addMetadata(Spider.SEGMENT_NAME_KEY, segmentName);
         content.addMetadata(Spider.FETCH_STATUS_KEY, String.valueOf(status));
         content.setExtendData(datum.getExtendData());
@@ -258,12 +232,6 @@ public class FetcherWithParse extends OozieMain implements Tool {
         if (content != null && storingContent)
           outer.write(key, new UnionData(content));
         if (content != null && parsing) {
-          if(!content.getExtendData().containsKey("web")){
-            content.setExtend("web", " Undefine");
-          }
-          if(!content.getExtendData().containsKey("urltype")){
-            content.setExtend("urltype", " Undefine");
-          }
           InfoToEs.getInstance().addUrlType(key, web,type,urlType,pageNum,deepth,content.getExtend("parse_class"));
           Parse parse = new ParserFactory().getParsers(key, content);
           try {
