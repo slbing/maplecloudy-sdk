@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.util.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig.Builder;
 import org.codehaus.jettison.json.JSONException;
@@ -31,7 +32,7 @@ public class InfoToEs {
   
   private final static String ES_IP = "localhost";
   private final static int ES_PORT = 9200;
-  private final static String ES_HOST = "es1.ali.szol.bds.com:9200,es2.ali.szol.bds.com:9200,es1.ali.szol.bds.com:9201,es2.ali.szol.bds.com:9201";
+  private final static String ES_HOST = "es1.ali.szol.bds.com:9200,es2.ali.szol.bds.com:9200";
 
   
   private final static String ES_INDEX_HTTP_REEOE = "http_error";
@@ -54,7 +55,6 @@ public class InfoToEs {
   
   private volatile static boolean flag = false;
   private final static JSONObject json = new JSONObject();
-  private final static StringBuffer sb = new StringBuffer();
   private final static List<String> listKey = Lists.newArrayList();
   
   private volatile RestHighLevelClient client;
@@ -109,11 +109,6 @@ public class InfoToEs {
   
   public synchronized void addHttpError(String url, int code,String web, String type, String urlType,String pageNum,String deepth, Exception e) {
     
-    StackTraceElement[] exceptionStack = e.getStackTrace();
-    sb.append(e.getMessage());
-    for (StackTraceElement ste : exceptionStack) {
-      sb.append("     @      " + ste);
-    }
     try {
       json.put("url", url);
       json.put("code", code);
@@ -122,7 +117,7 @@ public class InfoToEs {
       json.put("urltype", urlType);
       json.put("pageNum", Integer.valueOf(pageNum));
       json.put("deepth", Integer.valueOf(deepth));
-      json.put("error", sb.toString());
+      json.put("error", StringUtils.stringifyException(e));
       json.put("time", System.currentTimeMillis());
       httpErrorList.add(json.toString());
     } catch (JSONException e2) {
@@ -137,7 +132,7 @@ public class InfoToEs {
             XContentType.JSON));
       }
       try {
-        client.bulk(request, RequestOptions.DEFAULT);
+    	  this.client.bulk(request, RequestOptions.DEFAULT);
       } catch (Exception e1) {
         e1.printStackTrace();
       } finally {
@@ -147,17 +142,12 @@ public class InfoToEs {
   }
   
   public synchronized void addParseError(String url,String web, String type, String urlType, Exception e) {
-    StackTraceElement[] exceptionStack = e.getStackTrace();
-    sb.append(e.getMessage());
-    for (StackTraceElement ste : exceptionStack) {
-      sb.append("     @     " + ste);
-    }
     try {
       json.put("url", url);
       json.put("web", web);
       json.put("type", type);
       json.put("urltype", urlType);
-      json.put("error", sb.toString());
+      json.put("error", StringUtils.stringifyException(e));
       json.put("time", System.currentTimeMillis());
       parseErrorList.add(json.toString());
     } catch (JSONException e2) {
@@ -173,7 +163,7 @@ public class InfoToEs {
             .source(error, XContentType.JSON));
       }
       try {
-        client.bulk(request, RequestOptions.DEFAULT);
+    	  this.client.bulk(request, RequestOptions.DEFAULT);
       } catch (Exception e1) {
         e1.printStackTrace();
       } finally {
@@ -207,7 +197,7 @@ public class InfoToEs {
             .source(info, XContentType.JSON));
       }
       try {
-        client.bulk(request, RequestOptions.DEFAULT);
+        this.client.bulk(request, RequestOptions.DEFAULT);
       } catch (Exception e) {
         e.printStackTrace();
       } finally {
@@ -240,7 +230,7 @@ public class InfoToEs {
               .source(info, XContentType.JSON));
         }
         try {
-          client.bulk(request, RequestOptions.DEFAULT);
+           this.client.bulk(request, RequestOptions.DEFAULT);
         } catch (Exception e) {
           e.printStackTrace();
         } finally {
@@ -291,7 +281,7 @@ public class InfoToEs {
                 .script(inline));
       }
       try {
-        client.bulk(request, RequestOptions.DEFAULT);
+    	  this.client.bulk(request, RequestOptions.DEFAULT);
       } catch (Exception e) {
         e.printStackTrace();
       } finally {
@@ -333,7 +323,7 @@ public class InfoToEs {
               .script(inline));
     }
     try {
-      client.bulk(request, RequestOptions.DEFAULT);
+    	this.client.bulk(request, RequestOptions.DEFAULT);
     } catch (Exception e) {
       e.printStackTrace();
     } finally {
@@ -364,9 +354,6 @@ public class InfoToEs {
       json.remove(itKey.next());
     }
     listKey.clear();
-    if (sb.length() >= 1) {
-      sb.delete(0, sb.length() - 1);
-    }
   }
   
 }

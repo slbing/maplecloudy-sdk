@@ -11,6 +11,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
 import org.apache.http.HttpHost;
 import org.codehaus.jettison.json.JSONObject;
 import org.elasticsearch.action.bulk.BulkRequest;
