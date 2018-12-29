@@ -108,7 +108,7 @@ public class FetcherWithParse extends OozieMain implements Tool {
           .isStoringContent(context.getConfiguration());
       parsing = FetcherWithParse.isParsing(context.getConfiguration());
       ProxyWithEs.getInstance().setUp();
-     InfoToEs.getInstance(context.getConfiguration()).initClient();
+      InfoToEs.getInstance(context.getConfiguration()).initClient();
     }
     
     @Override
@@ -220,10 +220,11 @@ public class FetcherWithParse extends OozieMain implements Tool {
         content.addMetadata(Spider.FETCH_STATUS_KEY, String.valueOf(status));
         content.setExtendData(datum.getExtendData());
       }
-      Map<String, String> map = content.getExtendData();
+      Map<String,String> map = datum.getExtendData();
       String web = map.containsKey("web") ? map.get("web") : "DEFAULT";
       String type = map.containsKey("type") ? map.get("type") : "DEFAULT";
-      String urlType = map.containsKey("urlType") ? map.get("urlType") : "DEFAULT";
+      String urlType = map.containsKey("urlType") ? map.get("urlType")
+          : "DEFAULT";
       String pageNum = map.containsKey("pageNum") ? map.get("pageNum") : "1";
       String deepth = map.containsKey("deepth") ? map.get("deepth") : "1";
       
@@ -232,12 +233,13 @@ public class FetcherWithParse extends OozieMain implements Tool {
         if (content != null && storingContent)
           outer.write(key, new UnionData(content));
         if (content != null && parsing) {
-          InfoToEs.getInstance().addUrlType(key, web,type,urlType,pageNum,deepth,content.getExtend("parse_class"));
+          InfoToEs.getInstance().addUrlType(key, web, type, urlType, pageNum,
+              deepth, content.getExtend("parse_class"));
           Parse parse = new ParserFactory().getParsers(key, content);
           try {
             List<Object> pd = parse.parse(key, content);
-            if (HttpUtils.ES_ABLE)
-              InfoToEs.getInstance().addParseResponse(key, web,type,urlType,pageNum,deepth,pd);
+            if (HttpUtils.ES_ABLE) InfoToEs.getInstance().addParseResponse(key,
+                web, type, urlType, pageNum, deepth, pd);
             for (Object o : pd) {
               if (o instanceof Outlink) {
                 if (((Outlink) o).getExtend("fetch_right_now") != null && "true"
