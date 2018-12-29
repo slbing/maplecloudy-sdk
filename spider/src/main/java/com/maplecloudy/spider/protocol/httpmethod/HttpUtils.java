@@ -237,18 +237,11 @@ public class HttpUtils implements Protocol {
   }
   
   public static void main(String[] args) throws Exception {
-    RestHighLevelClient client = new RestHighLevelClient(
-        RestClient.builder(new HttpHost("localhost", 9200, "http")));
-    BulkRequest request = new BulkRequest();
-    Map<String,Object> parameters = Maps.newHashMap();
-    parameters.put("retry", 1);
-    Script inline = new Script(ScriptType.INLINE, "painless",
-        "ctx._source.retry+= params.retry", parameters);
-    request.add(new UpdateRequest("urltype", "_doc", "wwwe.ee")
-        .upsert("{\"url\":\"wwwe.ee\",\"retry\":1}", XContentType.JSON)
-        .id("wwwe.ee").script(inline));
-    client.bulk(request, RequestOptions.DEFAULT);
-    client.close();
+    InfoToEs.getInstance(new Configuration()).initClient();
+    for (int i = 0; i < 600; i++) {
+        InfoToEs.getInstance().addHttpError("dde", 1, "2", "3", "4", "5", "6", new Exception("e"));
+	}
+    InfoToEs.getInstance().cleanUp();
   }
   
 }
