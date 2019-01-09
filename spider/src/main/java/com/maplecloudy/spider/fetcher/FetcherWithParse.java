@@ -107,7 +107,7 @@ public class FetcherWithParse extends OozieMain implements Tool {
       storingContent = FetcherWithParse
           .isStoringContent(context.getConfiguration());
       parsing = FetcherWithParse.isParsing(context.getConfiguration());
-      ProxyWithEs.getInstance().setUp();
+      ProxyWithEs.getInstance().setUp(true);
      InfoToEs.getInstance(context.getConfiguration()).initClient();
     }
     
@@ -226,7 +226,7 @@ public class FetcherWithParse extends OozieMain implements Tool {
         content.addMetadata(Spider.FETCH_STATUS_KEY, String.valueOf(status));
         content.setExtendData(datum.getExtendData());
       }
-      Map<String, String> map = content.getExtendData();
+      Map<String, String> map = datum.getExtendData();
       String web = map.containsKey("web") ? map.get("web") : "DEFAULT";
       String type = map.containsKey("type") ? map.get("type") : "DEFAULT";
       String urlType = map.containsKey("urlType") ? map.get("urlType") : "DEFAULT";
@@ -252,7 +252,8 @@ public class FetcherWithParse extends OozieMain implements Tool {
                       content.getExtend(Spider.PARSE_CLASS));
                   parseQueue.add((Outlink) o);
                 } else {
-                  ((Outlink) o).addExtend(datum.getExtendData());
+                  ((Outlink) o).addExtend(Spider.PARSE_CLASS,
+                          content.getExtend(Spider.PARSE_CLASS));
                   outer.write(((Outlink) o).getUrl(),
                       new UnionData(((Outlink) o)));
                 }

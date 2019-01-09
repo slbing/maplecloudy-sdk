@@ -78,7 +78,7 @@ public class ProxyWithEs {
     return proxyWithEs;
   }
   
-  public synchronized void setUp() {
+  public synchronized void setUp(boolean esAble) {
     if (flag) return;
     timer = new Timer();
     timer.schedule(new TimerTask() {
@@ -94,7 +94,8 @@ public class ProxyWithEs {
             for (int i = 0; i < se.length; i++) {
               proxyList.add(se[i].split(",")[0]);
             }
-            proxyToEs(proxyList);
+            if(esAble)proxyToEs(proxyList);
+            if(!esAble) timer.cancel();
           }
         } catch (Exception e) {
           e.printStackTrace();
