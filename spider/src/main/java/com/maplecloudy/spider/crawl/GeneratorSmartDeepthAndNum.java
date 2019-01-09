@@ -90,7 +90,14 @@ public class GeneratorSmartDeepthAndNum extends OozieMain implements Tool {
       if (generateType != "") {
         String type = "default";
         type = crawlDatum.getExtend("type");
-        if (!generateType.contains(type)) return;
+        if (type != null) {
+          if (!generateType.contains(type)) {
+            return;
+          }
+        } else {
+          return;
+        }
+        
       }
       if (crawlDatum.getStatus() == CrawlDatum.STATUS_DB_FETCHED) return;
       if (crawlDatum.getStatus() == CrawlDatum.STATUS_DB_GONE) return;
