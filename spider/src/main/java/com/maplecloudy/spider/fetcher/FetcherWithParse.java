@@ -107,7 +107,7 @@ public class FetcherWithParse extends OozieMain implements Tool {
       storingContent = FetcherWithParse
           .isStoringContent(context.getConfiguration());
       parsing = FetcherWithParse.isParsing(context.getConfiguration());
-      ProxyWithEs.getInstance().setUp();
+      ProxyWithEs.getInstance().setUp(true);
       InfoToEs.getInstance(context.getConfiguration()).initClient();
     }
     
