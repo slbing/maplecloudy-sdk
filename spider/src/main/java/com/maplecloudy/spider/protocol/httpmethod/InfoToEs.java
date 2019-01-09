@@ -132,7 +132,7 @@ public class InfoToEs {
             XContentType.JSON));
       }
       try {
-    	  this.client.bulk(request, RequestOptions.DEFAULT);
+    	  if(this.client !=null) this.client.bulk(request, RequestOptions.DEFAULT);
       } catch (Exception e1) {
         e1.printStackTrace();
       } finally {
@@ -163,7 +163,7 @@ public class InfoToEs {
             .source(error, XContentType.JSON));
       }
       try {
-    	  this.client.bulk(request, RequestOptions.DEFAULT);
+    	  if(this.client !=null) this.client.bulk(request, RequestOptions.DEFAULT);
       } catch (Exception e1) {
         e1.printStackTrace();
       } finally {
@@ -197,7 +197,7 @@ public class InfoToEs {
             .source(info, XContentType.JSON));
       }
       try {
-        this.client.bulk(request, RequestOptions.DEFAULT);
+        if(this.client !=null)this.client.bulk(request, RequestOptions.DEFAULT);
       } catch (Exception e) {
         e.printStackTrace();
       } finally {
@@ -230,7 +230,7 @@ public class InfoToEs {
               .source(info, XContentType.JSON));
         }
         try {
-           this.client.bulk(request, RequestOptions.DEFAULT);
+        	if(this.client !=null)this.client.bulk(request, RequestOptions.DEFAULT);
         } catch (Exception e) {
           e.printStackTrace();
         } finally {
@@ -281,7 +281,7 @@ public class InfoToEs {
                 .script(inline));
       }
       try {
-    	  this.client.bulk(request, RequestOptions.DEFAULT);
+    	  if(this.client !=null) this.client.bulk(request, RequestOptions.DEFAULT);
       } catch (Exception e) {
         e.printStackTrace();
       } finally {
@@ -323,7 +323,7 @@ public class InfoToEs {
               .script(inline));
     }
     try {
-    	this.client.bulk(request, RequestOptions.DEFAULT);
+    	if (!request.requests().isEmpty() && this.client != null) this.client.bulk(request, RequestOptions.DEFAULT);
     } catch (Exception e) {
       e.printStackTrace();
     } finally {
@@ -338,6 +338,7 @@ public class InfoToEs {
   
   private void closeClient() {
     try {
+    
       client.close();
     } catch (IOException e) {
       e.printStackTrace();
