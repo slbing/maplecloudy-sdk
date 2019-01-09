@@ -43,7 +43,7 @@ public class HttpUtils implements Protocol {
   private static final Logger LOG = LoggerFactory
       .getLogger(MethodHandles.lookup().lookupClass());
   
-  private final static int TIME_OUT = 5 * 1000;
+  private final static int TIME_OUT = 10 * 1000;
   private final static int MAX_SIZE = 10 * 1024 * 1024;
   
   private static CloseableHttpClient httpClient = HttpClients.createDefault();
@@ -91,7 +91,7 @@ public class HttpUtils implements Protocol {
     String urlType = map.containsKey("urlType") ? map.get("urlType")
         : "DEFAULT";
     String pageNum = map.containsKey("pageNum") ? map.get("pageNum") : "1";
-    String deepth = map.containsKey("deepth") ? map.get("deepth") : "1";
+    String deepth = map.containsKey("deepth") ? map.get("deepth") : "0";
     try {
       HttpParameters parm = new HttpParameters(datum.getExtendData());
       String ip2port = ProxyWithEs.getInstance().getProxy();
@@ -177,13 +177,21 @@ public class HttpUtils implements Protocol {
           connection = connection.method(Method.GET);
         }
         Connection.Response response;
-        try {
-          response = connection.execute();
-        } catch (Exception e) {
-          LOG.error("fetch proxy -- url " + url + " error ", e);
-          if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 901, web, type,
-              urlType, pageNum, deepth, e);
-          connection.proxy(null);
+        
+        if (ip2port != null && ip2port.contains(":")) {
+          String[] proxy = ip2port.split(":");
+          connection.proxy(new Proxy(Proxy.Type.HTTP, InetSocketAddress
+              .createUnresolved(proxy[0], Integer.valueOf(proxy[1]))));
+          try {
+            response = connection.execute();
+          } catch (Exception e) {
+            LOG.error("fetch proxy -- url " + url + " error ", e);
+            if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 901, web,
+                type, urlType, pageNum, deepth, e);
+            connection.proxy(null);
+            response = connection.execute();
+          }
+        } else {
           response = connection.execute();
         }
         code = response.statusCode();
