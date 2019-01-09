@@ -85,17 +85,17 @@ public class HttpUtils implements Protocol {
   @Override
   public ProtocolOutput getProtocolOutput(String url, CrawlDatum datum) {
     // TODO Auto-generated method stub
-	  Map<String, String> map = datum.getExtendData();
-      String web = map.containsKey("web") ? map.get("web") : "DEFAULT";
-      String type = map.containsKey("type") ? map.get("type") : "DEFAULT";
-      String urlType = map.containsKey("urlType") ? map.get("urlType") : "DEFAULT";
-      String pageNum = map.containsKey("pageNum") ? map.get("pageNum") : "1";
-      String deepth = map.containsKey("deepth") ? map.get("deepth") : "1";
+    Map<String,String> map = datum.getExtendData();
+    String web = map.containsKey("web") ? map.get("web") : "DEFAULT";
+    String type = map.containsKey("type") ? map.get("type") : "DEFAULT";
+    String urlType = map.containsKey("urlType") ? map.get("urlType")
+        : "DEFAULT";
+    String pageNum = map.containsKey("pageNum") ? map.get("pageNum") : "1";
+    String deepth = map.containsKey("deepth") ? map.get("deepth") : "1";
     try {
       HttpParameters parm = new HttpParameters(datum.getExtendData());
       String ip2port = ProxyWithEs.getInstance().getProxy();
       
-
       Content c;
       int code;
       String html = "";
@@ -118,7 +118,7 @@ public class HttpUtils implements Protocol {
           http.addHeader("x_requested_with", parm.getX_requested_with());
         if (parm.getContentType() != null)
           http.addHeader("Content-Type", parm.getContentType());
-        
+        if (parm.getRefer() != null) http.addHeader("Referer", parm.getRefer());
         if (ip2port != null && ip2port.contains(":")) {
           String[] proxy = ip2port.split(":");
           http.setConfig(builder
@@ -130,7 +130,8 @@ public class HttpUtils implements Protocol {
           response = httpClient.execute(http);
         } catch (Exception e) {
           LOG.error("fetch proxy -- url " + url + " error ", e);
-          if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 900,web,type,urlType,pageNum,deepth,e);
+          if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 900, web, type,
+              urlType, pageNum, deepth, e);
           http.setConfig(builder.build());
           response = httpClient.execute(http);
         }
@@ -160,6 +161,8 @@ public class HttpUtils implements Protocol {
           connection.header("x_requested_with", parm.getX_requested_with());
         if (parm.getContentType() != null)
           connection.header("Content-Type", parm.getContentType());
+        if (parm.getRefer() != null)
+          connection.header("Referer", parm.getRefer());
         if (ip2port != null && ip2port.contains(":")) {
           String[] proxy = ip2port.split(":");
           connection.proxy(new Proxy(Proxy.Type.HTTP, InetSocketAddress
@@ -178,7 +181,8 @@ public class HttpUtils implements Protocol {
           response = connection.execute();
         } catch (Exception e) {
           LOG.error("fetch proxy -- url " + url + " error ", e);
-          if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 901,web,type,urlType,pageNum,deepth,e);
+          if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 901, web, type,
+              urlType, pageNum, deepth, e);
           connection.proxy(null);
           response = connection.execute();
         }
@@ -189,7 +193,8 @@ public class HttpUtils implements Protocol {
             Maps.newHashMap());
         c.setExtendData(datum.getExtendData());
       }
-      if (ES_ABLE) InfoToEs.getInstance().addHttpResponse(url, code,web,type,urlType,pageNum,deepth,html);
+      if (ES_ABLE) InfoToEs.getInstance().addHttpResponse(url, code, web, type,
+          urlType, pageNum, deepth, html);
       if (code == 200) { // got a good response
         return new ProtocolOutput(c); // return it
         
@@ -222,7 +227,8 @@ public class HttpUtils implements Protocol {
       }
     } catch (Exception e) {
       LOG.error("fetch -- url " + url + " error ", e);
-      if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 0,web,type,urlType,pageNum,deepth,e);
+      if (ES_ABLE) InfoToEs.getInstance().addHttpError(url, 0, web, type,
+          urlType, pageNum, deepth, e);
       return new ProtocolOutput(null, new ProtocolStatus(e));
     }
   }
@@ -239,8 +245,9 @@ public class HttpUtils implements Protocol {
   public static void main(String[] args) throws Exception {
     InfoToEs.getInstance(new Configuration()).initClient();
     for (int i = 0; i < 600; i++) {
-        InfoToEs.getInstance().addHttpError("dde", 1, "2", "3", "4", "5", "6", new Exception("e"));
-	}
+      InfoToEs.getInstance().addHttpError("dde", 1, "2", "3", "4", "5", "6",
+          new Exception("e"));
+    }
     InfoToEs.getInstance().cleanUp();
   }
   
