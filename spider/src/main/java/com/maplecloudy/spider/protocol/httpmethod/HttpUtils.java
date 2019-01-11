@@ -1,7 +1,9 @@
 package com.maplecloudy.spider.protocol.httpmethod;
 
 import java.lang.invoke.MethodHandles;
+import java.net.Authenticator;
 import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.util.Map;
 
@@ -39,6 +41,18 @@ import com.maplecloudy.spider.protocol.ProtocolOutput;
 import com.maplecloudy.spider.protocol.ProtocolStatus;
 
 public class HttpUtils implements Protocol {
+  // bind ip proxy
+  static {
+    String proxyUsernm = "maplecloudy";
+    String proxyPasswd = "maplecloudy";
+    Authenticator.setDefault(new Authenticator() {
+      @Override
+      protected PasswordAuthentication getPasswordAuthentication() {
+        return new PasswordAuthentication(proxyUsernm,
+            proxyPasswd.toCharArray());
+      }
+    });
+  }
   
   private static final Logger LOG = LoggerFactory
       .getLogger(MethodHandles.lookup().lookupClass());
@@ -163,11 +177,11 @@ public class HttpUtils implements Protocol {
           connection.header("Content-Type", parm.getContentType());
         if (parm.getRefer() != null)
           connection.header("Referer", parm.getRefer());
-        if (ip2port != null && ip2port.contains(":")) {
-          String[] proxy = ip2port.split(":");
-          connection.proxy(new Proxy(Proxy.Type.HTTP, InetSocketAddress
-              .createUnresolved(proxy[0], Integer.valueOf(proxy[1]))));
-        }
+//        if (ip2port != null && ip2port.contains(":")) {
+//          String[] proxy = ip2port.split(":");
+//          connection.proxy(new Proxy(Proxy.Type.SOCKS, InetSocketAddress
+//              .createUnresolved(proxy[0], Integer.valueOf(proxy[1]))));
+//        }
         
         if ("post".equals(parm.getType())) {
           connection.method(Method.POST);
@@ -180,7 +194,7 @@ public class HttpUtils implements Protocol {
         
         if (ip2port != null && ip2port.contains(":")) {
           String[] proxy = ip2port.split(":");
-          connection.proxy(new Proxy(Proxy.Type.HTTP, InetSocketAddress
+          connection.proxy(new Proxy(Proxy.Type.SOCKS, InetSocketAddress
               .createUnresolved(proxy[0], Integer.valueOf(proxy[1]))));
           try {
             response = connection.execute();
