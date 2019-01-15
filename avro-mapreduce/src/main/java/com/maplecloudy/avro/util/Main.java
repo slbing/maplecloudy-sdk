@@ -16,7 +16,7 @@ public class Main {
   
   Main() {
     tools = new TreeMap<String,Tool>();
-    for (Tool tool : new Tool[] {new AvroReadTool(), new GetSchemaTool(),
+    for (Tool tool : new Tool[] {new AvroReadTool3(),new AvroReadTool(), new GetSchemaTool(),
         new MapAvroReadTool(), new DataFileGetMetaTool(), new CutDataTool(), new AvroSumTool()}) {
       Tool prev = tools.put(tool.getName(), tool);
       if (prev != null) {

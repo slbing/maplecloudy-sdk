@@ -350,6 +350,7 @@ public class HDFSEventSink extends AbstractSink implements Configurable {
     Transaction transaction = channel.getTransaction();
     List<BucketWriter> writers = Lists.newArrayList();
     transaction.begin();
+    
     try {
       int txnEventCount = 0;
       for (txnEventCount = 0; txnEventCount < batchSize; txnEventCount++) {
