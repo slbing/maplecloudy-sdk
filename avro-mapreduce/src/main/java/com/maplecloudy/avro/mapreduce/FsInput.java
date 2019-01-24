@@ -20,7 +20,7 @@ public class FsInput implements Closeable, SeekableInput {
     this.len = path.getFileSystem(conf).getFileStatus(path).getLen();
   }
   
-  /** Construct given a path and a configuration. */
+  /** Construct given a path and a fs. */
   public FsInput(Path path, FileSystem fs) throws IOException {
     this.stream = fs.open(path);
     this.len = fs.getFileStatus(path).getLen();

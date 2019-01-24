@@ -2,6 +2,7 @@ package com.maplecloudy.flume.sink;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.avro.Schema;
@@ -15,17 +16,23 @@ import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.reflect.ReflectDatumWriter;
 import org.apache.avro.util.ByteBufferOutputStream;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.flume.Event;
 import org.apache.flume.event.SimpleEvent;
 import org.apache.hadoop.io.DataInputBuffer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.maplecloudy.avro.util.AvroUtils;
 
 @SuppressWarnings({"rawtypes"})
 public class AvroFileSerializer {
-  
+  private static final Logger LOG = LoggerFactory.getLogger(AvroFileSerializer.class);
   Schema schema;// = Schema.create(Schema.Type.LONG);
   DatumReader datumReader;
   
   GenericDatumWriter<Event> writer;
+  
   public AvroFileSerializer() {
     // if (Pair.class.getName().equals(valueschema.getFullName())) {
     schema = ReflectData.get().getSchema(SimpleEvent.class);
@@ -77,12 +84,19 @@ public class AvroFileSerializer {
   ByteBufferOutputStream bos = new ByteBufferOutputStream();
   
   public List<ByteBuffer> serialize(Event e) throws IOException {
-    BinaryEncoder encoder = EncoderFactory.get().directBinaryEncoder(bos, null);
-    writer.write(e, encoder);
-    return bos.getBufferList();
+    try {
+      BinaryEncoder encoder = EncoderFactory.get().directBinaryEncoder(bos,
+          null);
+      writer.write(e, encoder);
+      return bos.getBufferList();
+    } catch (Exception ex) {
+      LOG.info("serialize event error:"+ AvroUtils.toString(e));
+      LOG.info(ExceptionUtils.getFullStackTrace(ex));
+      return new ArrayList<ByteBuffer>();
+    }
   }
   
   public static void main(String[] args) {
-    System.out.println( ReflectData.get().getSchema(SimpleEvent.class));
+    System.out.println(ReflectData.get().getSchema(SimpleEvent.class));
   }
 }
