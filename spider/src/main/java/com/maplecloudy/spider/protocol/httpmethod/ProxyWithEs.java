@@ -9,6 +9,7 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -61,6 +62,7 @@ public class ProxyWithEs {
   
   private static volatile boolean flag = false;
   private static volatile boolean flag2 = true;
+  private static AtomicInteger num = new AtomicInteger(0);
   
   private Timer timer;
   
@@ -79,7 +81,7 @@ public class ProxyWithEs {
   }
   
   public synchronized void setUp(boolean esAble) {
-    if (flag) return;
+    if (!(num.getAndIncrement() == 0 && timer == null)) return;
     timer = new Timer();
     timer.schedule(new TimerTask() {
       @Override
@@ -89,28 +91,58 @@ public class ProxyWithEs {
               .toString().trim();
           eString = eString.split("<body>")[1].split("</body>")[0].trim();
           String[] se = eString.split(" ");
-          if (eString.length() > 10) {
-            proxyList.clear();
-            for (int i = 0; i < se.length; i++) {
-              proxyList.add(se[i].split(",")[0]);
-            }
-            if(esAble)proxyToEs(proxyList);
-            if(!esAble) timer.cancel();
+          proxyList.clear();
+          for (int i = 0; i < se.length; i++) {
+            proxyList.add(se[i].split(",")[0]);
           }
+//            if(esAble)proxyToEs(proxyList);
+//            if(!esAble) timer.cancel();
         } catch (Exception e) {
           e.printStackTrace();
         }
       }
-    }, 0, 3 * 60 * 1000);
-    flag = true;
+    }, 0, 1 * 60 * 1000);
   }
   
   public synchronized void close() {
-    if (timer != null && flag2) {
+    if (timer != null && num.decrementAndGet() == 0) {
       timer.cancel();
-      flag2 = false;
+      timer = null;
     }
   }
+//  public synchronized void setUp(boolean esAble) {
+//    if (flag) return;
+//    timer = new Timer();
+//    timer.schedule(new TimerTask() {
+//      @Override
+//      public void run() {
+//        try {
+//          String eString = Jsoup.connect(IP_URL).ignoreContentType(true).get()
+//              .toString().trim();
+//          eString = eString.split("<body>")[1].split("</body>")[0].trim();
+//          String[] se = eString.split(" ");
+//          if (eString.length() > 10) {
+//            proxyList.clear();
+//            for (int i = 0; i < se.length; i++) {
+//              proxyList.add(se[i].split(",")[0]);
+//            }
+//            if(esAble)proxyToEs(proxyList);
+//            if(!esAble) timer.cancel();
+//          }
+//        } catch (Exception e) {
+//          e.printStackTrace();
+//        }
+//      }
+//    }, 0, 3 * 60 * 1000);
+//    flag = true;
+//  }
+  
+//  public synchronized void close() {
+//    if (timer != null && flag2) {
+//      timer.cancel();
+//      flag2 = false;
+//    }
+//  }
   
   public void setUpBak1() {
     client = new RestHighLevelClient(
@@ -244,10 +276,11 @@ public class ProxyWithEs {
   
   public static void main(String[] args)
       throws Exception, InterruptedException {
-	  JSONObject jsonObject = new JSONObject();
-	  jsonObject.put("url", "rereff");
-	  jsonObject.put("web", "ewe");
-	  System.out.println(jsonObject.toString().split("url\":\"")[1].split("\",\"web")[0]);
+    JSONObject jsonObject = new JSONObject();
+    jsonObject.put("url", "rereff");
+    jsonObject.put("web", "ewe");
+    System.out.println(
+        jsonObject.toString().split("url\":\"")[1].split("\",\"web")[0]);
   }
   
 }
