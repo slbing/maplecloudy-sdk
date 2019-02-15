@@ -53,6 +53,7 @@ public class GeneratorSmartDeepthAndNum extends OozieMain implements Tool {
   public static final String GENERATOR_MAX_NUM_SEGMENTS = "generate.max.num.segments";
   public static final String GENERATOR_COUNT_PER_SEGMENTS = "generate.count.per.segments";
   public static final String GENERATOR_TYPE = "generate.type";
+  public static final String GENERATOR_TYPE_VALID = "generate.type.valid";
   
   public static class SelectorEntry {
     public String url;
@@ -69,6 +70,7 @@ public class GeneratorSmartDeepthAndNum extends OozieMain implements Tool {
     private SelectorEntry entry = new SelectorEntry();
     private long genDelay;
     private String generateType;
+    private String generateTypeValid;
     
     @Override
     protected void setup(Context context)
@@ -81,23 +83,27 @@ public class GeneratorSmartDeepthAndNum extends OozieMain implements Tool {
       genDelay = context.getConfiguration().getLong(GENERATOR_DELAY, 7L) * 3600L
           * 24L * 1000L;
       generateType = context.getConfiguration().get(GENERATOR_TYPE, "");
+      generateTypeValid = context.getConfiguration().get(GENERATOR_TYPE_VALID,
+          "");
     }
     
     @Override
     protected void map(String key, CrawlDatum crawlDatum, Context context)
         throws IOException, InterruptedException {
       // filter url type by spider.xml configuration
-      if (generateType != "") {
-        String type = "default";
-        type = crawlDatum.getExtend("type");
-        if (type != null) {
-          if (!generateType.contains(type)) {
+      if (org.apache.commons.lang.StringUtils.equals(generateTypeValid,
+          "true")) {
+        if (generateType != "") {
+          String type = "default";
+          type = crawlDatum.getExtend("type");
+          if (type != null) {
+            if (!generateType.contains(type)) {
+              return;
+            }
+          } else {
             return;
           }
-        } else {
-          return;
         }
-        
       }
       if (crawlDatum.getStatus() == CrawlDatum.STATUS_DB_FETCHED) return;
       if (crawlDatum.getStatus() == CrawlDatum.STATUS_DB_GONE) return;
