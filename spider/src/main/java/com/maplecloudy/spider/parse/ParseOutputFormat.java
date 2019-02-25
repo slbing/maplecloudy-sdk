@@ -30,8 +30,8 @@ public class ParseOutputFormat extends FileOutputFormat<String,UnionData> {
     return new RecordWriter<String,UnionData>() {
       
       @Override
-      public void write(String key, UnionData value) throws IOException,
-          InterruptedException {
+      public void write(String key, UnionData value)
+          throws IOException, InterruptedException {
         
         if (value.datum instanceof Outlink) {
           Outlink ol = (Outlink) value.datum;
@@ -42,18 +42,19 @@ public class ParseOutputFormat extends FileOutputFormat<String,UnionData> {
               ol.url, datum);
         } else {
           try {
-          mos.write(AvroMapOutputFormat.class, value.datum.getClass()
-              .getSimpleName() + "New/", key, value.datum);
-          }catch(Exception e) {
-            //to avoid datum null 
+            mos.write(AvroMapOutputFormat.class,
+                value.datum.getClass().getSimpleName() + "NewData/", key,
+                value.datum);
+          } catch (Exception e) {
+            // to avoid datum null
             Log.info(gson.toJson(value.datum));
           }
         }
       }
       
       @Override
-      public void close(TaskAttemptContext context) throws IOException,
-          InterruptedException {
+      public void close(TaskAttemptContext context)
+          throws IOException, InterruptedException {
         mos.close();
         
       }
