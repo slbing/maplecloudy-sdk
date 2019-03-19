@@ -43,7 +43,7 @@ public class ParseOutputFormat extends FileOutputFormat<String,UnionData> {
         } else {
           try {
             mos.write(AvroMapOutputFormat.class,
-                value.datum.getClass().getSimpleName() + "NewData/", key,
+                value.datum.getClass().getSimpleName() + "Last/", key,
                 value.datum);
           } catch (Exception e) {
             // to avoid datum null
