@@ -59,7 +59,9 @@ public class UserAgent {
   private static int len1 = phoneAgentArray.length;
   
   public static String getAgent() {
-    return userAgentArray[random.nextInt(len)];
+    String string = userAgentArray[random.nextInt(len)];
+    System.out.println("user agent::" + string);
+    return string;
   }
   
   public static String getPhoneAgent() {

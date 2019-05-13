@@ -119,7 +119,15 @@ public class FetcherWithParse extends OozieMain implements Tool {
         ProtocolOutput output = protocol.getProtocolOutput(key, value);
         ProtocolStatus status = output.getStatus();
         Content content = output.getContent();
-        
+        System.out.println("************************************************");
+        System.out.println("抓取网页的链接：" + key);
+        System.out.println("抓取网页的状态码：" + status.getCode());
+        if (content != null && content.getContent() != null) System.out
+            .println("抓取网页的内容：" + new String(content.getContent(), "gbk"));
+        else {
+          System.out.println("未抓到内容！！！！");
+        }
+        LOG.info("************************************************");
         switch (status.getCode()) {
           
           case ProtocolStatus.SUCCESS: // got a page
