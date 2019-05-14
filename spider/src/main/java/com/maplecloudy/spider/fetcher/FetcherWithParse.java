@@ -121,9 +121,9 @@ public class FetcherWithParse extends OozieMain implements Tool {
         Content content = output.getContent();
         System.out.println("************************************************");
         System.out.println("抓取网页的链接：" + key);
-        System.out.println("抓取网页的状态码：" + status.getCode());
-        if (content != null && content.getContent() != null) System.out
-            .println("抓取网页的内容：" + new String(content.getContent(), "gbk"));
+        if (content != null && content.getContent() != null)
+          System.out.println("抓取网页的内容前1000字符："
+              + new String(content.getContent(), "gbk").substring(0, 1000));
         else {
           System.out.println("未抓到内容！！！！");
         }

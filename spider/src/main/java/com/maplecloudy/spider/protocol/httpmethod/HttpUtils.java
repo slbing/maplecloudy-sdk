@@ -198,6 +198,7 @@ public class HttpUtils implements Protocol {
             response = connection.execute();
           }
         } else {
+          System.out.println("使用本地ip进行访问");
           response = connection.execute();
         }
         code = response.statusCode();
@@ -209,6 +210,7 @@ public class HttpUtils implements Protocol {
       }
       if (ES_ABLE) InfoToEs.getInstance().addHttpResponse(url, code, web, type,
           urlType, pageNum, deepth, html);
+      System.out.println("抓取网页的状态码：" + code);
       if (code == 200) { // got a good response
         return new ProtocolOutput(c); // return it
         
