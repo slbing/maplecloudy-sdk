@@ -132,7 +132,7 @@ public class HDFSCompressedDataStream implements HDFSWriter {
       isFinished = true;
     }
     fsOut.flush();
-    fsOut.sync();
+    fsOut.hsync();
   }
 
   @Override
@@ -144,7 +144,7 @@ public class HDFSCompressedDataStream implements HDFSWriter {
       isFinished = true;
     }
     fsOut.flush();
-    fsOut.sync();
+    fsOut.hsync();
     cmpOut.close();
   }
 

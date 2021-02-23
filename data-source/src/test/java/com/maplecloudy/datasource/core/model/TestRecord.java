@@ -56,14 +56,6 @@ public class TestRecord {
       JsonEncoder encoder;
       
       encoder = EncoderFactory.get().jsonEncoder(schema, out);
-      // TODO Auto-generated catch block
-      
-      if (!singleLine) {
-        JsonGenerator g = new JsonFactory().createJsonGenerator(out,
-            JsonEncoding.UTF8);
-        g.useDefaultPrettyPrinter();
-        encoder.configure(g);
-      }
       GenericDatumWriter<V> writer = new ReflectDatumWriter<V>(schema);
       
       writer.write(v, encoder);

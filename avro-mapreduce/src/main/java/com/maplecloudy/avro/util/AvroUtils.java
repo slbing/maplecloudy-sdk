@@ -13,7 +13,6 @@ import javax.xml.bind.DatatypeConverter;
 import org.apache.avro.AvroRuntimeException;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
-import org.apache.avro.data.Json;
 import org.apache.avro.file.DataFileReader;
 import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.generic.GenericContainer;
@@ -35,10 +34,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.DataOutputBuffer;
-import org.codehaus.jackson.JsonEncoding;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonGenerator;
-import org.codehaus.jackson.JsonNode;
 
 import com.google.common.collect.Maps;
 import com.maplecloudy.avro.io.MapAvroFile;
@@ -148,14 +143,6 @@ public class AvroUtils {
       JsonEncoder encoder;
       
       encoder = EncoderFactory.get().jsonEncoder(schema, out.get());
-      // TODO Auto-generated catch block
-      
-      if (!singleLine) {
-        JsonGenerator g = new JsonFactory().createJsonGenerator(out.get(),
-            JsonEncoding.UTF8);
-        g.useDefaultPrettyPrinter();
-        encoder.configure(g);
-      }
       GenericDatumWriter<V> writer = new ReflectDatumWriter<V>(schema);
       
       writer.write(v, encoder);
@@ -165,24 +152,6 @@ public class AvroUtils {
       e.printStackTrace();
       return null;
     }
-  }
-  
-  public static <V> JsonNode toJson(V v) throws IOException {
-    out.get().reset();
-    BinaryEncoder encoder = EncoderFactory.get().directBinaryEncoder(out.get(),
-        null);
-    Schema schema;
-    if (GenericContainer.class.isAssignableFrom(v.getClass()))
-      schema = ((GenericContainer) v).getSchema();
-    else schema = ReflectData.get().getSchema(v.getClass());
-    
-    GenericDatumWriter<V> writer = new ReflectDatumWriter<V>(schema);
-    writer.write(v, encoder);
-    in.get().reset(out.get().getData(), out.get().getLength());
-    BinaryDecoder decoder = DecoderFactory.get().directBinaryDecoder(in.get(),
-        null);
-    
-    return Json.read(decoder);
   }
   
   protected static void toString(Object datum, StringBuilder buffer,

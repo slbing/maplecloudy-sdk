@@ -1,1 +1,0 @@
-apache-maven-3.5.4-bin.tar.gz/apache-maven-3.5.4/bin/mvn <mvn_args> -f <src_zip>/pom.xml --settings settings.xml 

@@ -2,6 +2,8 @@ package com.maplecloudy.spider.fetcher;
 
 import java.io.IOException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.fs.FileAlreadyExistsException;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.InvalidJobConfException;
@@ -9,7 +11,6 @@ import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.mortbay.log.Log;
 
 import com.google.gson.Gson;
 import com.maplecloudy.avro.io.UnionData;
@@ -19,9 +20,11 @@ import com.maplecloudy.avro.mapreduce.output.MultipleOutputs;
 import com.maplecloudy.spider.crawl.CrawlDatum;
 import com.maplecloudy.spider.metadata.Spider;
 import com.maplecloudy.spider.parse.Outlink;
+import com.maplecloudy.spider.parse.ParseOutputFormat;
 import com.maplecloudy.spider.protocol.Content;
 
 public class FetcherOutputFormat extends FileOutputFormat<String,UnionData> {
+  Log log = LogFactory.getLog(ParseOutputFormat.class);
   
   @Override
   public RecordWriter<String,UnionData> getRecordWriter(TaskAttemptContext job)
@@ -53,7 +56,7 @@ public class FetcherOutputFormat extends FileOutputFormat<String,UnionData> {
             mos.write(AvroMapOutputFormat.class,
                 value.datum.getClass().getSimpleName() + "/", key, value.datum);
           } catch (Exception e) {
-            Log.info(gson.toJson(value.datum));
+            log.info(gson.toJson(value.datum));
           }
         }
       }

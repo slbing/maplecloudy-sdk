@@ -112,7 +112,7 @@ public class HDFSDataStream implements HDFSWriter {
   public void sync() throws IOException {
     serializer.flush();
     outStream.flush();
-    outStream.sync();
+    outStream.hsync();
   }
 
   @Override
@@ -120,7 +120,7 @@ public class HDFSDataStream implements HDFSWriter {
     serializer.flush();
     serializer.beforeClose();
     outStream.flush();
-    outStream.sync();
+    outStream.hsync();;
     outStream.close();
   }
 
