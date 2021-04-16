@@ -21,3 +21,29 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+*/.classpath
+distribute-job-engin/conf.cloudera.yarn/
+distribute-job-engin/nginx/
+distribute-job-engin/maplecloudy/
+distribute-job-engin/gxiang/
+elasticsearch-yarn/cfg
+elasticsearch-yarn/cfg2.4.4
+elasticsearch-yarn/conf.cloudera.yarn/
+*/src/test/java/org/apache/hadoop/util/Shell.java
+*/.project
+*/target
+*/bin
+*/*.log
+*/*.log.*
+*/.settings
+.classpath
+.project
+.settings
+log
+logs
+*/logs
+*/log
+*/*.iml
+*.iml
+*/downloads
+*.DS_Store
