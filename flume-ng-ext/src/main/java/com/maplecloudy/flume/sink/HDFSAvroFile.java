@@ -7,9 +7,11 @@ import java.util.Map;
 
 import org.apache.avro.file.CodecFactory;
 import org.apache.avro.file.DataFileWriter;
+import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.reflect.ReflectDatumWriter;
 import org.apache.flume.Context;
 import org.apache.flume.Event;
+import org.apache.flume.event.SimpleEvent;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
@@ -28,9 +30,8 @@ public class HDFSAvroFile implements HDFSWriter {
   private static final Logger logger = LoggerFactory
       .getLogger(HDFSAvroFile.class);
   
-  private DataFileWriter<Pair> writer;
+  private DataFileWriter<Event> writer;
   private String writeFormat;
-  private AvroFileSerializer serializer;
   private boolean useRawLocalFileSystem;
   private Context mContext;
   
@@ -65,10 +66,7 @@ public class HDFSAvroFile implements HDFSWriter {
   
   @Override
   public void append(Event event) throws IOException {
-    List<ByteBuffer> bfs = serializer.serialize(event);
-    for (ByteBuffer bf : bfs) {
-      writer.appendEncoded(bf);
-    }
+    writer.append(event);
   }
   
   @Override
@@ -102,9 +100,8 @@ public class HDFSAvroFile implements HDFSWriter {
             + "is not of type LocalFileSystem: " + hdfs.getClass().getName());
       }
     }
-    serializer = LogSchemaSource.getInstance(mContext).getAvroSerializer();
     
-    writer = new DataFileWriter<Pair>(new ReflectDatumWriter<Pair>());
+    writer = new DataFileWriter<Event>(new ReflectDatumWriter<Event>());
     writer
         .setCodec(CodecFactory.deflateCodec(MapAvroFile.DEFAULT_DEFLATE_LEVEL));
     // data.setCodec(CodecFactory.snappyCodec());
@@ -113,7 +110,7 @@ public class HDFSAvroFile implements HDFSWriter {
     // FSDataOutputStream outStream = hdfs.append(dstPath);
     // writer.create(serializer.getSchema(), outStream);
     // } else {
-    writer.create(serializer.getSchema(), hdfs.create(dstPath));
+    writer.create(ReflectData.get().getSchema(SimpleEvent.class), hdfs.create(dstPath));
     // }
   }
   
